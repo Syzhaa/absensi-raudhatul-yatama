@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { teacherService } from '../services';
-import { Plus, Edit, Trash, QrCode } from 'lucide-react';
+import { Plus, Edit, Trash, QrCode, Download } from 'lucide-react';
+import QRCode from 'qrcode';
 
 export default function Teachers() {
   const [showForm, setShowForm] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
+  const [selectedTeachers, setSelectedTeachers] = useState([]);
   const [formData, setFormData] = useState({
     lembaga: 'MA',
     nama: '',
@@ -92,6 +94,51 @@ export default function Teachers() {
     }
   };
 
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedTeachers(teachers.map(t => t.id));
+    } else {
+      setSelectedTeachers([]);
+    }
+  };
+
+  const handleSelectTeacher = (id) => {
+    if (selectedTeachers.includes(id)) {
+      setSelectedTeachers(selectedTeachers.filter(tid => tid !== id));
+    } else {
+      setSelectedTeachers([...selectedTeachers, id]);
+    }
+  };
+
+  const handleGenerateQR = async () => {
+    if (selectedTeachers.length === 0) {
+      alert('Pilih guru terlebih dahulu');
+      return;
+    }
+
+    try {
+      const selectedData = teachers.filter(t => selectedTeachers.includes(t.id));
+      
+      for (const teacher of selectedData) {
+        const qrData = teacher.uuid;
+        const canvas = document.createElement('canvas');
+        await QRCode.toCanvas(canvas, qrData, { width: 300, margin: 2 });
+        
+        const link = document.createElement('a');
+        link.download = `guru-${teacher.nama.replace(/\s+/g, '-')}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+        
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      alert(`Berhasil generate ${selectedTeachers.length} QR code`);
+      setSelectedTeachers([]);
+    } catch (error) {
+      alert('Gagal generate QR: ' + error.message);
+    }
+  };
+
   const teachers = data?.data || [];
 
   return (
@@ -101,13 +148,24 @@ export default function Teachers() {
           <h1 className="text-3xl font-bold">Data Guru</h1>
           <p className="text-gray-600">Total: {teachers.length} guru</p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus size={20} />
-          Tambah Guru
-        </button>
+        <div className="flex gap-2">
+          {selectedTeachers.length > 0 && (
+            <button
+              onClick={handleGenerateQR}
+              className="btn-primary flex items-center gap-2 bg-neo-green"
+            >
+              <Download size={20} />
+              Generate QR ({selectedTeachers.length})
+            </button>
+          )}
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus size={20} />
+            Tambah Guru
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -204,6 +262,14 @@ export default function Teachers() {
         <table className="w-full">
           <thead>
             <tr className="border-b-3 border-black">
+              <th className="text-left py-3 px-4 w-12">
+                <input
+                  type="checkbox"
+                  checked={selectedTeachers.length === teachers.length && teachers.length > 0}
+                  onChange={handleSelectAll}
+                  className="w-4 h-4"
+                />
+              </th>
               <th className="text-left py-3 px-4">Nama</th>
               <th className="text-left py-3 px-4">NIP</th>
               <th className="text-left py-3 px-4">Mata Pelajaran</th>
@@ -224,6 +290,14 @@ export default function Teachers() {
             ) : (
               teachers.map((teacher) => (
                 <tr key={teacher.id} className="border-b border-gray-300">
+                  <td className="py-3 px-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedTeachers.includes(teacher.id)}
+                      onChange={() => handleSelectTeacher(teacher.id)}
+                      className="w-4 h-4"
+                    />
+                  </td>
                   <td className="py-3 px-4 font-medium">{teacher.nama}</td>
                   <td className="py-3 px-4">{teacher.nip || '-'}</td>
                   <td className="py-3 px-4">{teacher.mata_pelajaran || '-'}</td>

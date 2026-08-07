@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { studentService } from '../services';
-import { Plus, Edit, Trash, QrCode } from 'lucide-react';
+import { Plus, Edit, Trash, QrCode, Download } from 'lucide-react';
+import QRCode from 'qrcode';
 
 export default function Students() {
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
+  const [selectedStudents, setSelectedStudents] = useState([]);
   const [formData, setFormData] = useState({
     lembaga: 'MA',
     nama: '',
@@ -104,6 +106,51 @@ export default function Students() {
     }
   };
 
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedStudents(students.map(s => s.id));
+    } else {
+      setSelectedStudents([]);
+    }
+  };
+
+  const handleSelectStudent = (id) => {
+    if (selectedStudents.includes(id)) {
+      setSelectedStudents(selectedStudents.filter(sid => sid !== id));
+    } else {
+      setSelectedStudents([...selectedStudents, id]);
+    }
+  };
+
+  const handleGenerateQR = async () => {
+    if (selectedStudents.length === 0) {
+      alert('Pilih siswa terlebih dahulu');
+      return;
+    }
+
+    try {
+      const selectedData = students.filter(s => selectedStudents.includes(s.id));
+      
+      for (const student of selectedData) {
+        const qrData = student.uuid;
+        const canvas = document.createElement('canvas');
+        await QRCode.toCanvas(canvas, qrData, { width: 300, margin: 2 });
+        
+        const link = document.createElement('a');
+        link.download = `siswa-${student.nama.replace(/\s+/g, '-')}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+        
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      alert(`Berhasil generate ${selectedStudents.length} QR code`);
+      setSelectedStudents([]);
+    } catch (error) {
+      alert('Gagal generate QR: ' + error.message);
+    }
+  };
+
   const students = data?.data || [];
 
   return (
@@ -113,13 +160,24 @@ export default function Students() {
           <h1 className="text-3xl font-bold">Data Siswa</h1>
           <p className="text-gray-600">Total: {students.length} siswa</p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus size={20} />
-          Tambah Siswa
-        </button>
+        <div className="flex gap-2">
+          {selectedStudents.length > 0 && (
+            <button
+              onClick={handleGenerateQR}
+              className="btn-primary flex items-center gap-2 bg-neo-green"
+            >
+              <Download size={20} />
+              Generate QR ({selectedStudents.length})
+            </button>
+          )}
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus size={20} />
+            Tambah Siswa
+          </button>
+        </div>
       </div>
 
       {showForm && (
@@ -271,6 +329,14 @@ export default function Students() {
         <table className="w-full">
           <thead>
             <tr className="border-b-3 border-black">
+              <th className="text-left py-3 px-4 w-12">
+                <input
+                  type="checkbox"
+                  checked={selectedStudents.length === students.length && students.length > 0}
+                  onChange={handleSelectAll}
+                  className="w-4 h-4"
+                />
+              </th>
               <th className="text-left py-3 px-4">Nama</th>
               <th className="text-left py-3 px-4">Kelas</th>
               <th className="text-left py-3 px-4">Lembaga</th>
@@ -290,6 +356,14 @@ export default function Students() {
             ) : (
               students.map((student) => (
                 <tr key={student.id} className="border-b border-gray-300">
+                  <td className="py-3 px-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedStudents.includes(student.id)}
+                      onChange={() => handleSelectStudent(student.id)}
+                      className="w-4 h-4"
+                    />
+                  </td>
                   <td className="py-3 px-4 font-medium">{student.nama}</td>
                   <td className="py-3 px-4">{student.kelas || '-'}</td>
                   <td className="py-3 px-4">{student.lembaga}</td>
