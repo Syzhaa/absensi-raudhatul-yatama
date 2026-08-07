@@ -50,6 +50,9 @@ export default function Students() {
       queryClient.invalidateQueries(['students']);
       alert('Siswa berhasil dihapus');
     },
+    onError: (error) => {
+      alert('Gagal menghapus siswa: ' + (error.message || 'Unknown error'));
+    },
   });
 
   const resetForm = () => {
@@ -297,13 +300,16 @@ export default function Students() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEdit(student)}
-                        className="p-2 bg-neo-blue border-2 border-black hover:shadow-neo"
+                        className="p-2 bg-neo-blue border-2 border-black hover:shadow-neo transition-shadow"
+                        title="Edit siswa"
                       >
                         <Edit size={16} />
                       </button>
                       <button
                         onClick={() => handleDelete(student.id)}
-                        className="p-2 bg-red-300 border-2 border-black hover:shadow-neo"
+                        disabled={deleteMutation.isPending}
+                        className="p-2 bg-red-300 border-2 border-black hover:shadow-neo transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Hapus siswa"
                       >
                         <Trash size={16} />
                       </button>

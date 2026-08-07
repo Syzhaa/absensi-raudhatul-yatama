@@ -46,6 +46,9 @@ export default function Teachers() {
       queryClient.invalidateQueries(['teachers']);
       alert('Guru berhasil dihapus');
     },
+    onError: (error) => {
+      alert('Gagal menghapus guru: ' + (error.message || 'Unknown error'));
+    },
   });
 
   const resetForm = () => {
@@ -232,13 +235,16 @@ export default function Teachers() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEdit(teacher)}
-                        className="p-2 bg-neo-blue border-2 border-black hover:shadow-neo"
+                        className="p-2 bg-neo-blue border-2 border-black hover:shadow-neo transition-shadow"
+                        title="Edit guru"
                       >
                         <Edit size={16} />
                       </button>
                       <button
                         onClick={() => handleDelete(teacher.id)}
-                        className="p-2 bg-red-300 border-2 border-black hover:shadow-neo"
+                        disabled={deleteMutation.isPending}
+                        className="p-2 bg-red-300 border-2 border-black hover:shadow-neo transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Hapus guru"
                       >
                         <Trash size={16} />
                       </button>
