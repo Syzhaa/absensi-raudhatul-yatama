@@ -27,9 +27,11 @@ export default function Login({ onLogin }) {
     <div className="min-h-screen bg-neo-bg flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="card text-center mb-8">
-          <div className="w-20 h-20 bg-neo-green border-3 border-black mx-auto mb-4 flex items-center justify-center">
-            <span className="text-3xl font-bold">RA</span>
-          </div>
+          <img 
+            src="/logo.jpg" 
+            alt="Logo Raudhatul Yatama" 
+            className="w-24 h-24 object-contain border-3 border-black rounded-lg mx-auto mb-4" 
+          />
           <h1 className="text-3xl font-bold mb-2">Absensi Digital</h1>
           <p className="text-gray-600">Raudhatul Yatama</p>
         </div>
