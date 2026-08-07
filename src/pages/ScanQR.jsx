@@ -21,6 +21,12 @@ export default function ScanQR() {
         data: data.data,
       });
       stopScanning();
+      // Auto-restart scanning after success modal, keeping same scanType (no need to re-select)
+      setTimeout(() => {
+        setResult(null);
+        setCameraError(null);
+        startScanning(); // keeps scanType (MASUK/PULANG)
+      }, 3500);
     },
     onError: (error) => {
       setResult({
