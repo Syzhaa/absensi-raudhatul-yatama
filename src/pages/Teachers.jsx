@@ -89,7 +89,7 @@ export default function Teachers() {
     }
   };
 
-  const teachers = data?.data?.data || [];
+  const teachers = data?.data || [];
 
   return (
     <div className="space-y-6">

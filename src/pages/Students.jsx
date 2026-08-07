@@ -101,7 +101,7 @@ export default function Students() {
     }
   };
 
-  const students = data?.data?.data || [];
+  const students = data?.data || [];
 
   return (
     <div className="space-y-6">
@@ -150,7 +150,27 @@ export default function Students() {
             </div>
 
             <div>
-              <label className="block font-bold mb-2">NISN</label>
+              <label className="block font-bold mb-2">NISN (10 digit)</label>
+              <input
+                type="text"
+                value={formData.nisn}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  if (value.length <= 10) {
+                    setFormData({ ...formData, nisn: value });
+                  }
+                }}
+                className="input"
+                placeholder="10 digit angka"
+                maxLength={10}
+              />
+              {formData.nisn && formData.nisn.length > 0 && formData.nisn.length !== 10 && (
+                <p className="text-red-600 text-sm mt-1">NISN harus tepat 10 digit (sekarang: {formData.nisn.length})</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block font-bold mb-2">Tempat Lahir</label>
               <input
                 type="text"
                 value={formData.tempat_lahir}
