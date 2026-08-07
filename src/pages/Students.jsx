@@ -252,8 +252,12 @@ export default function Students() {
             </div>
 
             <div className="md:col-span-2 flex gap-4">
-              <button type="submit" className="btn-primary flex-1">
-                {editingStudent ? 'Update' : 'Simpan'}
+              <button 
+                type="submit" 
+                className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {createMutation.isPending || updateMutation.isPending ? 'Menyimpan...' : (editingStudent ? 'Update' : 'Simpan')}
               </button>
               <button type="button" onClick={resetForm} className="btn-secondary flex-1">
                 Batal
