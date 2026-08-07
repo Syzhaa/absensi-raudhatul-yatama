@@ -7,12 +7,12 @@ export default function Students() {
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [formData, setFormData] = useState({
-    lembaga: '',
+    lembaga: 'MA',
     nama: '',
     nisn: '',
     tempat_lahir: '',
     tanggal_lahir: '',
-    jenis_kelamin: '',
+    jenis_kelamin: 'L',
     alamat: '',
     kelas: '',
     nomor_hp_orangtua: '',
