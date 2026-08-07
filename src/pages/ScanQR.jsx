@@ -192,62 +192,63 @@ export default function ScanQR() {
                 </h2>
                 
                 {result.success && result.data && (
-                  <div className="space-y-2">
-                    <p className="text-lg">
-                      <span className="font-bold">Tipe:</span>{' '}
-                      {result.data.type === 'student' ? 'Siswa' : 'Guru'}
-                    </p>
-                    
-                    {result.data.type === 'student' && result.data.student && (
-                      <>
+                  <div className="space-y-3">
+                    <div className="p-4 bg-white border-2 border-black">
+                      <p className="text-xl font-bold mb-3">
+                        {result.data.message}
+                      </p>
+                      
+                      <div className="space-y-2">
                         <p className="text-lg">
                           <span className="font-bold">Nama:</span>{' '}
-                          {result.data.student.nama}
+                          {result.data.type === 'student' ? result.data.student?.nama : result.data.teacher?.nama}
                         </p>
-                        <p className="text-lg">
-                          <span className="font-bold">NIS:</span>{' '}
-                          {result.data.student.nis}
-                        </p>
-                        <p className="text-lg">
-                          <span className="font-bold">Kelas:</span>{' '}
-                          {result.data.student.kelas}
-                        </p>
-                      </>
-                    )}
-                    
-                    {result.data.type === 'teacher' && result.data.teacher && (
-                      <>
-                        <p className="text-lg">
-                          <span className="font-bold">Nama:</span>{' '}
-                          {result.data.teacher.nama}
-                        </p>
-                        <p className="text-lg">
-                          <span className="font-bold">NIP:</span>{' '}
-                          {result.data.teacher.nip}
-                        </p>
-                      </>
-                    )}
-                    
-                    {result.data.attendance && (
-                      <>
-                        <p className="text-lg">
-                          <span className="font-bold">Jam:</span>{' '}
-                          {new Date(result.data.attendance.check_in_time || result.data.attendance.check_in).toLocaleTimeString('id-ID')}
-                        </p>
-                        <p className="text-lg">
-                          <span className="font-bold">Status:</span>{' '}
-                          <span className={`px-3 py-1 font-bold ${
-                            result.data.attendance.status === 'present' || result.data.attendance.status === 'hadir'
-                              ? 'bg-green-500 text-white'
-                              : 'bg-yellow-500 text-black'
-                          }`}>
-                            {result.data.attendance.status === 'present' ? 'HADIR' :
-                             result.data.attendance.status === 'late' ? 'TERLAMBAT' :
-                             result.data.attendance.status.toUpperCase()}
-                          </span>
-                        </p>
-                      </>
-                    )}
+                        
+                        {result.data.type === 'student' && result.data.student && (
+                          <>
+                            <p className="text-lg">
+                              <span className="font-bold">Kelas:</span>{' '}
+                              {result.data.student.kelas}
+                            </p>
+                            <p className="text-lg">
+                              <span className="font-bold">NISN:</span>{' '}
+                              {result.data.student.nisn || result.data.student.nis}
+                            </p>
+                          </>
+                        )}
+                        
+                        {result.data.attendance && (
+                          <>
+                            {result.data.attendance.check_in && (
+                              <p className="text-lg">
+                                <span className="font-bold">Check-in:</span>{' '}
+                                <span className="text-green-600 font-bold">
+                                  {result.data.attendance.check_in}
+                                </span>
+                              </p>
+                            )}
+                            {result.data.attendance.check_out && (
+                              <p className="text-lg">
+                                <span className="font-bold">Check-out:</span>{' '}
+                                <span className="text-blue-600 font-bold">
+                                  {result.data.attendance.check_out}
+                                </span>
+                              </p>
+                            )}
+                            <p className="text-lg">
+                              <span className="font-bold">Status:</span>{' '}
+                              <span className={`px-3 py-1 font-bold border-2 border-black ${
+                                result.data.attendance.status === 'hadir'
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-yellow-500 text-black'
+                              }`}>
+                                {result.data.attendance.status.toUpperCase()}
+                              </span>
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
                 

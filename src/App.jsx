@@ -7,6 +7,7 @@ import ScanQR from './pages/ScanQR';
 import Students from './pages/Students';
 import Teachers from './pages/Teachers';
 import Settings from './pages/Settings';
+import Attendance from './pages/Attendance';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -42,6 +43,7 @@ function App() {
         <Route path="/scan" element={<ScanQR />} />
         <Route path="/students" element={<Students />} />
         <Route path="/teachers" element={<Teachers />} />
+        <Route path="/attendance" element={<Attendance />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
