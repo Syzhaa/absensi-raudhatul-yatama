@@ -2,24 +2,21 @@ import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useMutation } from '@tanstack/react-query';
 import { attendanceService } from '../services';
-import { QrCode, CheckCircle, XCircle, User } from 'lucide-react';
+import { QrCode, CheckCircle, XCircle, Camera, AlertCircle } from 'lucide-react';
 
 export default function ScanQR() {
-  const [scanType, setScanType] = useState('student');
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState(null);
+  const [cameraError, setCameraError] = useState(null);
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
 
   const scanMutation = useMutation({
-    mutationFn: (uuid) => {
-      return scanType === 'student'
-        ? attendanceService.scanStudent(uuid)
-        : attendanceService.scanTeacher(uuid);
-    },
+    mutationFn: (uuid) => attendanceService.scan(uuid),
     onSuccess: (data) => {
       setResult({
         success: true,
+        type: data.data.type,
         data: data.data,
       });
       stopScanning();
@@ -34,7 +31,19 @@ export default function ScanQR() {
   });
 
   const startScanning = async () => {
+    setCameraError(null);
+    setResult(null);
+    
     try {
+      // Request camera permission explicitly
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      
+      // Stop the test stream
+      stream.getTracks().forEach(track => track.stop());
+      
+      // Now start html5-qrcode
       html5QrCodeRef.current = new Html5Qrcode('qr-reader');
       
       await html5QrCodeRef.current.start(
@@ -42,19 +51,35 @@ export default function ScanQR() {
         {
           fps: 10,
           qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
         },
         (decodedText) => {
-          scanMutation.mutate(decodedText);
+          if (!scanMutation.isPending) {
+            scanMutation.mutate(decodedText);
+          }
         },
-        (errorMessage) => {
-          // Ignore scan errors
+        () => {
+          // Ignore continuous scan errors
         }
       );
       
       setScanning(true);
-      setResult(null);
     } catch (err) {
-      alert('Tidak dapat mengakses kamera: ' + err.message);
+      console.error('Camera error:', err);
+      
+      let errorMsg = 'Tidak dapat mengakses kamera';
+      
+      if (err.name === 'NotAllowedError') {
+        errorMsg = 'Akses kamera ditolak. Mohon izinkan akses kamera di pengaturan browser.';
+      } else if (err.name === 'NotFoundError') {
+        errorMsg = 'Kamera tidak ditemukan. Pastikan device memiliki kamera.';
+      } else if (err.name === 'NotReadableError') {
+        errorMsg = 'Kamera sedang digunakan aplikasi lain.';
+      } else if (err.name === 'NotSupportedError') {
+        errorMsg = 'Browser tidak mendukung akses kamera atau halaman tidak HTTPS.';
+      }
+      
+      setCameraError(errorMsg);
     }
   };
 
@@ -62,6 +87,7 @@ export default function ScanQR() {
     if (html5QrCodeRef.current) {
       try {
         await html5QrCodeRef.current.stop();
+        html5QrCodeRef.current.clear();
         html5QrCodeRef.current = null;
       } catch (err) {
         console.error('Error stopping scanner:', err);
@@ -78,180 +104,185 @@ export default function ScanQR() {
 
   const handleNewScan = () => {
     setResult(null);
+    setCameraError(null);
     startScanning();
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="card">
-        <h1 className="text-3xl font-bold mb-4">Scan QR Code</h1>
-        
-        <div className="flex gap-4 mb-6">
-          <button
-            onClick={() => setScanType('student')}
-            className={`flex-1 py-3 px-4 font-bold border-3 border-black ${
-              scanType === 'student'
-                ? 'bg-neo-green shadow-neo'
-                : 'bg-white shadow-neo hover:shadow-neo-lg'
-            } transition-all`}
-          >
-            Siswa
-          </button>
-          <button
-            onClick={() => setScanType('teacher')}
-            className={`flex-1 py-3 px-4 font-bold border-3 border-black ${
-              scanType === 'teacher'
-                ? 'bg-neo-yellow shadow-neo'
-                : 'bg-white shadow-neo hover:shadow-neo-lg'
-            } transition-all`}
-          >
-            Guru
-          </button>
+        <div className="flex items-center gap-3 mb-6">
+          <QrCode size={32} className="text-neo-green" />
+          <div>
+            <h1 className="text-3xl font-bold">Scan QR Code</h1>
+            <p className="text-gray-600">Otomatis deteksi siswa atau guru</p>
+          </div>
         </div>
 
-        {!scanning && !result && (
-          <button onClick={startScanning} className="w-full btn-primary">
-            <div className="flex items-center justify-center gap-2">
-              <QrCode size={24} />
-              <span>Mulai Scan</span>
+        {/* Camera Error Alert */}
+        {cameraError && (
+          <div className="mb-6 p-4 bg-red-100 border-3 border-red-500 text-red-700">
+            <div className="flex items-start gap-3">
+              <AlertCircle size={24} className="flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold mb-2">Kamera Error</p>
+                <p className="mb-3">{cameraError}</p>
+                <div className="space-y-2 text-sm">
+                  <p className="font-bold">Troubleshooting:</p>
+                  <ul className="list-disc ml-5 space-y-1">
+                    <li>Pastikan menggunakan HTTPS (bukan HTTP)</li>
+                    <li>Klik icon gembok/kamera di address bar, izinkan kamera</li>
+                    <li>Tutup aplikasi lain yang menggunakan kamera</li>
+                    <li>Coba refresh halaman (Ctrl+Shift+R)</li>
+                    <li>Gunakan browser Chrome/Firefox terbaru</li>
+                  </ul>
+                </div>
+              </div>
             </div>
-          </button>
-        )}
-
-        {scanning && (
-          <div className="space-y-4">
-            <div
-              id="qr-reader"
-              ref={scannerRef}
-              className="border-3 border-black"
-            ></div>
-            <button onClick={stopScanning} className="w-full btn-secondary">
-              Batal
-            </button>
           </div>
         )}
 
+        {/* Scanner Area */}
+        {!result && (
+          <div className="mb-6">
+            <div 
+              id="qr-reader" 
+              className={`w-full border-3 border-black ${scanning ? 'bg-black' : 'bg-gray-100'}`}
+              style={{ minHeight: scanning ? 'auto' : '300px' }}
+            />
+          </div>
+        )}
+
+        {/* Scan Button */}
+        {!scanning && !result && (
+          <button
+            onClick={startScanning}
+            className="w-full btn-primary flex items-center justify-center gap-2"
+          >
+            <Camera size={20} />
+            Mulai Scan
+          </button>
+        )}
+
+        {/* Stop Button */}
+        {scanning && !result && (
+          <button
+            onClick={stopScanning}
+            className="w-full bg-red-500 text-white font-bold py-3 px-6 border-3 border-black shadow-neo hover:shadow-neo-lg transition-all"
+          >
+            Stop Scan
+          </button>
+        )}
+
+        {/* Result */}
         {result && (
-          <div className="space-y-4">
-            <div
-              className={`p-6 border-3 border-black ${
-                result.success ? 'bg-green-100' : 'bg-red-100'
-              }`}
-            >
-              <div className="flex items-center gap-4 mb-4">
-                {result.success ? (
-                  <CheckCircle size={48} className="text-green-600" />
-                ) : (
-                  <XCircle size={48} className="text-red-600" />
+          <div className={`p-6 border-3 border-black ${
+            result.success ? 'bg-green-100' : 'bg-red-100'
+          }`}>
+            <div className="flex items-start gap-4 mb-4">
+              {result.success ? (
+                <CheckCircle size={48} className="text-green-600 flex-shrink-0" />
+              ) : (
+                <XCircle size={48} className="text-red-600 flex-shrink-0" />
+              )}
+              
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold mb-2">
+                  {result.success ? 'Absensi Berhasil!' : 'Absensi Gagal'}
+                </h2>
+                
+                {result.success && result.data && (
+                  <div className="space-y-2">
+                    <p className="text-lg">
+                      <span className="font-bold">Tipe:</span>{' '}
+                      {result.data.type === 'student' ? 'Siswa' : 'Guru'}
+                    </p>
+                    
+                    {result.data.type === 'student' && result.data.student && (
+                      <>
+                        <p className="text-lg">
+                          <span className="font-bold">Nama:</span>{' '}
+                          {result.data.student.nama}
+                        </p>
+                        <p className="text-lg">
+                          <span className="font-bold">NIS:</span>{' '}
+                          {result.data.student.nis}
+                        </p>
+                        <p className="text-lg">
+                          <span className="font-bold">Kelas:</span>{' '}
+                          {result.data.student.kelas}
+                        </p>
+                      </>
+                    )}
+                    
+                    {result.data.type === 'teacher' && result.data.teacher && (
+                      <>
+                        <p className="text-lg">
+                          <span className="font-bold">Nama:</span>{' '}
+                          {result.data.teacher.nama}
+                        </p>
+                        <p className="text-lg">
+                          <span className="font-bold">NIP:</span>{' '}
+                          {result.data.teacher.nip}
+                        </p>
+                      </>
+                    )}
+                    
+                    {result.data.attendance && (
+                      <>
+                        <p className="text-lg">
+                          <span className="font-bold">Jam:</span>{' '}
+                          {new Date(result.data.attendance.check_in_time || result.data.attendance.check_in).toLocaleTimeString('id-ID')}
+                        </p>
+                        <p className="text-lg">
+                          <span className="font-bold">Status:</span>{' '}
+                          <span className={`px-3 py-1 font-bold ${
+                            result.data.attendance.status === 'present' || result.data.attendance.status === 'hadir'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-yellow-500 text-black'
+                          }`}>
+                            {result.data.attendance.status === 'present' ? 'HADIR' :
+                             result.data.attendance.status === 'late' ? 'TERLAMBAT' :
+                             result.data.attendance.status.toUpperCase()}
+                          </span>
+                        </p>
+                      </>
+                    )}
+                  </div>
                 )}
-                <div>
-                  <h2 className="text-2xl font-bold">
-                    {result.success ? 'Berhasil!' : 'Gagal!'}
-                  </h2>
-                  <p className="text-gray-700">
-                    {result.success
-                      ? result.data.message
-                      : result.message}
-                  </p>
-                </div>
+                
+                {!result.success && (
+                  <p className="text-lg text-red-700">{result.message}</p>
+                )}
               </div>
-
-              {result.success && result.data.student && (
-                <div className="bg-white border-3 border-black p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-neo-blue border-3 border-black flex items-center justify-center">
-                      <User size={32} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold">
-                        {result.data.student.nama}
-                      </h3>
-                      <p className="text-gray-600">
-                        NIS: {result.data.student.nis}
-                      </p>
-                      <p className="text-gray-600">
-                        Kelas: {result.data.student.kelas}
-                      </p>
-                      <p className="text-gray-600">
-                        Lembaga: {result.data.student.lembaga}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-4 border-t-3 border-black">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-sm text-gray-600">Jam Masuk</span>
-                        <p className="font-bold text-lg">
-                          {result.data.attendance.check_in}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-600">Status</span>
-                        <p className={`font-bold text-lg ${
-                          result.data.attendance.status === 'hadir'
-                            ? 'text-green-600'
-                            : 'text-orange-600'
-                        }`}>
-                          {result.data.attendance.status.toUpperCase()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {result.success && result.data.teacher && (
-                <div className="bg-white border-3 border-black p-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-neo-pink border-3 border-black flex items-center justify-center">
-                      <User size={32} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold">
-                        {result.data.teacher.nama}
-                      </h3>
-                      <p className="text-gray-600">
-                        NIP: {result.data.teacher.nip || '-'}
-                      </p>
-                      <p className="text-gray-600">
-                        Mata Pelajaran: {result.data.teacher.mata_pelajaran || '-'}
-                      </p>
-                      <p className="text-gray-600">
-                        Lembaga: {result.data.teacher.lembaga}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4 pt-4 border-t-3 border-black">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <span className="text-sm text-gray-600">
-                          {result.data.attendance.check_out ? 'Check Out' : 'Check In'}
-                        </span>
-                        <p className="font-bold text-lg">
-                          {result.data.attendance.check_out || result.data.attendance.check_in}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-600">Status</span>
-                        <p className={`font-bold text-lg ${
-                          result.data.attendance.status === 'hadir'
-                            ? 'text-green-600'
-                            : 'text-orange-600'
-                        }`}>
-                          {result.data.attendance.status.toUpperCase()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
-
-            <button onClick={handleNewScan} className="w-full btn-primary">
+            
+            <button
+              onClick={handleNewScan}
+              className="w-full btn-primary"
+            >
               Scan Lagi
             </button>
           </div>
         )}
+      </div>
+
+      {/* Info Card */}
+      <div className="card bg-blue-50">
+        <h3 className="font-bold mb-3">📱 Cara Menggunakan:</h3>
+        <ol className="list-decimal ml-5 space-y-2 text-gray-700">
+          <li>Klik tombol "Mulai Scan"</li>
+          <li>Izinkan akses kamera (jika diminta)</li>
+          <li>Arahkan kamera ke QR code siswa atau guru</li>
+          <li>Sistem otomatis deteksi dan catat absensi</li>
+          <li>Lihat hasil scan di layar</li>
+        </ol>
+        
+        <div className="mt-4 p-3 bg-yellow-100 border-2 border-yellow-500">
+          <p className="text-sm font-bold text-yellow-800">
+            ⚠️ Penting: Halaman harus HTTPS untuk akses kamera
+          </p>
+        </div>
       </div>
     </div>
   );

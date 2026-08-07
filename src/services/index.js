@@ -24,6 +24,13 @@ export const attendanceService = {
     return response.data;
   },
   
+  // New: Auto-detect scan (student or teacher)
+  scan: async (uuid) => {
+    const response = await api.post('/attendance/scan', { uuid });
+    return response.data;
+  },
+  
+  // Legacy: specific scan endpoints
   scanStudent: async (uuid) => {
     const response = await api.post('/attendance/scan/student', { uuid });
     return response.data;
@@ -61,7 +68,7 @@ export const studentService = {
     return response.data;
   },
   
-  getQr: async (id) => {
+  getQR: async (id) => {
     const response = await api.get(`/attendance/students/${id}/qr`);
     return response.data;
   },
@@ -93,8 +100,25 @@ export const teacherService = {
     return response.data;
   },
   
-  getQr: async (id) => {
+  getQR: async (id) => {
     const response = await api.get(`/attendance/teachers/${id}/qr`);
+    return response.data;
+  },
+};
+
+export const settingsService = {
+  getAll: async () => {
+    const response = await api.get('/attendance/settings');
+    return response.data;
+  },
+  
+  getByLembaga: async (lembaga) => {
+    const response = await api.get(`/attendance/settings/${lembaga}`);
+    return response.data;
+  },
+  
+  update: async (lembaga, data) => {
+    const response = await api.put(`/attendance/settings/${lembaga}`, data);
     return response.data;
   },
 };
