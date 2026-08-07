@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, QrCode, Users, UserCog, LogOut } from 'lucide-react';
+import { Home, QrCode, Users, UserCog, Settings, LogOut } from 'lucide-react';
 import { authService } from '../services';
 
 export default function Layout({ children, onLogout }) {
@@ -21,6 +21,7 @@ export default function Layout({ children, onLogout }) {
     { path: '/scan', label: 'Scan QR', icon: QrCode },
     { path: '/students', label: 'Siswa', icon: Users },
     { path: '/teachers', label: 'Guru', icon: UserCog },
+    { path: '/settings', label: 'Pengaturan', icon: Settings },
   ];
 
   return (
