@@ -25,8 +25,8 @@ export const attendanceService = {
   },
   
   // New: Auto-detect scan (student or teacher)
-  scan: async (uuid) => {
-    const response = await api.post('/attendance/scan', { uuid });
+  scan: async (uuid, scanType = null) => {
+    const response = await api.post('/attendance/scan', { uuid, scan_type: scanType });
     return response.data;
   },
   

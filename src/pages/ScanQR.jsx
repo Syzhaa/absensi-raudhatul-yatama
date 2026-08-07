@@ -8,11 +8,12 @@ export default function ScanQR() {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState(null);
   const [cameraError, setCameraError] = useState(null);
+  const [scanType, setScanType] = useState(null); // 'check_in' or 'check_out'
   const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
 
   const scanMutation = useMutation({
-    mutationFn: (uuid) => attendanceService.scan(uuid),
+    mutationFn: (uuid) => attendanceService.scan(uuid, scanType),
     onSuccess: (data) => {
       setResult({
         success: true,
@@ -105,7 +106,7 @@ export default function ScanQR() {
   const handleNewScan = () => {
     setResult(null);
     setCameraError(null);
-    startScanning();
+    setScanType(null);
   };
 
   return (
@@ -118,6 +119,37 @@ export default function ScanQR() {
             <p className="text-gray-600">Otomatis deteksi siswa atau guru</p>
           </div>
         </div>
+
+        {/* Scan Type Selection */}
+        {!scanType && !result && (
+          <div className="mb-6 space-y-4">
+            <p className="text-center text-lg font-bold mb-4">Pilih Jenis Absensi:</p>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => {
+                  setScanType('check_in');
+                  startScanning();
+                }}
+                className="py-6 px-4 bg-green-500 text-white font-bold border-3 border-black shadow-neo hover:shadow-neo-lg transition-all"
+              >
+                <div className="text-3xl mb-2">🟢</div>
+                <div className="text-xl">MASUK</div>
+                <div className="text-sm mt-1">Check-in</div>
+              </button>
+              <button
+                onClick={() => {
+                  setScanType('check_out');
+                  startScanning();
+                }}
+                className="py-6 px-4 bg-blue-500 text-white font-bold border-3 border-black shadow-neo hover:shadow-neo-lg transition-all"
+              >
+                <div className="text-3xl mb-2">🔵</div>
+                <div className="text-xl">PULANG</div>
+                <div className="text-sm mt-1">Check-out</div>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Camera Error Alert */}
         {cameraError && (
@@ -143,7 +175,7 @@ export default function ScanQR() {
         )}
 
         {/* Scanner Area */}
-        {!result && (
+        {scanType && !result && (
           <div className="mb-6">
             <div 
               id="qr-reader" 
@@ -153,19 +185,8 @@ export default function ScanQR() {
           </div>
         )}
 
-        {/* Scan Button */}
-        {!scanning && !result && (
-          <button
-            onClick={startScanning}
-            className="w-full btn-primary flex items-center justify-center gap-2"
-          >
-            <Camera size={20} />
-            Mulai Scan
-          </button>
-        )}
-
         {/* Stop Button */}
-        {scanning && !result && (
+        {scanning && !result && scanType && (
           <button
             onClick={stopScanning}
             className="w-full bg-red-500 text-white font-bold py-3 px-6 border-3 border-black shadow-neo hover:shadow-neo-lg transition-all"
