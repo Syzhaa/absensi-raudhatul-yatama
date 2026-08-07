@@ -245,7 +245,6 @@ export default function Students() {
           <thead>
             <tr className="border-b-3 border-black">
               <th className="text-left py-3 px-4">Nama</th>
-              <th className="text-left py-3 px-4">NIS</th>
               <th className="text-left py-3 px-4">Kelas</th>
               <th className="text-left py-3 px-4">Lembaga</th>
               <th className="text-left py-3 px-4">Status</th>
@@ -265,7 +264,6 @@ export default function Students() {
               students.map((student) => (
                 <tr key={student.id} className="border-b border-gray-300">
                   <td className="py-3 px-4 font-medium">{student.nama}</td>
-                  <td className="py-3 px-4">{student.nis || '-'}</td>
                   <td className="py-3 px-4">{student.kelas || '-'}</td>
                   <td className="py-3 px-4">{student.lembaga}</td>
                   <td className="py-3 px-4">
