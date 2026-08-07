@@ -5,11 +5,11 @@ import api from '../services/api';
 
 const attendanceService = {
   getStudentAttendance: async (date) => {
-    const response = await api.get('/attendance/students', { params: { date } });
+    const response = await api.get('/attendance/logs/students', { params: { date } });
     return response.data;
   },
   getTeacherAttendance: async (date) => {
-    const response = await api.get('/attendance/teachers', { params: { date } });
+    const response = await api.get('/attendance/logs/teachers', { params: { date } });
     return response.data;
   },
 };
