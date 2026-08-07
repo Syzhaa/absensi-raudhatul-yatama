@@ -35,6 +35,7 @@ export default function Settings() {
     late_after: settings.late_after || '07:30:00',
     attendance_close: settings.attendance_close || '08:00:00',
     timezone: settings.timezone || 'Asia/Makassar',
+    test_mode: settings.test_mode || false,
   });
 
   // Update form when settings data changes
@@ -235,6 +236,40 @@ export default function Settings() {
               <p className="text-sm text-gray-600 mt-1">
                 Zona waktu sekolah (default: WITA untuk Sulawesi)
               </p>
+            </div>
+
+            <div className="md:col-span-2">
+              <div className="card bg-neo-yellow border-2 border-black">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <label className="block font-bold mb-1">
+                      🧪 Mode Testing
+                    </label>
+                    <p className="text-sm text-gray-700">
+                      Aktifkan untuk testing sistem tanpa mempengaruhi data production. 
+                      Data absensi di mode testing akan ditandai khusus.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, test_mode: !formData.test_mode })}
+                    className={`relative w-14 h-8 rounded-full border-3 border-black transition-colors ${
+                      formData.test_mode ? 'bg-neo-green' : 'bg-gray-300'
+                    }`}
+                  >
+                    <div
+                      className={`absolute top-0.5 w-6 h-6 bg-white border-2 border-black rounded-full transition-transform ${
+                        formData.test_mode ? 'translate-x-7' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+                {formData.test_mode && (
+                  <div className="mt-3 p-2 bg-white border-2 border-black text-sm">
+                    ⚠️ Mode testing aktif - Sistem dalam mode percobaan
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
