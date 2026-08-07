@@ -7,13 +7,12 @@ export default function Students() {
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [formData, setFormData] = useState({
-    lembaga: 'MA',
+    lembaga: '',
     nama: '',
-    nis: '',
     nisn: '',
     tempat_lahir: '',
     tanggal_lahir: '',
-    jenis_kelamin: 'L',
+    jenis_kelamin: '',
     alamat: '',
     kelas: '',
     nomor_hp_orangtua: '',
@@ -59,7 +58,6 @@ export default function Students() {
     setFormData({
       lembaga: 'MA',
       nama: '',
-      nis: '',
       nisn: '',
       tempat_lahir: '',
       tanggal_lahir: '',
@@ -76,7 +74,6 @@ export default function Students() {
     setFormData({
       lembaga: student.lembaga,
       nama: student.nama,
-      nis: student.nis || '',
       nisn: student.nisn || '',
       tempat_lahir: student.tempat_lahir || '',
       tanggal_lahir: student.tanggal_lahir || '',
@@ -153,27 +150,7 @@ export default function Students() {
             </div>
 
             <div>
-              <label className="block font-bold mb-2">NIS</label>
-              <input
-                type="text"
-                value={formData.nis}
-                onChange={(e) => setFormData({ ...formData, nis: e.target.value })}
-                className="input"
-              />
-            </div>
-
-            <div>
               <label className="block font-bold mb-2">NISN</label>
-              <input
-                type="text"
-                value={formData.nisn}
-                onChange={(e) => setFormData({ ...formData, nisn: e.target.value })}
-                className="input"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold mb-2">Tempat Lahir</label>
               <input
                 type="text"
                 value={formData.tempat_lahir}
