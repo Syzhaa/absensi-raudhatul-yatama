@@ -39,7 +39,7 @@ export default function Settings() {
   });
 
   // Update form when settings data changes
-  useState(() => {
+  useEffect(() => {
     if (settings) {
       setFormData({
         attendance_open: settings.attendance_open || '06:00:00',
@@ -47,6 +47,7 @@ export default function Settings() {
         late_after: settings.late_after || '07:30:00',
         attendance_close: settings.attendance_close || '08:00:00',
         timezone: settings.timezone || 'Asia/Makassar',
+        test_mode: settings.test_mode || false,
       });
     }
   }, [settings]);
