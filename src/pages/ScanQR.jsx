@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { attendanceService } from '../services';
 import { QrCode, CheckCircle, XCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 
@@ -10,13 +10,24 @@ export default function ScanQR() {
   const [cameraError, setCameraError] = useState(null);
   const [scanType, setScanType] = useState(null);
   const html5QrCodeRef = useRef(null);
+  const restartTimerRef = useRef(null);
+  const queryClient = useQueryClient();
+
+  // Cleanup on unmount: stop camera + clear restart timer (prevent memory leak)
+  useEffect(() => {
+    return () => {
+      stopScanning();
+      if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
+    };
+  }, []);
 
   const scanMutation = useMutation({
     mutationFn: (uuid) => attendanceService.scan(uuid, scanType),
     onSuccess: (data) => {
       setResult({ success: true, type: data.data.type, data: data.data });
       stopScanning();
-      setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      restartTimerRef.current = setTimeout(() => {
         setResult(null);
         setCameraError(null);
         startScanning();
@@ -61,7 +72,12 @@ export default function ScanQR() {
 
   useEffect(() => { return () => { stopScanning(); }; }, []);
 
-  const handleNewScan = () => { setResult(null); setCameraError(null); setScanType(null); };
+  const handleNewScan = async () => {
+    await stopScanning();
+    setResult(null);
+    setCameraError(null);
+    setScanType(null);
+  };
 
   const personName = result?.data?.type === 'student' ? result?.data?.student?.nama : result?.data?.teacher?.nama;
 
@@ -153,7 +169,7 @@ export default function ScanQR() {
               <h2 className="text-xl font-bold">{result.data.message}</h2>
               <p className="text-2xl font-bold">{personName}</p>
               {result.data.type === 'student' && result.data.student && (
-                <p className="text-gray-600">{result.data.student.kelas} — NISN {result.data.student.nisn || result.data.student.nis}</p>
+                <p className="text-gray-600">{result.data.student.kelas} — NISN {result.data.student?.nisn || result.data.student?.nis}</p>
               )}
               {result.data.attendance && (
                 <div className="flex justify-center gap-3 mt-2 flex-wrap">
@@ -170,7 +186,7 @@ export default function ScanQR() {
                   <span className={'px-3 py-1 font-bold border-2 border-black text-sm ' +
                     (result.data.attendance.status === 'hadir' ? 'bg-green-500 text-white' : 'bg-yellow-500 text-black')
                   }>
-                    {result.data.attendance.status.toUpperCase()}
+                    {result.data.attendance.status?.toUpperCase()}
                   </span>
                 </div>
               )}

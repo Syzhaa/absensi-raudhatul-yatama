@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: 'https://api.raudhatulyatama.sch.id/api/v1',
+  timeout: 30000, // 30s timeout to prevent hanging
   headers: {
     'Content-Type': 'application/json',
   },

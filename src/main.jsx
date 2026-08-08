@@ -8,7 +8,8 @@ import App from './App.jsx'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
+      // Sync across tabs: refetch when window regains focus (admin edits in tab 1 -> tab 2 updates)
+      refetchOnWindowFocus: true,
       retry: 1,
       staleTime: 5 * 60 * 1000, // 5 minutes
     },
