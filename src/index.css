@@ -4,42 +4,110 @@
 
 @layer base {
   body {
-    @apply bg-background text-on-background;
-    font-family: 'Public Sans', sans-serif;
-    background-image: radial-gradient(#d9dbcb 1px, transparent 1px);
-    background-size: 20px 20px;
+    @apply bg-white text-gray-900;
+    font-family: 'Inter', sans-serif;
+    background-color: #F8F9FA;
+    background-image: 
+      linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+      linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+    background-size: 30px 30px;
   }
 }
 
 @layer components {
+  /* Clean borders - thinner, dark gray */
+  .clean-border {
+    border: 1.5px solid #1a202c;
+  }
+  
+  .clean-border-b {
+    border-bottom: 1.5px solid #1a202c;
+  }
+  
+  .clean-border-r {
+    border-right: 1.5px solid #1a202c;
+  }
+  
+  /* Softer shadows */
+  .clean-shadow-sm {
+    box-shadow: 2px 2px 0px 0px rgba(26, 32, 44, 0.8);
+  }
+  
+  .clean-shadow-md {
+    box-shadow: 4px 4px 0px 0px rgba(26, 32, 44, 0.8);
+  }
+  
+  /* Interactive states */
+  .hover-lift:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0px 0px rgba(26, 32, 44, 0.8);
+  }
+  
+  .active-press:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px 0px rgba(26, 32, 44, 0.8);
+  }
+  
+  /* 3D CSS Spheres */
+  .sphere-green {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #a8f5df, #38d39f 40%, #158a64);
+    box-shadow: inset -4px -4px 8px rgba(0,0,0,0.2), 4px 4px 10px rgba(0,0,0,0.15);
+  }
+  
+  .sphere-blue {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #9bc4e6, #4185d1 40%, #1a5299);
+    box-shadow: inset -4px -4px 8px rgba(0,0,0,0.2), 4px 4px 10px rgba(0,0,0,0.15);
+  }
+  
+  /* Refined colors */
+  .bg-primary-green { 
+    background-color: #b1e04a; 
+  }
+  
+  .bg-primary-purple { 
+    background-color: #9254a6; 
+  }
+  
+  .bg-danger-red { 
+    background-color: #c93a38; 
+  }
+  
+  /* Menu states */
+  .menu-active {
+    background-color: #b1e04a;
+    border-radius: 4px;
+  }
+  
+  .menu-item {
+    border-radius: 4px;
+  }
+  
+  /* Legacy buttons - simplified */
   .btn-primary {
-    @apply bg-neo-green text-black font-bold py-3 px-6 border-3 border-black shadow-neo hover:shadow-neo-lg transition-all duration-200 active:shadow-none;
+    @apply bg-primary-green text-gray-900 font-bold py-3 px-6 clean-border clean-shadow-sm hover-lift active-press transition-all duration-200;
   }
   
   .btn-secondary {
-    @apply bg-white text-black font-bold py-3 px-6 border-3 border-black shadow-neo hover:shadow-neo-lg transition-all duration-200 active:shadow-none;
+    @apply bg-white text-gray-900 font-bold py-3 px-6 clean-border clean-shadow-sm hover-lift active-press transition-all duration-200;
   }
   
   .card {
-    @apply bg-surface border-3 border-outline shadow-neo p-6;
+    @apply bg-white clean-border clean-shadow-sm p-6;
   }
   
   .input {
-    @apply w-full px-4 py-3 border-3 border-outline bg-surface text-on-surface placeholder:text-input-placeholder focus:outline-none focus:ring-0 focus:shadow-neo-sm transition-shadow;
-  }
-  
-  .neo-btn {
-    @apply transition-all duration-100;
-  }
-  
-  .neo-btn:active {
-    box-shadow: 0px 0px 0px 0px rgba(0,0,0,1);
-    transform: translate(6px, 6px);
+    @apply w-full px-4 py-3 clean-border bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-0 focus:clean-shadow-sm transition-shadow;
   }
 }
 
 @layer utilities {
-  .material-symbols-outlined {
-    font-variation-settings: 'FILL' 1, 'wght' 700;
+  .neo-btn {
+    @apply transition-all duration-100 hover-lift active-press;
   }
 }

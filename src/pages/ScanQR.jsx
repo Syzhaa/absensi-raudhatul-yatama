@@ -88,27 +88,33 @@ export default function ScanQR() {
 
   return (
     <div className="min-h-[calc(100vh-180px)] flex items-center justify-center px-4">
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-4xl">
       {/* Scan Type Selection */}
       {!scanType && !result && (
-        <div className="space-y-6">
-          <h1 className="font-headline-lg text-headline-lg text-on-surface text-center mb-8">Pilih Jenis Absensi</h1>
-          <div className="grid grid-cols-2 gap-6">
+        <div className="space-y-10">
+          <h1 className="text-3xl font-bold text-gray-800 text-center tracking-tight">Pilih Jenis Absensi</h1>
+          <div className="flex flex-wrap justify-center gap-8">
             <button
               onClick={() => { setScanType('check_in'); startScanning(); }}
-              className="py-12 bg-neo-green text-on-primary font-headline-md border-3 border-outline shadow-neo-lg neo-btn hover:shadow-neo-xl"
+              className="w-[280px] h-[220px] rounded-lg bg-primary-green clean-border clean-shadow-md flex flex-col items-center justify-center gap-5 hover-lift active-press transition-all cursor-pointer relative overflow-hidden group"
             >
-              <div className="text-6xl mb-4">🟢</div>
-              <div className="text-2xl">MASUK</div>
-              <div className="text-sm font-body-md mt-2 opacity-80">Check-in</div>
+              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <div className="sphere-green z-10"></div>
+              <div className="text-center z-10">
+                <div className="text-white text-2xl font-bold tracking-wide" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.2)'}}>MASUK</div>
+                <div className="text-white text-sm font-medium mt-1 opacity-90">Check-in</div>
+              </div>
             </button>
             <button
               onClick={() => { setScanType('check_out'); startScanning(); }}
-              className="py-12 bg-tertiary text-on-tertiary font-headline-md border-3 border-outline shadow-neo-lg neo-btn hover:shadow-neo-xl"
+              className="w-[280px] h-[220px] rounded-lg bg-primary-purple clean-border clean-shadow-md flex flex-col items-center justify-center gap-5 hover-lift active-press transition-all cursor-pointer relative overflow-hidden group"
             >
-              <div className="text-6xl mb-4">🔵</div>
-              <div className="text-2xl">PULANG</div>
-              <div className="text-sm font-body-md mt-2 opacity-80">Check-out</div>
+              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
+              <div className="sphere-blue z-10"></div>
+              <div className="text-center z-10">
+                <div className="text-white text-2xl font-bold tracking-wide" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.2)'}}>PULANG</div>
+                <div className="text-white text-sm font-medium mt-1 opacity-90">Check-out</div>
+              </div>
             </button>
           </div>
         </div>
