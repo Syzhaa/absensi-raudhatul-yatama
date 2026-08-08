@@ -110,15 +110,10 @@ export default function Attendance() {
     
     eventSourceRef.current = new EventSource(url);
 
-    eventSourceRef.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        // Invalidate all queries when new attendance arrives
-        queryClient.invalidateQueries(['attendance']);
-        queryClient.invalidateQueries(['attendance_counts']);
-      } catch (err) {
-        console.error('SSE parse error:', err);
-      }
+    eventSourceRef.current.onmessage = () => {
+      // Invalidate all queries when new attendance arrives
+      queryClient.invalidateQueries(['attendance']);
+      queryClient.invalidateQueries(['attendance_counts']);
     };
 
     eventSourceRef.current.onerror = () => {
