@@ -4,7 +4,10 @@
 
 @layer base {
   body {
-    @apply bg-neo-bg text-gray-900;
+    @apply bg-background text-on-background;
+    font-family: 'Public Sans', sans-serif;
+    background-image: radial-gradient(#d9dbcb 1px, transparent 1px);
+    background-size: 20px 20px;
   }
 }
 
@@ -18,10 +21,25 @@
   }
   
   .card {
-    @apply bg-white border-3 border-black shadow-neo p-6;
+    @apply bg-surface border-3 border-outline shadow-neo p-6;
   }
   
   .input {
-    @apply w-full px-4 py-3 border-3 border-black focus:outline-none focus:ring-4 focus:ring-neo-yellow;
+    @apply w-full px-4 py-3 border-3 border-outline bg-surface text-on-surface placeholder:text-input-placeholder focus:outline-none focus:ring-0 focus:shadow-neo-sm transition-shadow;
+  }
+  
+  .neo-btn {
+    @apply transition-all duration-100;
+  }
+  
+  .neo-btn:active {
+    box-shadow: 0px 0px 0px 0px rgba(0,0,0,1);
+    transform: translate(6px, 6px);
+  }
+}
+
+@layer utilities {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 1, 'wght' 700;
   }
 }
