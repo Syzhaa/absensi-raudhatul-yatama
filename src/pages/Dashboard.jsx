@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { attendanceService } from '../services';
-import { Users, UserCog, CheckCircle, Clock, AlertCircle, XCircle } from 'lucide-react';
 
 export default function Dashboard() {
   const { data, isLoading } = useQuery({
@@ -14,57 +13,65 @@ export default function Dashboard() {
     {
       label: 'Total Siswa',
       value: stats.total_students || 0,
-      icon: Users,
-      color: 'bg-neo-blue',
+      icon: 'groups',
+      color: 'bg-primary-container',
+      iconColor: 'text-on-primary-container',
     },
     {
       label: 'Total Guru',
       value: stats.total_teachers || 0,
-      icon: UserCog,
-      color: 'bg-neo-pink',
+      icon: 'badge',
+      color: 'bg-secondary-container',
+      iconColor: 'text-on-secondary-container',
     },
     {
       label: 'Siswa Hadir Hari Ini',
       value: stats.students_present_today || 0,
-      icon: CheckCircle,
+      icon: 'check_circle',
       color: 'bg-neo-green',
+      iconColor: 'text-on-primary-container',
     },
     {
       label: 'Guru Hadir Hari Ini',
       value: stats.teachers_present_today || 0,
-      icon: CheckCircle,
+      icon: 'verified',
       color: 'bg-neo-yellow',
+      iconColor: 'text-on-primary-container',
     },
     {
       label: 'Terlambat',
       value: stats.students_late || 0,
-      icon: Clock,
-      color: 'bg-orange-300',
+      icon: 'schedule',
+      color: 'bg-neo-orange',
+      iconColor: 'text-on-primary',
     },
     {
       label: 'Izin',
       value: stats.students_permission || 0,
-      icon: AlertCircle,
-      color: 'bg-blue-300',
+      icon: 'info',
+      color: 'bg-tertiary-container',
+      iconColor: 'text-on-tertiary-container',
     },
     {
       label: 'Sakit',
       value: stats.students_sick || 0,
-      icon: AlertCircle,
-      color: 'bg-yellow-300',
+      icon: 'emergency',
+      color: 'bg-neo-yellow',
+      iconColor: 'text-on-primary-container',
     },
     {
       label: 'Alpha',
       value: stats.students_alpha || 0,
-      icon: XCircle,
-      color: 'bg-red-300',
+      icon: 'cancel',
+      color: 'bg-error-container',
+      iconColor: 'text-on-error-container',
     },
   ];
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-xl font-bold">Loading...</div>
+        <div className="font-headline-md text-headline-md text-on-surface">Loading...</div>
       </div>
     );
   }
@@ -72,24 +79,25 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="card">
-        <h1 className="text-3xl font-bold mb-2">Dashboard Absensi</h1>
-        <p className="text-gray-600">
-          Persentase Kehadiran: <span className="font-bold">{stats.attendance_rate || 0}%</span>
+        <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2">Dashboard Absensi</h1>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          Persentase Kehadiran: <span className="font-bold text-on-surface">{stats.attendance_rate || 0}%</span>
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat) => {
-          const Icon = stat.icon;
           return (
             <div key={stat.label} className="card">
               <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 ${stat.color} border-3 border-black flex items-center justify-center`}>
-                  <Icon size={24} />
+                <div className={`w-14 h-14 ${stat.color} border-3 border-outline flex items-center justify-center`}>
+                  <span className={`material-symbols-outlined text-3xl ${stat.iconColor}`}>
+                    {stat.icon}
+                  </span>
                 </div>
-                <div>
-                  <div className="text-3xl font-bold">{stat.value}</div>
-                  <div className="text-sm text-gray-600">{stat.label}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-headline-md text-headline-md text-on-surface">{stat.value}</div>
+                  <div className="font-body-md text-sm text-on-surface-variant truncate">{stat.label}</div>
                 </div>
               </div>
             </div>
