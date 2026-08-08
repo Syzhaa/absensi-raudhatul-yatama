@@ -11,6 +11,7 @@ export default function ScanQR() {
   const [scanType, setScanType] = useState(null);
   const html5QrCodeRef = useRef(null);
   const restartTimerRef = useRef(null);
+  const lastScannedRef = useRef(null);
   const queryClient = useQueryClient();
 
   // Cleanup on unmount: stop camera + clear restart timer (prevent memory leak)
@@ -49,7 +50,11 @@ export default function ScanQR() {
       await html5QrCodeRef.current.start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
-        (decodedText) => { if (!scanMutation.isPending) scanMutation.mutate(decodedText); },
+        (decodedText) => {
+          if (scanMutation.isPending || lastScannedRef.current === decodedText) return;
+          lastScannedRef.current = decodedText;
+          scanMutation.mutate(decodedText);
+        },
         () => {}
       );
       setScanning(true);
@@ -77,6 +82,7 @@ export default function ScanQR() {
     setResult(null);
     setCameraError(null);
     setScanType(null);
+    lastScannedRef.current = null;
   };
 
   const personName = result?.data?.type === 'student' ? result?.data?.student?.nama : result?.data?.teacher?.nama;

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar, Users, GraduationCap } from 'lucide-react';
 import api from '../services/api';
 
@@ -60,11 +60,31 @@ function AttendanceCard({ attendance, isStudent }) {
 export default function Attendance() {
   const [activeTab, setActiveTab] = useState('masuk_siswa');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const queryClient = useQueryClient();
+  const eventSourceRef = useRef(null);
 
   const tabConfig = TAB_CONFIG.find(t => t.id === activeTab);
   const isStudent = tabConfig?.role === 'student';
   const attendanceType = tabConfig?.type;
 
+  // Load ALL tab counts in parallel
+  const { data: tabCounts } = useQuery({
+    queryKey: ['attendance_counts', selectedDate],
+    queryFn: async () => {
+      const results = await Promise.all(
+        TAB_CONFIG.map(tab =>
+          tab.role === 'student'
+            ? attendanceService.getStudentAttendance(selectedDate, tab.type)
+            : attendanceService.getTeacherAttendance(selectedDate, tab.type)
+        )
+      );
+      return Object.fromEntries(
+        TAB_CONFIG.map((tab, i) => [tab.id, results[i].data?.length || 0])
+      );
+    },
+  });
+
+  // Active tab data
   const { data: attendanceData, isLoading } = useQuery({
     queryKey: ['attendance', selectedDate, activeTab],
     queryFn: () => {
@@ -78,7 +98,37 @@ export default function Attendance() {
 
   const records = attendanceData?.data || [];
 
-  const getCountForTab = (tabId) => tabId === activeTab ? records.length : '?';
+  const getCountForTab = (tabId) => tabCounts?.[tabId] ?? 0;
+
+  // SSE realtime updates
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return;
+
+    const baseURL = api.defaults.baseURL || '';
+    const url = `${baseURL}/attendance/logs/stream?date=${selectedDate}`;
+    
+    eventSourceRef.current = new EventSource(url);
+
+    eventSourceRef.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        // Invalidate all queries when new attendance arrives
+        queryClient.invalidateQueries(['attendance']);
+        queryClient.invalidateQueries(['attendance_counts']);
+      } catch (err) {
+        console.error('SSE parse error:', err);
+      }
+    };
+
+    eventSourceRef.current.onerror = () => {
+      eventSourceRef.current?.close();
+    };
+
+    return () => {
+      eventSourceRef.current?.close();
+    };
+  }, [selectedDate, queryClient]);
 
   const renderContent = () => {
     if (isLoading) return <p className="text-center py-8 text-gray-600">Loading...</p>;
