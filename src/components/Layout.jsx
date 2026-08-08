@@ -50,29 +50,7 @@ export default function Layout({ children, onLogout }) {
         </div>
       </header>
 
-      {/* Mobile Navigation */}
-      <nav className="md:hidden bg-white border-b-3 border-black sticky top-[73px] z-40">
-        <div className="flex">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex-1 flex flex-col items-center gap-1 py-3 border-r-3 border-black last:border-r-0 ${
-                  isActive ? 'bg-neo-yellow' : 'hover:bg-gray-100'
-                }`}
-              >
-                <Icon size={20} />
-                <span className="text-xs font-medium">{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
         {/* Sidebar Desktop */}
         <aside className="hidden md:block w-64 min-h-[calc(100vh-73px)] bg-white border-r-3 border-black">
           <nav className="p-4 space-y-2">
@@ -98,10 +76,32 @@ export default function Layout({ children, onLogout }) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-6 pb-24 md:pb-6">
           {children}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-3 border-black z-50">
+        <div className="flex">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex-1 flex flex-col items-center gap-1 py-3 border-r-3 border-black last:border-r-0 transition-colors ${
+                  isActive ? 'bg-neo-yellow' : 'bg-white hover:bg-gray-50'
+                }`}
+              >
+                <Icon size={20} />
+                <span className="text-xs font-bold text-center">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }
