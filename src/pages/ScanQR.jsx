@@ -87,7 +87,7 @@ export default function ScanQR() {
   const personName = result?.data?.type === 'student' ? result?.data?.student?.nama : result?.data?.teacher?.nama;
 
   return (
-    <div className="max-w-lg mx-auto space-y-4">
+    <div className="max-w-4xl mx-auto space-y-4">
       {/* Scan Type Selection */}
       {!scanType && !result && (
         <div className="card">
