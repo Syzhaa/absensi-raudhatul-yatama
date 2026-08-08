@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { teacherService } from '../services';
-import { Plus, Edit, Trash, QrCode, Download } from 'lucide-react';
 import QRCode from 'qrcode';
 
 export default function Teachers() {
@@ -154,7 +153,7 @@ export default function Teachers() {
               onClick={handleGenerateQR}
               className="btn-primary flex items-center gap-2 bg-neo-green"
             >
-              <Download size={20} />
+              <span className="material-symbols-outlined">download</span>
               Generate QR ({selectedTeachers.length})
             </button>
           )}
@@ -162,7 +161,7 @@ export default function Teachers() {
             onClick={() => setShowForm(!showForm)}
             className="btn-primary flex items-center gap-2"
           >
-            <Plus size={20} />
+            <span className="material-symbols-outlined">add</span>
             Tambah Guru
           </button>
         </div>
@@ -316,7 +315,7 @@ export default function Teachers() {
                         className="p-2 bg-neo-blue border-2 border-black hover:shadow-neo transition-shadow"
                         title="Edit guru"
                       >
-                        <Edit size={16} />
+                        <span className="material-symbols-outlined text-lg">edit</span>
                       </button>
                       <button
                         onClick={() => handleDelete(teacher.id)}
@@ -324,7 +323,7 @@ export default function Teachers() {
                         className="p-2 bg-red-300 border-2 border-black hover:shadow-neo transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Hapus guru"
                       >
-                        <Trash size={16} />
+                        <span className="material-symbols-outlined text-lg">delete</span>
                       </button>
                     </div>
                   </td>
