@@ -122,15 +122,15 @@ export default function ScanQR() {
 
       {/* Camera Error */}
       {cameraError && (
-        <div className="card bg-error-container border-3 border-error">
-          <div className="flex items-start gap-3 text-on-error-container">
+        <div className="card bg-red-100 border-3 border-error">
+          <div className="flex items-start gap-3 text-red-600">
             <span className="material-symbols-outlined text-2xl flex-shrink-0">error</span>
             <div className="flex-1">
-              <p className="font-label-lg text-label-lg">{cameraError}</p>
-              <p className="font-body-md text-sm mt-1">Pastikan HTTPS dan izinkan kamera di browser.</p>
+              <p className="font-semibold text-base">{cameraError}</p>
+              <p className="font-normal text-sm mt-1">Pastikan HTTPS dan izinkan kamera di browser.</p>
               <button 
                 onClick={handleNewScan} 
-                className="mt-3 w-full py-2 bg-surface text-on-surface border-2 border-outline font-label-lg neo-btn shadow-neo-sm"
+                className="mt-3 w-full py-2 bg-white text-gray-800 border-2 border-gray-900 font-semibold neo-btn clean-shadow-sm"
               >
                 Kembali
               </button>
@@ -145,23 +145,23 @@ export default function ScanQR() {
           <div className="flex items-center justify-center gap-3 mb-6">
             <button 
               onClick={handleNewScan} 
-              className="p-3 hover:bg-surface-container border-2 border-outline neo-btn bg-surface"
+              className="p-3 hover:bg-gray-50 border-2 border-gray-900 neo-btn bg-white"
             >
               <span className="material-symbols-outlined text-2xl">arrow_back</span>
             </button>
-            <span className="font-headline-md text-headline-md text-on-surface">
+            <span className="font-bold text-xl text-gray-800">
               {scanType === 'check_in' ? '🟢 MASUK' : '🔵 PULANG'}
             </span>
           </div>
           <div
             id="qr-reader"
-            className={'w-full border-3 border-outline rounded-lg overflow-hidden ' + (scanning ? 'bg-black' : 'bg-surface-container')}
+            className={'w-full border-3 border-gray-900 rounded-lg overflow-hidden ' + (scanning ? 'bg-black' : 'bg-gray-50')}
             style={{ minHeight: scanning ? 'auto' : '400px' }}
           />
           {scanning && (
             <button
               onClick={stopScanning}
-              className="w-full bg-error text-on-error font-headline-md py-4 border-3 border-outline shadow-neo neo-btn"
+              className="w-full bg-error text-white font-bold py-4 border-3 border-gray-900 shadow-neo neo-btn"
             >
               Stop Scan
             </button>
@@ -171,32 +171,32 @@ export default function ScanQR() {
 
       {/* Result */}
       {result && (
-        <div className={'p-8 border-3 border-outline rounded-lg ' + (result.success ? 'bg-primary-container' : 'bg-error-container')}>
+        <div className={'p-8 border-3 border-gray-900 rounded-lg ' + (result.success ? 'bg-primary-green' : 'bg-red-100')}>
           <div className="text-center mb-6">
             {result.success ? (
-              <span className="material-symbols-outlined text-8xl text-neo-green mx-auto block">check_circle</span>
+              <span className="material-symbols-outlined text-8xl text-green-700 mx-auto block">check_circle</span>
             ) : (
-              <span className="material-symbols-outlined text-8xl text-error mx-auto block">cancel</span>
+              <span className="material-symbols-outlined text-8xl text-red-600 mx-auto block">cancel</span>
             )}
           </div>
 
           {result.success && result.data ? (
             <div className="text-center space-y-4">
-              <p className="font-headline-lg text-3xl text-on-primary-container">{personName}</p>
+              <p className="font-bold text-3xl text-gray-800">{personName}</p>
               {result.data.type === 'student' && result.data.student && (
-                <p className="font-body-lg text-lg text-on-surface-variant">
+                <p className="font-medium text-lg text-gray-600">
                   {result.data.student.kelas}
                 </p>
               )}
               {result.data.attendance && (
                 <div className="flex justify-center gap-4 mt-4">
                   {result.data.attendance.check_in && (
-                    <span className="bg-surface border-2 border-outline px-4 py-2 font-mono text-neo-green font-bold text-xl">
+                    <span className="bg-white border-2 border-gray-900 px-4 py-2 font-mono text-green-700 font-bold text-xl">
                       {result.data.attendance.check_in}
                     </span>
                   )}
                   {result.data.attendance.check_out && (
-                    <span className="bg-surface border-2 border-outline px-4 py-2 font-mono text-tertiary font-bold text-xl">
+                    <span className="bg-white border-2 border-gray-900 px-4 py-2 font-mono text-purple-600 font-bold text-xl">
                       {result.data.attendance.check_out}
                     </span>
                   )}
@@ -204,7 +204,7 @@ export default function ScanQR() {
               )}
             </div>
           ) : (
-            <p className="text-center font-headline-md text-xl text-on-error-container">{result.message}</p>
+            <p className="text-center font-bold text-xl text-red-600">{result.message}</p>
           )}
 
           <button onClick={handleNewScan} className="w-full mt-6 btn-primary neo-btn py-4 text-xl">

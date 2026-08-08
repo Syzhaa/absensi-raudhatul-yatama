@@ -151,7 +151,7 @@ export default function Teachers() {
           {selectedTeachers.length > 0 && (
             <button
               onClick={handleGenerateQR}
-              className="btn-primary flex items-center gap-2 bg-neo-green"
+              className="btn-primary flex items-center gap-2 bg-primary-green"
             >
               <span className="material-symbols-outlined">download</span>
               Generate QR ({selectedTeachers.length})
@@ -303,7 +303,7 @@ export default function Teachers() {
                   <td className="py-3 px-4">{teacher.lembaga}</td>
                   <td className="py-3 px-4">
                     <span className={`px-2 py-1 text-xs font-bold border-2 border-black ${
-                      teacher.status === 'aktif' ? 'bg-neo-green' : 'bg-gray-300'
+                      teacher.status === 'aktif' ? 'bg-primary-green' : 'bg-gray-300'
                     }`}>
                       {teacher.status.toUpperCase()}
                     </span>
@@ -312,7 +312,7 @@ export default function Teachers() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEdit(teacher)}
-                        className="p-2 bg-neo-blue border-2 border-black hover:shadow-neo transition-shadow"
+                        className="p-2 bg-blue-200 border-2 border-black hover:shadow-neo transition-shadow"
                         title="Edit guru"
                       >
                         <span className="material-symbols-outlined text-lg">edit</span>

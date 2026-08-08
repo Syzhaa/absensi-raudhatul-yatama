@@ -116,7 +116,7 @@ export default function Login({ onLogin }) {
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center">
                 <input
-                  className="h-6 w-6 border-3 border-outline text-neo-orange focus:ring-0 rounded-none bg-surface cursor-pointer checked:bg-neo-orange"
+                  className="h-6 w-6 border-3 border-gray-900 text-orange-600 focus:ring-0 rounded-none bg-white cursor-pointer checked:bg-primary-green"
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
@@ -124,7 +124,7 @@ export default function Login({ onLogin }) {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   disabled={loading}
                 />
-                <label className="ml-3 block font-body-md text-body-md text-on-surface cursor-pointer" htmlFor="remember-me">
+                <label className="ml-3 block font-normal text-sm text-gray-800 cursor-pointer" htmlFor="remember-me">
                   Ingat Saya
                 </label>
               </div>
