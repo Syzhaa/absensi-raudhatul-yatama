@@ -46,41 +46,39 @@ export default function Login({ onLogin }) {
       <main className="w-full max-w-md">
         {/* Logo Section */}
         <div className="flex flex-col items-center justify-center mb-8">
-          <div className="w-32 h-32 mb-4 p-2 bg-surface border-outline rounded-full shadow-neo-sm overflow-hidden flex items-center justify-center border-2">
+          <div className="w-32 h-32 mb-4 p-2 bg-white clean-border rounded-full clean-shadow-sm overflow-hidden flex items-center justify-center">
             <img 
               alt="MA Raudhatul Yatama Logo" 
               className="w-full h-full object-contain" 
               src="/logo.jpg"
             />
           </div>
-          <h1 className="font-headline-lg text-headline-lg text-on-surface text-center uppercase">
+          <h1 className="text-3xl font-bold text-gray-800 text-center uppercase tracking-tight">
             Absensi Digital
           </h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-2 font-bold tracking-wider">
+          <p className="text-gray-600 mt-2 font-bold tracking-wider text-lg">
             RAUDHATUL YATAMA
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-surface border-outline p-8 rounded-xl relative z-10 border-2 shadow-neo-sm">
+        <div className="bg-white clean-border p-8 rounded-xl relative z-10 clean-shadow-md">
           {error && (
-            <div className="mb-6 p-4 bg-error-container border-2 border-error text-error rounded-lg">
-              <p className="font-body-md text-body-md">{error}</p>
+            <div className="mb-6 p-4 bg-red-100 border-red-300 border-2 text-red-600 rounded-lg">
+              <p className="font-medium">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Input */}
             <div className="space-y-2">
-              <label className="block font-label-lg text-label-lg text-on-surface" htmlFor="email">
+              <label className="block font-bold text-gray-800" htmlFor="email">
                 EMAIL
               </label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface">
-                  person
-                </span>
+                <i className="fa-solid fa-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-600"></i>
                 <input
-                  className="w-full bg-surface border-3 border-outline pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-input-placeholder focus:outline-none focus:ring-0 focus:border-outline focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                  className="input pl-12"
                   id="email"
                   name="email"
                   placeholder="Masukkan Email Admin"
@@ -95,15 +93,13 @@ export default function Login({ onLogin }) {
 
             {/* Password Input */}
             <div className="space-y-2">
-              <label className="block font-label-lg text-label-lg text-on-surface" htmlFor="password">
+              <label className="block font-bold text-gray-800" htmlFor="password">
                 PASSWORD
               </label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface">
-                  lock
-                </span>
+                <i className="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-600"></i>
                 <input
-                  className="w-full bg-surface border-3 border-outline pl-12 pr-4 py-3 font-body-md text-body-md text-on-surface placeholder:text-input-placeholder focus:outline-none focus:ring-0 focus:border-outline focus:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                  className="input pl-12"
                   id="password"
                   name="password"
                   placeholder="••••••••"
@@ -136,12 +132,11 @@ export default function Login({ onLogin }) {
 
             {/* Submit Button */}
             <button
-              className="w-full bg-neo-orange text-on-primary font-headline-md text-headline-md py-4 border-outline rounded-lg shadow-neo-sm neo-btn transition-all duration-100 flex justify-center items-center gap-2 mt-4 border-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary w-full py-4 text-lg"
               type="submit"
               disabled={loading}
             >
               {loading ? 'MEMPROSES...' : 'LOGIN'}
-              {!loading && <span className="material-symbols-outlined">arrow_forward</span>}
             </button>
           </form>
         </div>
