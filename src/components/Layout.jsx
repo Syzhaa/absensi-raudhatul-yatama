@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, QrCode, Users, UserCog, Settings, LogOut, Calendar } from 'lucide-react';
 import { authService } from '../services';
 
 export default function Layout({ children, onLogout }) {
@@ -17,34 +16,34 @@ export default function Layout({ children, onLogout }) {
   };
 
   const menuItems = [
-    { path: '/', label: 'Dashboard', icon: Home },
-    { path: '/scan', label: 'Scan QR', icon: QrCode },
-    { path: '/students', label: 'Siswa', icon: Users },
-    { path: '/teachers', label: 'Guru', icon: UserCog },
-    { path: '/attendance', label: 'Absensi', icon: Calendar },
-    { path: '/settings', label: 'Pengaturan', icon: Settings },
+    { path: '/', label: 'Dashboard', icon: 'home' },
+    { path: '/scan', label: 'Scan QR', icon: 'qr_code_scanner' },
+    { path: '/students', label: 'Siswa', icon: 'group' },
+    { path: '/teachers', label: 'Guru', icon: 'badge' },
+    { path: '/attendance', label: 'Absensi', icon: 'calendar_month' },
+    { path: '/settings', label: 'Pengaturan', icon: 'settings' },
   ];
 
   return (
-    <div className="min-h-screen bg-neo-bg">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-white border-b-3 border-black shadow-neo sticky top-0 z-50">
+      <header className="bg-surface border-b-3 border-outline shadow-neo sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-neo-green border-3 border-black flex items-center justify-center font-bold">
+            <div className="w-10 h-10 bg-primary-container border-3 border-outline flex items-center justify-center font-headline-md text-headline-md text-on-primary-container">
               RA
             </div>
             <div>
-              <h1 className="text-xl font-bold">Absensi Digital</h1>
-              <p className="text-sm text-gray-600">Raudhatul Yatama</p>
+              <h1 className="font-headline-md text-xl text-on-surface">Absensi Digital</h1>
+              <p className="font-body-md text-sm text-on-surface-variant">Raudhatul Yatama</p>
             </div>
           </div>
           
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white font-bold border-3 border-black shadow-neo hover:shadow-neo-lg transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-error text-on-error font-label-lg border-3 border-outline shadow-neo hover:shadow-neo-lg transition-all active:shadow-none"
           >
-            <LogOut size={18} />
+            <span className="material-symbols-outlined text-xl">logout</span>
             <span className="hidden md:inline">Logout</span>
           </button>
         </div>
@@ -52,22 +51,21 @@ export default function Layout({ children, onLogout }) {
 
       <div className="flex flex-col md:flex-row">
         {/* Sidebar Desktop */}
-        <aside className="hidden md:block w-64 min-h-[calc(100vh-73px)] bg-white border-r-3 border-black">
+        <aside className="hidden md:block w-64 min-h-[calc(100vh-73px)] bg-surface border-r-3 border-outline">
           <nav className="p-4 space-y-2">
             {menuItems.map((item) => {
-              const Icon = item.icon;
               const isActive = location.pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 font-bold border-3 border-black ${
+                  className={`flex items-center gap-3 px-4 py-3 font-label-lg border-3 border-outline transition-all ${
                     isActive
-                      ? 'bg-neo-yellow shadow-neo'
-                      : 'bg-white hover:bg-gray-50 shadow-neo hover:shadow-neo-lg'
-                  } transition-all`}
+                      ? 'bg-primary-container text-on-primary-container shadow-neo'
+                      : 'bg-surface text-on-surface hover:bg-surface-container shadow-neo hover:shadow-neo-lg'
+                  }`}
                 >
-                  <Icon size={20} />
+                  <span className="material-symbols-outlined text-2xl">{item.icon}</span>
                   <span>{item.label}</span>
                 </Link>
               );
@@ -82,20 +80,19 @@ export default function Layout({ children, onLogout }) {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-3 border-black z-50">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface border-t-3 border-outline z-50">
         <div className="flex">
           {menuItems.map((item) => {
-            const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex-1 flex flex-col items-center gap-1 py-3 border-r-3 border-black last:border-r-0 transition-colors ${
-                  isActive ? 'bg-neo-yellow' : 'bg-white hover:bg-gray-50'
+                className={`flex-1 flex flex-col items-center gap-1 py-3 border-r-3 border-outline last:border-r-0 transition-colors ${
+                  isActive ? 'bg-primary-container text-on-primary-container' : 'bg-surface text-on-surface hover:bg-surface-container'
                 }`}
               >
-                <Icon size={20} />
+                <span className="material-symbols-outlined text-2xl">{item.icon}</span>
                 <span className="text-xs font-bold text-center">{item.label}</span>
               </Link>
             );
