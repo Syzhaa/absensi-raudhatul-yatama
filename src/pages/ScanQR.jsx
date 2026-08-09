@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { attendanceService } from '../services';
 
 export default function ScanQR() {
@@ -12,6 +12,13 @@ export default function ScanQR() {
   const restartTimerRef = useRef(null);
   const lastScannedRef = useRef(null);
   const queryClient = useQueryClient();
+
+  // Fetch recent logs
+  const { data: recentLogs } = useQuery({
+    queryKey: ['recentLogs'],
+    queryFn: () => attendanceService.getRecentLogs(5),
+    refetchInterval: 10000, // refresh every 10s
+  });
 
   // Cleanup on unmount: stop camera + clear restart timer (prevent memory leak)
   useEffect(() => {
@@ -208,6 +215,48 @@ export default function ScanQR() {
           <button onClick={handleNewScan} className="w-full mt-6 btn-primary neo-btn py-4 text-xl">
             Scan Lagi
           </button>
+        </div>
+      )}
+
+      {/* Recent Logs Section */}
+      {recentLogs?.data && recentLogs.data.length > 0 && (
+        <div className="mt-8 space-y-4">
+          <h2 className="font-black text-lg text-gray-800 uppercase tracking-tight">Riwayat Scan Hari Ini</h2>
+          <div className="space-y-3">
+            {recentLogs.data.map((log, index) => {
+              const isCheckIn = log.type === 'check_in';
+              const name = log.student?.nama || log.teacher?.nama || 'Unknown';
+              const time = isCheckIn ? log.check_in : log.check_out;
+              const badgeColor = isCheckIn ? 'bg-primary-green' : 'bg-primary-purple';
+              const badgeText = isCheckIn ? 'Masuk' : 'Pulang';
+              const initials = (name || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+              return (
+                <div key={index} className="bg-white border-2 border-gray-900 rounded-lg px-4 py-3 flex items-center gap-3 shadow-neo">
+                  {/* Initials Circle */}
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-full ${isCheckIn ? 'bg-green-100' : 'bg-purple-100'}`}>
+                    <span className="font-black text-sm text-gray-800">{initials}</span>
+                  </div>
+                  
+                  {/* Name */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-800 truncate">{name}</p>
+                    <p className="text-xs text-gray-600">
+                      {log.student ? 'Siswa' : 'Guru'} • {log.student?.kelas || log.teacher?.mapel || '-'}
+                    </p>
+                  </div>
+                  
+                  {/* Time & Status */}
+                  <div className="flex items-center gap-2 text-right">
+                    <span className="font-mono font-bold text-sm text-gray-800">{time?.slice(0, 5)}</span>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-md text-white ${badgeColor}`}>
+                      {badgeText}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
       </div>

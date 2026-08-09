@@ -24,6 +24,12 @@ export const attendanceService = {
     return response.data;
   },
   
+  getRecentLogs: async (limit = 5) => {
+    const today = new Date().toISOString().split('T')[0];
+    const response = await api.get('/attendance/logs/students', { params: { date: today, limit } });
+    return response.data;
+  },
+
   // New: Auto-detect scan (student or teacher)
   scan: async (uuid, scanType = null) => {
     const response = await api.post('/attendance/scan', { uuid, scan_type: scanType });
