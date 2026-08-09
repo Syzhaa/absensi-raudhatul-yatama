@@ -1,7 +1,22 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 export default function Layout({ children }) {
   const location = useLocation();
+  const [isTestMode, setIsTestMode] = useState(() => localStorage.getItem('is_test_mode') === 'true');
+
+  useEffect(() => {
+    const checkTestMode = () => {
+      setIsTestMode(localStorage.getItem('is_test_mode') === 'true');
+    };
+
+    window.addEventListener('storage', checkTestMode);
+    window.addEventListener('test_mode_change', checkTestMode);
+    return () => {
+      window.removeEventListener('storage', checkTestMode);
+      window.removeEventListener('test_mode_change', checkTestMode);
+    };
+  }, []);
 
   const menuItems = [
     { path: '/', label: 'Dashboard', icon: 'home' },
@@ -14,6 +29,13 @@ export default function Layout({ children }) {
 
   return (
     <div className="min-h-screen">
+      {/* Global App-Wide Mode Testing Warning Banner */}
+      {isTestMode && (
+        <div className="bg-amber-400 text-amber-950 border-b-2 border-gray-900 px-4 py-2 text-xs md:text-sm font-black flex items-center justify-center gap-2 shadow-sm text-center sticky top-0 z-50 animate-pulse">
+          <span className="material-symbols-outlined text-base md:text-lg text-amber-950 flex-shrink-0">warning</span>
+          <span>⚠️ MODE TESTING AKTIF — Data Simulasi (Data Riil Disembunyikan)</span>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row">
         {/* Sidebar Desktop */}
         <aside className="hidden md:block w-64 min-h-screen bg-white border-r-3 border-gray-900 flex-shrink-0">

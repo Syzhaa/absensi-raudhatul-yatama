@@ -9,7 +9,7 @@ const api = axios.create({
   },
 });
 
-// Request interceptor untuk inject token
+// Request interceptor untuk inject token & flag test mode
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('auth_token');
@@ -17,6 +17,14 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     config.headers.Accept = 'application/json';
+
+    // Inject Test Mode flag secara otomatis jika mode testing aktif
+    const isTestMode = localStorage.getItem('is_test_mode') === 'true';
+    if (isTestMode) {
+      config.headers['X-Test-Mode'] = 'true';
+      config.params = { ...config.params, mode: 'test', is_test: true };
+    }
+
     return config;
   },
   (error) => {

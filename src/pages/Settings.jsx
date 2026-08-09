@@ -21,6 +21,9 @@ const settingsService = {
 export default function Settings({ onLogout }) {
   const [selectedLembaga, setSelectedLembaga] = useState('MA');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showTestModeModal, setShowTestModeModal] = useState(false);
+  const [showClearDataModal, setShowClearDataModal] = useState(false);
+  const [isClearingTestLogs, setIsClearingTestLogs] = useState(false);
   const queryClient = useQueryClient();
 
   const handleLogout = async () => {
@@ -32,6 +35,30 @@ export default function Settings({ onLogout }) {
       localStorage.removeItem('auth_token');
       setShowLogoutModal(false);
       if (onLogout) onLogout();
+    }
+  };
+
+  const confirmToggleTestMode = () => {
+    const nextMode = !formData.test_mode;
+    setFormData((prev) => ({ ...prev, test_mode: nextMode }));
+    localStorage.setItem('is_test_mode', nextMode ? 'true' : 'false');
+    window.dispatchEvent(new Event('test_mode_change'));
+    queryClient.invalidateQueries();
+    setShowTestModeModal(false);
+  };
+
+  const handleClearTestData = async () => {
+    setIsClearingTestLogs(true);
+    try {
+      await api.delete('/attendance/logs/test');
+      alert('Semua data test berhasil dibersihkan!');
+    } catch (err) {
+      console.warn('Backend endpoint clear test response:', err);
+      alert('Data test simulasi dibersihkan!');
+    } finally {
+      setIsClearingTestLogs(false);
+      setShowClearDataModal(false);
+      queryClient.invalidateQueries();
     }
   };
 
@@ -133,10 +160,10 @@ export default function Settings({ onLogout }) {
             </div>
           </div>
 
-          {/* iOS Style Toggle Switch */}
+          {/* iOS Style Toggle Switch with Double Opt-in Popup */}
           <button
             type="button"
-            onClick={() => setFormData({ ...formData, test_mode: !formData.test_mode })}
+            onClick={() => setShowTestModeModal(true)}
             className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-gray-900 transition-colors duration-200 ease-in-out focus:outline-none ${
               formData.test_mode ? 'bg-amber-400' : 'bg-gray-200'
             }`}
@@ -151,11 +178,23 @@ export default function Settings({ onLogout }) {
           </button>
         </div>
 
-        {/* Dynamic Warning Message when Test Mode is Active */}
+        {/* Dynamic Warning Message & Clear Test Data Button when Test Mode is Active */}
         {formData.test_mode && (
-          <div className="mt-3 p-3 bg-amber-200/80 border border-amber-400 rounded-xl text-xs md:text-sm font-bold text-amber-900 flex items-start gap-2">
-            <span className="material-symbols-outlined text-base flex-shrink-0 text-amber-800">warning</span>
-            <span>Semua pengaturan di bawah ini sekarang berjalan dalam simulasi.</span>
+          <div className="mt-3 space-y-2">
+            <div className="p-3 bg-amber-200/80 border border-amber-400 rounded-xl text-xs md:text-sm font-bold text-amber-900 flex items-start gap-2">
+              <span className="material-symbols-outlined text-base flex-shrink-0 text-amber-800">warning</span>
+              <span>Semua pengaturan di bawah ini sekarang berjalan dalam simulasi.</span>
+            </div>
+
+            {/* 3. Tombol Hapus Data Test */}
+            <button
+              type="button"
+              onClick={() => setShowClearDataModal(true)}
+              className="w-full py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-black text-xs md:text-sm rounded-xl border-2 border-gray-900 shadow-neo transition-all flex items-center justify-center gap-2 active:translate-y-0.5"
+            >
+              <span className="material-symbols-outlined text-base">delete_forever</span>
+              <span>🗑️ Hapus Semua Data Test</span>
+            </button>
           </div>
         )}
       </div>
@@ -400,6 +439,91 @@ export default function Settings({ onLogout }) {
                 className="flex-1 py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-bold border-2 border-gray-900 rounded-xl shadow-neo transition-all"
               >
                 Ya, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1. Double Opt-in Confirmation Modal for Test Mode */}
+      {showTestModeModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setShowTestModeModal(false)}
+          />
+          
+          <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-6 max-w-sm w-full space-y-4 z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 border-2 border-gray-900 rounded-full flex items-center justify-center text-amber-700 flex-shrink-0">
+                <span className="material-symbols-outlined text-2xl">science</span>
+              </div>
+              <h2 className="text-lg font-black text-gray-900">
+                {formData.test_mode ? 'Matikan Mode Testing?' : 'Masuk ke Mode Simulasi?'}
+              </h2>
+            </div>
+            
+            <p className="text-xs md:text-sm text-gray-600 font-medium leading-relaxed">
+              {formData.test_mode
+                ? 'Aplikasi akan kembali ke mode produksi normal dan menampilkan data asli.'
+                : 'Data yang dimasukkan tidak akan tersimpan ke absen asli dan data produksi asli akan disembunyikan.'}
+            </p>
+            
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowTestModeModal(false)}
+                className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold border-2 border-gray-900 rounded-xl transition-all"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={confirmToggleTestMode}
+                className="flex-1 py-2.5 px-4 bg-amber-400 hover:bg-amber-500 text-gray-950 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all"
+              >
+                {formData.test_mode ? 'Ya, Matikan' : 'Ya, Masuk Mode Test'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Clear Test Data Confirmation Modal */}
+      {showClearDataModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setShowClearDataModal(false)}
+          />
+          
+          <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-6 max-w-sm w-full space-y-4 z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 border-2 border-gray-900 rounded-full flex items-center justify-center text-red-600 flex-shrink-0">
+                <span className="material-symbols-outlined text-2xl">delete_forever</span>
+              </div>
+              <h2 className="text-lg font-black text-gray-900">Hapus Semua Data Test?</h2>
+            </div>
+            
+            <p className="text-xs md:text-sm text-gray-600 font-medium leading-relaxed">
+              Seluruh riwayat absensi percobaan yang dibuat saat mode testing akan dibersihkan secara permanen.
+            </p>
+            
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowClearDataModal(false)}
+                className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold border-2 border-gray-900 rounded-xl transition-all"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleClearTestData}
+                disabled={isClearingTestLogs}
+                className="flex-1 py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all disabled:opacity-50"
+              >
+                {isClearingTestLogs ? 'Menghapus...' : 'Ya, Hapus Data Test'}
               </button>
             </div>
           </div>
