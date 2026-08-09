@@ -147,74 +147,137 @@ export default function ScanQR() {
       {/* Scanning Area */}
       {scanType && !result && (
         <div className="space-y-4">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <button 
-              onClick={handleNewScan} 
-              className="p-3 hover:bg-gray-50 border-2 border-gray-900 neo-btn bg-white"
+          {/* Toggle Tabs: MASUK / PULANG */}
+          <div className="flex gap-2 p-1 bg-gray-100 border-3 border-gray-900 rounded-full">
+            <button
+              onClick={() => setScanType('check_in')}
+              className={`flex-1 py-2.5 px-4 font-black text-sm md:text-base transition-all rounded-full ${
+                scanType === 'check_in'
+                  ? 'bg-primary-green text-gray-800 shadow-neo'
+                  : 'bg-transparent text-gray-600'
+              }`}
             >
-              <span className="material-symbols-outlined text-2xl">arrow_back</span>
+              MASUK
             </button>
-            <span className="font-bold text-xl text-gray-800">
-              {scanType === 'check_in' ? '🟢 MASUK' : '🔵 PULANG'}
-            </span>
+            <button
+              onClick={() => setScanType('check_out')}
+              className={`flex-1 py-2.5 px-4 font-black text-sm md:text-base transition-all rounded-full ${
+                scanType === 'check_out'
+                  ? 'bg-primary-purple text-gray-800 shadow-neo'
+                  : 'bg-transparent text-gray-600'
+              }`}
+            >
+              PULANG
+            </button>
           </div>
-          <div
-            id="qr-reader"
-            className={'w-full border-3 border-gray-900 rounded-lg overflow-hidden ' + (scanning ? 'bg-black' : 'bg-gray-50')}
-            style={{ minHeight: scanning ? 'auto' : '400px' }}
-          />
+
+          {/* Camera Viewfinder with Scanner */}
+          <div className="relative w-full aspect-square md:aspect-video bg-black border-3 border-gray-900 rounded-2xl overflow-hidden">
+            {/* QR Reader */}
+            <div id="qr-reader" className="w-full h-full" />
+            
+            {/* Scanner Brackets (Corner Markers) */}
+            <div className="absolute inset-0 pointer-events-none">
+              {/* Top-Left */}
+              <div className="absolute top-4 left-4 w-6 h-6 border-t-3 border-l-3 border-white"></div>
+              {/* Top-Right */}
+              <div className="absolute top-4 right-4 w-6 h-6 border-t-3 border-r-3 border-white"></div>
+              {/* Bottom-Left */}
+              <div className="absolute bottom-4 left-4 w-6 h-6 border-b-3 border-l-3 border-white"></div>
+              {/* Bottom-Right */}
+              <div className="absolute bottom-4 right-4 w-6 h-6 border-b-3 border-r-3 border-white"></div>
+            </div>
+
+            {/* Animated Scanning Line */}
+            {scanning && (
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="animate-scan-line h-1 bg-gradient-to-b from-transparent via-primary-green to-transparent absolute w-full"></div>
+              </div>
+            )}
+          </div>
+
+          {/* Stop Scan Button */}
           {scanning && (
             <button
               onClick={stopScanning}
-              className="w-full bg-error text-white font-bold py-4 border-3 border-gray-900 shadow-neo neo-btn"
+              className="w-full bg-red-500 text-white font-black py-3 border-3 border-gray-900 rounded-full shadow-neo hover:clean-shadow-md transition-all flex items-center justify-center gap-2"
             >
-              Stop Scan
+              <span className="material-symbols-outlined">visibility_off</span>
+              Hentikan Scan
             </button>
           )}
         </div>
       )}
 
-      {/* Result */}
-      {result && (
-        <div className={'p-8 border-3 border-gray-900 rounded-lg ' + (result.success ? 'bg-primary-green' : 'bg-red-100')}>
-          <div className="text-center mb-6">
-            {result.success ? (
-              <span className="material-symbols-outlined text-8xl text-green-700 mx-auto block">check_circle</span>
-            ) : (
-              <span className="material-symbols-outlined text-8xl text-red-600 mx-auto block">cancel</span>
-            )}
-          </div>
-
-          {result.success && result.data ? (
-            <div className="text-center space-y-4">
-              <p className="font-bold text-3xl text-gray-800">{personName}</p>
-              {result.data.type === 'student' && result.data.student && (
-                <p className="font-medium text-lg text-gray-600">
-                  {result.data.student.kelas}
-                </p>
-              )}
-              {result.data.attendance && (
-                <div className="flex justify-center gap-4 mt-4">
-                  {result.data.attendance.check_in && (
-                    <span className="bg-white border-2 border-gray-900 px-4 py-2 font-mono text-green-700 font-bold text-xl">
-                      {result.data.attendance.check_in}
-                    </span>
-                  )}
-                  {result.data.attendance.check_out && (
-                    <span className="bg-white border-2 border-gray-900 px-4 py-2 font-mono text-purple-600 font-bold text-xl">
-                      {result.data.attendance.check_out}
-                    </span>
-                  )}
-                </div>
-              )}
+      {/* Success Modal */}
+      {result?.success && result.data && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={handleNewScan}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white border-4 border-gray-900 rounded-3xl shadow-neo-heavy p-6 md:p-8 max-w-sm w-full animate-fade-in">
+            {/* Icon Checkmark (partially outside) */}
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
+              <span className="material-symbols-outlined text-6xl text-primary-green bg-white border-4 border-gray-900 rounded-full p-2">
+                check_circle
+              </span>
             </div>
-          ) : (
-            <p className="text-center font-bold text-xl text-red-600">{result.message}</p>
-          )}
-
-          <button onClick={handleNewScan} className="w-full mt-6 btn-primary neo-btn py-4 text-xl">
-            Scan Lagi
-          </button>
+            
+            {/* Title */}
+            <h2 className="font-black text-2xl text-gray-800 text-center mb-6 mt-4 uppercase tracking-tight">
+              {result.data.type === 'student' ? 'BERHASIL ABSEN SISWA' : 'BERHASIL ABSEN GURU'}
+            </h2>
+            
+            {/* Details */}
+            <div className="space-y-3 mb-8">
+              <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
+                <span className="font-bold text-sm text-gray-600 uppercase">Name</span>
+                <span className="font-black text-base text-gray-800">{personName}</span>
+              </div>
+              <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
+                <span className="font-bold text-sm text-gray-600 uppercase">
+                  {result.data.type === 'student' ? 'NIS' : 'NIP'}
+                </span>
+                <span className="font-black text-base text-gray-800">
+                  {result.data.student?.nis || result.data.teacher?.nip || '-'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
+                <span className="font-bold text-sm text-gray-600 uppercase">Time</span>
+                <span className="font-black text-base text-gray-800">
+                  {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
+                <span className="font-bold text-sm text-gray-600 uppercase">Date</span>
+                <span className="font-black text-base text-gray-800">
+                  {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
+                <span className="font-bold text-sm text-gray-600 uppercase">Status</span>
+                <span className={`font-black text-sm px-3 py-1 rounded-full ${
+                  scanType === 'check_in' 
+                    ? 'bg-primary-green text-gray-800' 
+                    : 'bg-primary-purple text-gray-800'
+                }`}>
+                  {scanType === 'check_in' ? 'MASUK' : 'PULANG'}
+                </span>
+              </div>
+            </div>
+            
+            {/* Close Button */}
+            <button 
+              onClick={handleNewScan}
+              className="w-full bg-gray-100 text-gray-800 font-black py-3 border-3 border-gray-900 rounded-full shadow-neo hover:clean-shadow-md transition-all"
+            >
+              TUTUP
+            </button>
+          </div>
         </div>
       )}
 
