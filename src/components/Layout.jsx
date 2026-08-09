@@ -26,8 +26,8 @@ export default function Layout({ children, onLogout }) {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <header className="bg-white border-b-3 border-gray-900 shadow-neo sticky top-0 z-50">
+      {/* Header - Hidden on Mobile */}
+      <header className="hidden md:block bg-white border-b-3 border-gray-900 shadow-neo sticky top-0 z-50">
         <div className="px-4 md:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-white border-3 border-gray-900 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0">

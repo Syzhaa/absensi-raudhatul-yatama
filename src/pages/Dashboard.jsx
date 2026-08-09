@@ -77,32 +77,30 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="card">
-        <h1 className="font-bold text-2xl text-gray-800 mb-2">Dashboard Absensi</h1>
-        <p className="font-normal text-sm text-gray-600">
-          Persentase Kehadiran: <span className="font-bold text-gray-800">{stats.attendance_rate || 0}%</span>
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat) => {
-          return (
-            <div key={stat.label} className="card">
-              <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 ${stat.color} border-3 border-gray-900 flex items-center justify-center`}>
-                  <span className={`material-symbols-outlined text-3xl ${stat.iconColor}`}>
-                    {stat.icon}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-xl text-gray-800">{stat.value}</div>
-                  <div className="font-normal text-sm text-gray-600 truncate">{stat.label}</div>
-                </div>
-              </div>
+    <div className="space-y-4">
+      {/* Stats Grid 2x2 */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        {statCards.map((stat) => (
+          <div 
+            key={stat.label} 
+            className={`${stat.color} border-3 border-gray-900 rounded-xl p-3 md:p-4 flex flex-col items-center justify-center text-center clean-shadow-sm hover:clean-shadow-md transition-all`}
+          >
+            {/* Icon */}
+            <span className={`material-symbols-outlined text-2xl md:text-3xl mb-1 ${stat.iconColor}`}>
+              {stat.icon}
+            </span>
+            
+            {/* Value */}
+            <div className="font-black text-xl md:text-2xl text-gray-800 mb-0.5">
+              {stat.value}
             </div>
-          );
-        })}
+            
+            {/* Label */}
+            <div className="font-bold text-xs md:text-sm text-gray-800 leading-tight">
+              {stat.label}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
