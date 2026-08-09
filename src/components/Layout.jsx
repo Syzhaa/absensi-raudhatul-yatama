@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 import { authService } from '../services';
 
 export default function Layout({ children, onLogout }) {
   const location = useLocation();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   
   const handleLogout = async () => {
     try {
@@ -11,6 +13,7 @@ export default function Layout({ children, onLogout }) {
       console.error('Logout error:', error);
     } finally {
       localStorage.removeItem('auth_token');
+      setShowLogoutModal(false);
       onLogout();
     }
   };
@@ -46,8 +49,8 @@ export default function Layout({ children, onLogout }) {
           </div>
           
           <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-error text-white font-semibold border-3 border-gray-900 shadow-neo hover:clean-shadow-md transition-all active:shadow-none"
+            onClick={() => setShowLogoutModal(true)}
+            className="flex items-center gap-2 px-3 py-2 md:px-4 bg-red-500 text-white font-bold border-3 border-gray-900 rounded-lg shadow-neo hover:clean-shadow-md transition-all active:shadow-none"
           >
             <span className="material-symbols-outlined text-xl">logout</span>
             <span className="hidden md:inline">Logout</span>
@@ -109,6 +112,40 @@ export default function Layout({ children, onLogout }) {
           </div>
         </div>
       </nav>
+      
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setShowLogoutModal(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white border-3 border-gray-900 rounded-xl shadow-neo p-6 max-w-sm w-full animate-fade-in">
+            <h2 className="text-xl font-black text-gray-800 mb-3">Konfirmasi Logout</h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Apakah Anda yakin ingin keluar dari aplikasi?
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-4 py-2.5 bg-white text-gray-800 font-bold border-3 border-gray-900 rounded-lg shadow-neo hover:clean-shadow-md transition-all"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2.5 bg-red-500 text-white font-bold border-3 border-gray-900 rounded-lg shadow-neo hover:clean-shadow-md transition-all"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
