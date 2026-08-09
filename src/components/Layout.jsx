@@ -30,8 +30,8 @@ export default function Layout({ children, onLogout }) {
       <header className="bg-white border-b-3 border-gray-900 shadow-neo sticky top-0 z-50">
         <div className="px-4 md:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary-green border-3 border-gray-900 flex items-center justify-center font-bold text-xl text-gray-800">
-              RA
+            <div className="w-12 h-12 bg-white border-3 border-gray-900 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0">
+              <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="font-bold text-xl text-gray-800">Absensi Digital</h1>
