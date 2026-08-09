@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://api.raudhatulyatama.sch.id/api/v1',
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 30000, // 30s timeout to prevent hanging
   headers: {
     'Content-Type': 'application/json',
