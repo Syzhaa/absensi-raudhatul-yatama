@@ -26,10 +26,16 @@ export default function Layout({ children, onLogout }) {
 
   return (
     <div className="min-h-screen">
-      {/* Header - Hidden on Mobile */}
-      <header className="hidden md:block bg-white border-b-3 border-gray-900 shadow-neo sticky top-0 z-50">
-        <div className="px-4 md:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {/* Header - Minimalist Mobile, Full Desktop */}
+      <header className="bg-white border-b-3 border-gray-900 shadow-neo sticky top-0 z-50">
+        <div className="px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
+          {/* Mobile: Simple Title */}
+          <div className="md:hidden">
+            <h1 className="font-black text-xl text-gray-800 uppercase tracking-tight">Dashboard</h1>
+          </div>
+          
+          {/* Desktop: Logo + Full Title */}
+          <div className="hidden md:flex items-center gap-3">
             <div className="w-12 h-12 bg-white border-3 border-gray-900 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0">
               <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain" />
             </div>
