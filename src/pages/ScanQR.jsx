@@ -11,6 +11,7 @@ export default function ScanQR() {
   const html5QrCodeRef = useRef(null);
   const restartTimerRef = useRef(null);
   const lastScannedRef = useRef(null);
+  const scanTypeRef = useRef(null);
   const queryClient = useQueryClient();
 
   // Fetch recent logs
@@ -19,6 +20,10 @@ export default function ScanQR() {
     queryFn: () => attendanceService.getRecentLogs(5),
     refetchInterval: 10000, // refresh every 10s
   });
+
+  useEffect(() => {
+    scanTypeRef.current = scanType;
+  }, [scanType]);
 
   // Cleanup on unmount: stop camera + clear restart timer (prevent memory leak)
   useEffect(() => {
@@ -29,16 +34,13 @@ export default function ScanQR() {
   }, []);
 
   const scanMutation = useMutation({
-    mutationFn: (uuid) => attendanceService.scan(uuid, scanType),
+    mutationFn: (uuid) => attendanceService.scan(uuid, scanTypeRef.current),
     onSuccess: (data) => {
-      setResult({ success: true, type: data.data.type, data: data.data });
+      const activeScanType = scanTypeRef.current;
+      setResult({ success: true, type: data.data.type, data: data.data, scanType: activeScanType });
       stopScanning();
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
-      restartTimerRef.current = setTimeout(() => {
-        setResult(null);
-        setCameraError(null);
-        startScanning();
-      }, 3500);
+      queryClient.invalidateQueries({ queryKey: ['recentLogs'] });
     },
     onError: (error) => {
       setResult({ success: false, message: error.response?.data?.message || 'Scan gagal' });
@@ -84,6 +86,7 @@ export default function ScanQR() {
   useEffect(() => { return () => { stopScanning(); }; }, []);
 
   const handleNewScan = async () => {
+    if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
     await stopScanning();
     setResult(null);
     setCameraError(null);
@@ -91,10 +94,16 @@ export default function ScanQR() {
     lastScannedRef.current = null;
   };
 
+  const resultScanType = result?.scanType || scanType;
+  const isResultCheckIn = resultScanType === 'check_in';
   const personName = result?.data?.type === 'student' ? result?.data?.student?.nama : result?.data?.teacher?.nama;
+  const personNumber = result?.data?.student?.nis || result?.data?.student?.nisn || result?.data?.teacher?.nip || '-';
+  const resultTime = isResultCheckIn ? result?.data?.attendance?.check_in : result?.data?.attendance?.check_out;
+  const displayTime = resultTime ? resultTime.slice(0, 5) : new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  const displayDate = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
-    <div className="flex items-center justify-center px-4 py-6">
+    <div className="flex items-center justify-center px-4 py-4 pb-28 md:pb-6">
       <div className="w-full max-w-2xl">
       {/* Scan Type Selection */}
       {!scanType && !result && (
@@ -102,7 +111,7 @@ export default function ScanQR() {
           <h1 className="text-2xl md:text-3xl font-black text-gray-800 text-center uppercase tracking-tight">Pilih Jenis Absensi</h1>
           <div className="grid grid-cols-2 gap-4 md:gap-6">
             <button
-              onClick={() => { setScanType('check_in'); startScanning(); }}
+              onClick={() => { scanTypeRef.current = 'check_in'; setScanType('check_in'); startScanning(); }}
               className="bg-primary-green border-3 border-gray-900 rounded-xl p-6 flex flex-col items-center justify-center gap-3 hover:clean-shadow-md transition-all active:shadow-none"
             >
               <span className="material-symbols-outlined text-5xl text-gray-800">login</span>
@@ -112,7 +121,7 @@ export default function ScanQR() {
               </div>
             </button>
             <button
-              onClick={() => { setScanType('check_out'); startScanning(); }}
+              onClick={() => { scanTypeRef.current = 'check_out'; setScanType('check_out'); startScanning(); }}
               className="bg-primary-purple border-3 border-gray-900 rounded-xl p-6 flex flex-col items-center justify-center gap-3 hover:clean-shadow-md transition-all active:shadow-none"
             >
               <span className="material-symbols-outlined text-5xl text-gray-800">logout</span>
@@ -148,31 +157,33 @@ export default function ScanQR() {
       {scanType && !result && (
         <div className="space-y-4">
           {/* Toggle Tabs: MASUK / PULANG */}
-          <div className="flex gap-2 p-1 bg-gray-100 border-3 border-gray-900 rounded-full">
+          <div className="flex gap-1.5 p-1 bg-white/80 border-3 border-gray-900 rounded-full shadow-neo-sm">
             <button
-              onClick={() => setScanType('check_in')}
-              className={`flex-1 py-2.5 px-4 font-black text-sm md:text-base transition-all rounded-full ${
+              onClick={() => { scanTypeRef.current = 'check_in'; setScanType('check_in'); }}
+              className={`flex-1 py-2.5 px-4 font-black text-sm md:text-base transition-all rounded-full flex items-center justify-center gap-1.5 ${
                 scanType === 'check_in'
                   ? 'bg-primary-green text-gray-800 shadow-neo'
-                  : 'bg-transparent text-gray-600'
+                  : 'bg-gray-100/80 text-gray-600'
               }`}
             >
+              <span className="material-symbols-outlined text-lg">login</span>
               MASUK
             </button>
             <button
-              onClick={() => setScanType('check_out')}
-              className={`flex-1 py-2.5 px-4 font-black text-sm md:text-base transition-all rounded-full ${
+              onClick={() => { scanTypeRef.current = 'check_out'; setScanType('check_out'); }}
+              className={`flex-1 py-2.5 px-4 font-black text-sm md:text-base transition-all rounded-full flex items-center justify-center gap-1.5 ${
                 scanType === 'check_out'
-                  ? 'bg-primary-purple text-gray-800 shadow-neo'
-                  : 'bg-transparent text-gray-600'
+                  ? 'bg-primary-green text-gray-800 shadow-neo'
+                  : 'bg-gray-100/80 text-gray-600'
               }`}
             >
+              <span className="material-symbols-outlined text-lg">logout</span>
               PULANG
             </button>
           </div>
 
           {/* Camera Viewfinder with Scanner */}
-          <div className="relative w-full aspect-square md:aspect-video bg-black border-3 border-gray-900 rounded-2xl overflow-hidden">
+          <div className="relative w-full aspect-square sm:aspect-[4/3] bg-gray-900 border-3 border-gray-900 rounded-2xl overflow-hidden shadow-neo-lg">
             {/* QR Reader */}
             <div id="qr-reader" className="w-full h-full" />
             
@@ -191,7 +202,7 @@ export default function ScanQR() {
             {/* Animated Scanning Line */}
             {scanning && (
               <div className="absolute inset-0 pointer-events-none">
-                <div className="animate-scan-line h-1 bg-gradient-to-b from-transparent via-primary-green to-transparent absolute w-full"></div>
+                <div className="animate-scan-line h-1 bg-primary-green absolute w-full shadow-[0_0_18px_rgba(177,224,74,0.9)]"></div>
               </div>
             )}
           </div>
@@ -200,10 +211,10 @@ export default function ScanQR() {
           {scanning && (
             <button
               onClick={stopScanning}
-              className="w-full bg-red-500 text-white font-black py-3 border-3 border-gray-900 rounded-full shadow-neo hover:clean-shadow-md transition-all flex items-center justify-center gap-2"
+              className="w-full bg-white text-gray-800 font-black py-3 border-3 border-gray-900 rounded-full shadow-neo hover:clean-shadow-md transition-all flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined">visibility_off</span>
-              Hentikan Scan
+              Stop Scan
             </button>
           )}
         </div>
@@ -219,61 +230,45 @@ export default function ScanQR() {
           />
           
           {/* Modal Content */}
-          <div className="relative bg-white border-4 border-gray-900 rounded-3xl shadow-neo-heavy p-6 md:p-8 max-w-sm w-full animate-fade-in">
+          <div className="relative bg-white border-4 border-gray-900 rounded-3xl shadow-neo-xl p-6 pt-10 md:p-8 md:pt-10 max-w-sm w-full animate-fade-in">
             {/* Icon Checkmark (partially outside) */}
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
-              <span className="material-symbols-outlined text-6xl text-primary-green bg-white border-4 border-gray-900 rounded-full p-2">
-                check_circle
-              </span>
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-16 h-16 bg-primary-green border-4 border-gray-900 rounded-full flex items-center justify-center shadow-neo">
+              <span className="material-symbols-outlined text-4xl text-white">check</span>
             </div>
             
             {/* Title */}
-            <h2 className="font-black text-2xl text-gray-800 text-center mb-6 mt-4 uppercase tracking-tight">
-              {result.data.type === 'student' ? 'BERHASIL ABSEN SISWA' : 'BERHASIL ABSEN GURU'}
+            <h2 className="font-black text-2xl text-gray-800 text-center mb-6 uppercase tracking-tight leading-tight">
+              BERHASIL ABSEN {isResultCheckIn ? 'MASUK' : 'PULANG'}
             </h2>
             
             {/* Details */}
-            <div className="space-y-3 mb-8">
-              <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
-                <span className="font-bold text-sm text-gray-600 uppercase">Name</span>
-                <span className="font-black text-base text-gray-800">{personName}</span>
+            <div className="space-y-3 mb-8 text-sm">
+              <div className="grid grid-cols-[64px_10px_1fr] items-start gap-2 border-b-2 border-gray-200 pb-2">
+                <span className="font-bold text-gray-600">Name</span>
+                <span className="font-bold text-gray-600">:</span>
+                <span className="font-black text-gray-800 text-right leading-tight">{personName}</span>
               </div>
-              <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
-                <span className="font-bold text-sm text-gray-600 uppercase">
-                  {result.data.type === 'student' ? 'NIS' : 'NIP'}
-                </span>
-                <span className="font-black text-base text-gray-800">
-                  {result.data.student?.nis || result.data.teacher?.nip || '-'}
-                </span>
+              <div className="grid grid-cols-[64px_10px_1fr] items-start gap-2 border-b-2 border-gray-200 pb-2">
+                <span className="font-bold text-gray-600">{result.data.type === 'student' ? 'NIS' : 'NIP'}</span>
+                <span className="font-bold text-gray-600">:</span>
+                <span className="font-black text-gray-800 text-right">{personNumber}</span>
               </div>
-              <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
-                <span className="font-bold text-sm text-gray-600 uppercase">Time</span>
-                <span className="font-black text-base text-gray-800">
-                  {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
-                </span>
+              <div className="grid grid-cols-[64px_10px_1fr] items-start gap-2 border-b-2 border-gray-200 pb-2">
+                <span className="font-bold text-gray-600">Time</span>
+                <span className="font-bold text-gray-600">:</span>
+                <span className="font-black text-gray-800 text-right">{displayTime} WIB</span>
               </div>
-              <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
-                <span className="font-bold text-sm text-gray-600 uppercase">Date</span>
-                <span className="font-black text-base text-gray-800">
-                  {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
-              </div>
-              <div className="flex items-center justify-between border-b-2 border-gray-200 pb-2">
-                <span className="font-bold text-sm text-gray-600 uppercase">Status</span>
-                <span className={`font-black text-sm px-3 py-1 rounded-full ${
-                  scanType === 'check_in' 
-                    ? 'bg-primary-green text-gray-800' 
-                    : 'bg-primary-purple text-gray-800'
-                }`}>
-                  {scanType === 'check_in' ? 'MASUK' : 'PULANG'}
-                </span>
+              <div className="grid grid-cols-[64px_10px_1fr] items-start gap-2 border-b-2 border-gray-200 pb-2">
+                <span className="font-bold text-gray-600">Date</span>
+                <span className="font-bold text-gray-600">:</span>
+                <span className="font-black text-gray-800 text-right leading-tight">{displayDate}</span>
               </div>
             </div>
             
             {/* Close Button */}
             <button 
               onClick={handleNewScan}
-              className="w-full bg-gray-100 text-gray-800 font-black py-3 border-3 border-gray-900 rounded-full shadow-neo hover:clean-shadow-md transition-all"
+              className="w-full bg-white text-gray-800 font-black py-3 border-3 border-gray-900 rounded-full shadow-neo hover:clean-shadow-md transition-all"
             >
               TUTUP
             </button>

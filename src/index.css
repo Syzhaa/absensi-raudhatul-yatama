@@ -139,12 +139,18 @@
 }
 
 @layer utilities {
+  .neo-btn {
+    @apply transition-all duration-100 hover-lift active-press;
+  }
+
   /* Scanning line animation */
   @keyframes scan-line {
-    0% { top: 0; }
-    100% { top: 100%; }
+    0% { top: 10%; opacity: 0.65; }
+    50% { opacity: 1; }
+    100% { top: 90%; opacity: 0.65; }
   }
   
   .animate-scan-line {
-    animation: scan-line 2s ease-in-out infinite;
+    animation: scan-line 1.8s ease-in-out infinite alternate;
   }
+}
