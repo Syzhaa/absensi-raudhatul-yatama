@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { studentService } from '../services';
+import Modal from '../components/Modal';
 import QRCode from 'qrcode';
 
 export default function Students() {
@@ -179,12 +180,13 @@ export default function Students() {
         </div>
       </div>
 
-      {showForm && (
-        <div className="card">
-          <h2 className="text-2xl font-bold mb-4">
-            {editingStudent ? 'Edit Siswa' : 'Tambah Siswa'}
-          </h2>
-          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Modal
+        isOpen={showForm}
+        onClose={() => resetForm()}
+        title={editingStudent ? 'Edit Siswa' : 'Tambah Siswa'}
+        size="lg"
+      >
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block font-bold mb-2">Lembaga *</label>
               <select
@@ -321,8 +323,7 @@ export default function Students() {
               </button>
             </div>
           </form>
-        </div>
-      )}
+        </Modal>
 
       <div className="card overflow-x-auto">
         <table className="w-full">
