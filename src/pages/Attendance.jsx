@@ -37,14 +37,30 @@ export default function Attendance() {
   const queryClient = useQueryClient();
   const eventSourceRef = useRef(null);
 
-  const { data: studentData } = useQuery({
+  const { data: studentData, error: studentError } = useQuery({
     queryKey: ['attendance_students', selectedDate],
-    queryFn: () => api.get('/attendance/logs/students', { params: { date: selectedDate } }),
+    queryFn: async () => {
+      try {
+        const res = await api.get('/attendance/logs/students', { params: { date: selectedDate } });
+        return res.data;
+      } catch (err) {
+        console.error('Student attendance fetch failed:', err);
+        return [];
+      }
+    },
   });
 
-  const { data: teacherData } = useQuery({
+  const { data: teacherData, error: teacherError } = useQuery({
     queryKey: ['attendance_teachers', selectedDate],
-    queryFn: () => api.get('/attendance/logs/teachers', { params: { date: selectedDate } }),
+    queryFn: async () => {
+      try {
+        const res = await api.get('/attendance/logs/teachers', { params: { date: selectedDate } });
+        return res.data;
+      } catch (err) {
+        console.error('Teacher attendance fetch failed:', err);
+        return [];
+      }
+    },
   });
 
   // Combine + sort newest first by created_at (fallback: id desc)
@@ -70,16 +86,19 @@ export default function Attendance() {
     const baseURL = api.defaults.baseURL || '';
     const url = `${baseURL}/attendance/logs/stream?date=${selectedDate}`;
 
-    eventSourceRef.current = new EventSource(url);
-
-    eventSourceRef.current.onmessage = () => {
-      queryClient.invalidateQueries(['attendance_students']);
-      queryClient.invalidateQueries(['attendance_teachers']);
-    };
-
-    eventSourceRef.current.onerror = () => {
-      eventSourceRef.current?.close();
-    };
+    try {
+      eventSourceRef.current = new EventSource(url);
+      eventSourceRef.current.onmessage = () => {
+        queryClient.invalidateQueries(['attendance_students']);
+        queryClient.invalidateQueries(['attendance_teachers']);
+      };
+      eventSourceRef.current.onerror = (err) => {
+        console.warn('SSE stream error:', err);
+        eventSourceRef.current?.close();
+      };
+    } catch (err) {
+      console.warn('SSE connection failed, real-time updates disabled:', err);
+    }
 
     return () => {
       eventSourceRef.current?.close();
