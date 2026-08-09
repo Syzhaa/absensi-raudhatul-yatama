@@ -74,29 +74,33 @@ export default function Layout({ children, onLogout }) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-6 pb-24 md:pb-6">
+        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
           {children}
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t-3 border-gray-900 z-50">
-        <div className="flex">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex-1 flex flex-col items-center gap-1 py-3 border-r-3 border-gray-900 last:border-r-0 transition-colors ${
-                  isActive ? 'bg-primary-green text-gray-800' : 'bg-white text-gray-800 hover:bg-gray-50'
-                }`}
-              >
-                <span className="material-symbols-outlined text-2xl">{item.icon}</span>
-                <span className="text-xs font-bold text-center">{item.label}</span>
-              </Link>
-            );
-          })}
+      {/* Mobile Bottom Navigation - Floating Telegram Style */}
+      <nav className="md:hidden fixed bottom-4 left-4 right-4 z-50">
+        <div className="bg-white border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden">
+          <div className="flex">
+            {menuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all ${
+                    isActive 
+                      ? 'bg-primary-green text-gray-800' 
+                      : 'bg-white text-gray-800 hover:bg-gray-50'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-xl">{item.icon}</span>
+                  <span className="text-[10px] font-bold text-center leading-tight">{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </nav>
     </div>
