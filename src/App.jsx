@@ -72,14 +72,14 @@ function App() {
   }
 
   return (
-    <Layout onLogout={() => setIsAuthenticated(false)}>
+    <Layout>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/scan" element={<ScanQR />} />
         <Route path="/students" element={<Students />} />
         <Route path="/teachers" element={<Teachers />} />
         <Route path="/attendance" element={<Attendance />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/settings" element={<Settings onLogout={() => setIsAuthenticated(false)} />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

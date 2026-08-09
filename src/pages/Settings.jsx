@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
+import { authService } from '../services';
 
 const settingsService = {
   getAll: async () => {
@@ -17,9 +18,22 @@ const settingsService = {
   },
 };
 
-export default function Settings() {
+export default function Settings({ onLogout }) {
   const [selectedLembaga, setSelectedLembaga] = useState('MA');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const queryClient = useQueryClient();
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('auth_token');
+      setShowLogoutModal(false);
+      if (onLogout) onLogout();
+    }
+  };
 
   const { data: settingsData, isLoading } = useQuery({
     queryKey: ['settings', selectedLembaga],
@@ -315,6 +329,28 @@ export default function Settings() {
             <li>• Scan ditolak di luar jam buka dan jam tutup operasional.</li>
           </ul>
         </div>
+
+        {/* Logout Account Section */}
+        <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 shadow-neo space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-red-100 border-2 border-gray-900 rounded-full flex items-center justify-center text-red-600 flex-shrink-0">
+              <span className="material-symbols-outlined text-xl">logout</span>
+            </div>
+            <div>
+              <h3 className="font-black text-base md:text-lg text-gray-900 tracking-tight">Keluar Akun</h3>
+              <p className="text-xs text-gray-500 font-medium">Akhiri sesi login admin di perangkat ini</p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowLogoutModal(true)}
+            className="w-full py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-black text-sm md:text-base rounded-xl border-2 border-gray-900 shadow-neo transition-all flex items-center justify-center gap-2 active:translate-y-0.5"
+          >
+            <span className="material-symbols-outlined text-xl">logout</span>
+            <span>Logout / Keluar</span>
+          </button>
+        </div>
       </form>
 
       {/* 5. Sticky Submit Button (Fixed above Floating Bottom Nav) */}
@@ -329,6 +365,46 @@ export default function Settings() {
           <span>{updateMutation.isPending ? 'Menyimpan...' : 'Simpan Pengaturan'}</span>
         </button>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setShowLogoutModal(false)}
+          />
+          
+          <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-6 max-w-sm w-full space-y-4 z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-100 border-2 border-gray-900 rounded-full flex items-center justify-center text-red-600 flex-shrink-0">
+                <span className="material-symbols-outlined text-2xl">warning</span>
+              </div>
+              <h2 className="text-xl font-black text-gray-900">Konfirmasi Logout</h2>
+            </div>
+            
+            <p className="text-sm text-gray-600 font-medium">
+              Apakah Anda yakin ingin keluar dari akun admin ini?
+            </p>
+            
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold border-2 border-gray-900 rounded-xl transition-all"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex-1 py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-bold border-2 border-gray-900 rounded-xl shadow-neo transition-all"
+              >
+                Ya, Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
