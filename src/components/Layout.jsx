@@ -5,6 +5,16 @@ import { authService } from '../services';
 export default function Layout({ children, onLogout }) {
   const location = useLocation();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const pageTitles = {
+    '/': 'Dashboard',
+    '/scan': 'Scan QR',
+    '/students': 'Data Siswa',
+    '/teachers': 'Data Guru',
+    '/attendance': 'Absensi',
+    '/settings': 'Pengaturan',
+  };
+  const pageTitle = pageTitles[location.pathname] || 'Dashboard';
   
   const handleLogout = async () => {
     try {
@@ -34,7 +44,7 @@ export default function Layout({ children, onLogout }) {
         <div className="px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
           {/* Mobile: Simple Title */}
           <div className="md:hidden">
-            <h1 className="font-black text-xl text-gray-800 uppercase tracking-tight">Dashboard</h1>
+            <h1 className="font-black text-xl text-gray-800 uppercase tracking-tight">{pageTitle}</h1>
           </div>
           
           {/* Desktop: Logo + Full Title */}

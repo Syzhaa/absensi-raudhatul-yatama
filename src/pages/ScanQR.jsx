@@ -87,33 +87,31 @@ export default function ScanQR() {
   const personName = result?.data?.type === 'student' ? result?.data?.student?.nama : result?.data?.teacher?.nama;
 
   return (
-    <div className="min-h-[calc(100vh-180px)] flex items-center justify-center px-4">
-      <div className="w-full max-w-4xl">
+    <div className="flex items-center justify-center px-4 py-6">
+      <div className="w-full max-w-2xl">
       {/* Scan Type Selection */}
       {!scanType && !result && (
-        <div className="space-y-10">
-          <h1 className="text-3xl font-bold text-gray-800 text-center tracking-tight">Pilih Jenis Absensi</h1>
-          <div className="flex flex-wrap justify-center gap-8">
+        <div className="space-y-6">
+          <h1 className="text-2xl md:text-3xl font-black text-gray-800 text-center uppercase tracking-tight">Pilih Jenis Absensi</h1>
+          <div className="grid grid-cols-2 gap-4 md:gap-6">
             <button
               onClick={() => { setScanType('check_in'); startScanning(); }}
-              className="w-[280px] h-[220px] rounded-lg bg-primary-green clean-border clean-shadow-md flex flex-col items-center justify-center gap-5 hover-lift active-press transition-all cursor-pointer relative overflow-hidden group"
+              className="bg-primary-green border-3 border-gray-900 rounded-xl p-6 flex flex-col items-center justify-center gap-3 hover:clean-shadow-md transition-all active:shadow-none"
             >
-              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
-              <div className="sphere-green z-10"></div>
-              <div className="text-center z-10">
-                <div className="text-white text-2xl font-bold tracking-wide" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.2)'}}>MASUK</div>
-                <div className="text-white text-sm font-medium mt-1 opacity-90">Check-in</div>
+              <span className="material-symbols-outlined text-5xl text-gray-800">login</span>
+              <div className="text-center">
+                <div className="text-gray-800 font-black text-lg md:text-xl">MASUK</div>
+                <div className="text-gray-700 text-xs md:text-sm font-bold">Check-in</div>
               </div>
             </button>
             <button
               onClick={() => { setScanType('check_out'); startScanning(); }}
-              className="w-[280px] h-[220px] rounded-lg bg-primary-purple clean-border clean-shadow-md flex flex-col items-center justify-center gap-5 hover-lift active-press transition-all cursor-pointer relative overflow-hidden group"
+              className="bg-primary-purple border-3 border-gray-900 rounded-xl p-6 flex flex-col items-center justify-center gap-3 hover:clean-shadow-md transition-all active:shadow-none"
             >
-              <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
-              <div className="sphere-blue z-10"></div>
-              <div className="text-center z-10">
-                <div className="text-white text-2xl font-bold tracking-wide" style={{textShadow: '1px 1px 2px rgba(0,0,0,0.2)'}}>PULANG</div>
-                <div className="text-white text-sm font-medium mt-1 opacity-90">Check-out</div>
+              <span className="material-symbols-outlined text-5xl text-gray-800">logout</span>
+              <div className="text-center">
+                <div className="text-gray-800 font-black text-lg md:text-xl">PULANG</div>
+                <div className="text-gray-700 text-xs md:text-sm font-bold">Check-out</div>
               </div>
             </button>
           </div>
