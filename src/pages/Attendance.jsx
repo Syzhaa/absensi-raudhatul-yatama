@@ -5,26 +5,67 @@ import api from '../services/api';
 function AttendanceItem({ item }) {
   const isStudent = item.role === 'student';
   const person = isStudent ? item.student : item.teacher;
-  const label = isStudent ? `${person?.kelas || ''} (Siswa)` : `${person?.nip || ''} (Guru)`;
+  const subtitle = isStudent 
+    ? `Kelas ${person?.kelas || '-'} (${item.lembaga?.toUpperCase() || 'MA'})`
+    : `${person?.nip ? 'NIP: ' + person.nip : 'Guru'} (${item.lembaga?.toUpperCase() || 'MA'})`;
+
   return (
-    <div className="bg-white clean-border clean-shadow-sm p-3 space-y-1">
-      <div className="flex justify-between items-start gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-base text-gray-800 truncate">{person?.nama}</p>
-          <p className="font-normal text-sm text-gray-600 truncate">{label}</p>
+    <div className="bg-white border-2 md:border-3 border-gray-900 rounded-xl md:rounded-2xl p-3.5 md:p-4 shadow-neo transition-all space-y-3">
+      {/* Top Row: Name, Role Badge, Status Badge */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-bold text-base md:text-lg text-gray-900 truncate leading-snug">
+              {person?.nama || 'Tanpa Nama'}
+            </h3>
+            
+            {/* Role Badge */}
+            <span className={`px-2 py-0.5 text-[11px] font-bold rounded-md border ${
+              isStudent ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-purple-100 text-purple-800 border-purple-300'
+            }`}>
+              {isStudent ? 'Siswa' : 'Guru'}
+            </span>
+          </div>
+
+          <p className="text-xs text-gray-500 font-medium">
+            {subtitle}
+          </p>
         </div>
-        <span className={'px-2 py-0.5 text-xs font-bold clean-border flex-shrink-0 ' +
-          (item.status === 'hadir' ? 'bg-primary-green text-gray-800' : 'bg-yellow-200 text-gray-800')
-        }>
-          {item.status?.toUpperCase()}
+
+        {/* Status Badge */}
+        <span className={`px-2.5 py-1 text-xs font-black rounded-md border-2 border-gray-900 flex-shrink-0 ${
+          item.status === 'hadir' 
+            ? 'bg-primary-green text-gray-900' 
+            : item.status === 'terlambat'
+            ? 'bg-amber-300 text-gray-900'
+            : 'bg-red-200 text-red-900'
+        }`}>
+          {item.status?.toUpperCase() || 'HADIR'}
         </span>
       </div>
-      <div className="flex gap-2 text-sm flex-wrap">
-        {item.check_in && (
-          <span className="bg-primary-green clean-border px-2 py-0.5 font-mono text-gray-800 font-bold">In {item.check_in}</span>
+
+      {/* Bottom Row: Check-in / Check-out Time Badges */}
+      <div className="flex items-center gap-2 pt-2 border-t border-gray-100 flex-wrap">
+        {item.check_in ? (
+          <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-lg text-xs font-bold">
+            <span className="material-symbols-outlined text-sm text-emerald-700">login</span>
+            Masuk: <strong className="font-black text-gray-900">{item.check_in}</strong>
+          </span>
+        ) : (
+          <span className="px-2.5 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs font-medium">
+            Belum Masuk
+          </span>
         )}
-        {item.check_out && (
-          <span className="bg-primary-purple clean-border px-2 py-0.5 font-mono text-white font-bold">Out {item.check_out}</span>
+
+        {item.check_out ? (
+          <span className="flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-xs font-bold">
+            <span className="material-symbols-outlined text-sm text-purple-700">logout</span>
+            Pulang: <strong className="font-black text-gray-900">{item.check_out}</strong>
+          </span>
+        ) : (
+          <span className="px-2.5 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs font-medium">
+            Belum Pulang
+          </span>
         )}
       </div>
     </div>
@@ -33,11 +74,12 @@ function AttendanceItem({ item }) {
 
 export default function Attendance() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [filter, setFilter] = useState('all'); // all | student | teacher
+  const [roleFilter, setRoleFilter] = useState('all'); // all | student | teacher
+  const [statusFilter, setStatusFilter] = useState('all'); // all | masuk | pulang
   const queryClient = useQueryClient();
   const eventSourceRef = useRef(null);
 
-  const { data: studentData, error: studentError } = useQuery({
+  const { data: studentData, isLoading: isStudentLoading } = useQuery({
     queryKey: ['attendance_students', selectedDate],
     queryFn: async () => {
       try {
@@ -50,7 +92,7 @@ export default function Attendance() {
     },
   });
 
-  const { data: teacherData, error: teacherError } = useQuery({
+  const { data: teacherData, isLoading: isTeacherLoading } = useQuery({
     queryKey: ['attendance_teachers', selectedDate],
     queryFn: async () => {
       try {
@@ -63,14 +105,25 @@ export default function Attendance() {
     },
   });
 
-  // Combine + sort newest first by created_at (fallback: id desc)
+  const isLoading = isStudentLoading || isTeacherLoading;
+
+  // Combine + sort newest first
   const allItems = [
     ...(studentData?.data || []).map((a) => ({ ...a, role: 'student' })),
     ...(teacherData?.data || []).map((a) => ({ ...a, role: 'teacher' })),
   ];
 
   const records = allItems
-    .filter((a) => filter === 'all' || a.role === filter)
+    .filter((a) => {
+      // Role filter
+      if (roleFilter !== 'all' && a.role !== roleFilter) return false;
+      
+      // Status filter
+      if (statusFilter === 'masuk' && !a.check_in) return false;
+      if (statusFilter === 'pulang' && !a.check_out) return false;
+      
+      return true;
+    })
     .sort((a, b) => {
       const ta = new Date(a.created_at || 0).getTime();
       const tb = new Date(b.created_at || 0).getTime();
@@ -78,7 +131,7 @@ export default function Attendance() {
       return (b.id || 0) - (a.id || 0);
     });
 
-  // SSE realtime updates - invalidates all queries when new attendance arrives
+  // SSE realtime updates
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     if (!token) return;
@@ -107,35 +160,103 @@ export default function Attendance() {
 
   return (
     <div className="space-y-4">
-      {/* Filter bar: date + dropdown */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      {/* Header Compact + Modern Date Picker */}
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 shadow-neo flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
+          <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight">Log Absensi</h1>
+          <span className="px-2.5 py-0.5 text-xs font-bold bg-gray-100 text-gray-700 border-2 border-gray-900 rounded-full">
+            Total: {records.length}
+          </span>
+        </div>
+
+        {/* Date Picker with Left Icon */}
+        <div className="relative inline-flex items-center w-full sm:w-auto">
+          <span className="material-symbols-outlined absolute left-3.5 text-gray-600 pointer-events-none text-xl z-10">
+            calendar_month
+          </span>
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="input w-auto"
+            className="w-full sm:w-auto pl-10 pr-4 py-2.5 bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-sm text-gray-800 shadow-neo focus:border-primary-green focus:bg-white focus:outline-none min-h-[44px] transition-all cursor-pointer"
           />
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="input w-auto cursor-pointer"
-          >
-            <option value="all">Semua</option>
-            <option value="student">Siswa</option>
-            <option value="teacher">Guru</option>
-          </select>
         </div>
-        <p className="font-normal text-sm text-gray-600">
-          {records.length} absensi
-        </p>
       </div>
 
-      {/* Card list */}
-      <div className="space-y-2">
-        {records.length === 0 ? (
-          <div className="card text-center py-10">
-            <p className="font-normal text-sm text-gray-600">Belum ada data absensi pada tanggal {selectedDate}</p>
+      {/* Two-Tier Filter Container */}
+      <div className="space-y-3">
+        {/* Tier 1: Segmented Control [ Siswa | Guru ] (iOS Style 50/50 Split) */}
+        <div className="grid grid-cols-2 p-1 bg-gray-100 border-2 border-gray-900 rounded-full shadow-neo">
+          <button
+            type="button"
+            onClick={() => setRoleFilter(roleFilter === 'student' ? 'all' : 'student')}
+            className={`py-2 px-4 rounded-full text-xs md:text-sm font-black transition-all text-center select-none flex items-center justify-center gap-1.5 ${
+              roleFilter === 'student'
+                ? 'bg-primary-green text-gray-900 shadow-sm border border-gray-900'
+                : 'text-gray-600 hover:text-gray-900 font-bold'
+            }`}
+          >
+            <span className="material-symbols-outlined text-lg">groups</span>
+            <span>Siswa</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setRoleFilter(roleFilter === 'teacher' ? 'all' : 'teacher')}
+            className={`py-2 px-4 rounded-full text-xs md:text-sm font-black transition-all text-center select-none flex items-center justify-center gap-1.5 ${
+              roleFilter === 'teacher'
+                ? 'bg-primary-green text-gray-900 shadow-sm border border-gray-900'
+                : 'text-gray-600 hover:text-gray-900 font-bold'
+            }`}
+          >
+            <span className="material-symbols-outlined text-lg">badge</span>
+            <span>Guru</span>
+          </button>
+        </div>
+
+        {/* Tier 2: Status Filter Chips [ Semua | Masuk | Pulang ] */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1 flex-shrink-0">
+            Status:
+          </span>
+          {[
+            { id: 'all', label: 'Semua' },
+            { id: 'masuk', label: 'Masuk' },
+            { id: 'pulang', label: 'Pulang' },
+          ].map((chip) => {
+            const isActive = statusFilter === chip.id;
+            return (
+              <button
+                key={chip.id}
+                onClick={() => setStatusFilter(chip.id)}
+                className={`px-4 py-1.5 rounded-full text-xs md:text-sm whitespace-nowrap transition-all select-none ${
+                  isActive
+                    ? 'bg-primary-green text-gray-900 font-black border-2 border-gray-900 shadow-neo'
+                    : 'bg-gray-100 text-gray-700 font-bold border border-gray-200 hover:bg-gray-200'
+                }`}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Cards List Container with Extra Large Bottom Padding for Mobile Nav */}
+      <div className="space-y-3 pb-40 md:pb-12">
+        {isLoading ? (
+          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
+            Memuat data absensi...
+          </div>
+        ) : records.length === 0 ? (
+          /* Styled Mobile Empty State Card */
+          <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 md:p-12 text-center shadow-sm flex flex-col items-center justify-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full border border-gray-200 flex items-center justify-center mb-3">
+              <span className="material-symbols-outlined text-3xl text-gray-400">search_off</span>
+            </div>
+            <h3 className="font-bold text-base md:text-lg text-gray-800 mb-1">Belum Ada Data Absensi</h3>
+            <p className="text-xs md:text-sm text-gray-500 max-w-xs leading-relaxed">
+              Tidak ditemukan riwayat kehadiran untuk filter ini pada tanggal {selectedDate}.
+            </p>
           </div>
         ) : (
           records.map((a) => <AttendanceItem key={`${a.role}-${a.id}`} item={a} />)

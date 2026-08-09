@@ -24,7 +24,12 @@ export default function Login({ onLogin }) {
 
     try {
       const response = await authService.login(email, password);
-      localStorage.setItem('auth_token', response.data.token);
+      const token = response.data?.token || response.token || response.data?.data?.token;
+      if (token) {
+        localStorage.setItem('auth_token', token);
+      } else {
+        console.error('Token tidak ditemukan dalam respon:', response);
+      }
       
       // Remember me functionality
       if (rememberMe) {

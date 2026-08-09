@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export default function Modal({ isOpen, onClose, title, children, size = 'lg' }) {
+export default function Modal({ isOpen, onClose, title, children, footer, size = 'lg' }) {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -17,57 +17,65 @@ export default function Modal({ isOpen, onClose, title, children, size = 'lg' })
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-2xl',
-    lg: 'max-w-4xl',
-    xl: 'max-w-6xl',
+    lg: 'max-w-3xl',
+    xl: 'max-w-5xl',
   };
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-y-auto">
+    <div className="fixed inset-0 z-[60] overflow-hidden flex items-end sm:items-center justify-center">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 transition-opacity"
+        className="fixed inset-0 bg-black/50 transition-opacity animate-fade-in"
         onClick={onClose}
       />
 
-      {/* Modal Container */}
-      <div className="flex min-h-full items-end sm:items-center justify-center p-0 sm:p-4">
-        {/* Modal Content */}
-        <div 
-          className={`
-            relative w-full ${sizeClasses[size]} 
-            bg-white clean-border clean-shadow-lg
-            transform transition-all
-            
-            /* Mobile: slide from bottom, rounded top only */
-            rounded-t-2xl sm:rounded-2xl
-            max-h-[90vh] sm:max-h-[85vh]
-            
-            /* Animation */
-            animate-slide-up sm:animate-fade-in
-          `}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="sticky top-0 z-10 bg-white border-b-3 border-gray-900 px-4 sm:px-6 py-4 rounded-t-2xl">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl sm:text-2xl font-black uppercase text-gray-900">
-                {title}
-              </h2>
-              <button
-                onClick={onClose}
-                className="w-10 h-10 flex items-center justify-center clean-border bg-gray-100 hover:bg-red-400 transition-colors"
-                aria-label="Close"
-              >
-                <span className="text-2xl font-bold">×</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Body - scrollable */}
-          <div className="overflow-y-auto max-h-[calc(90vh-80px)] sm:max-h-[calc(85vh-80px)] p-4 sm:p-6">
-            {children}
-          </div>
+      {/* Bottom Sheet Container */}
+      <div 
+        className={`
+          relative w-full ${sizeClasses[size]} 
+          bg-white border-t-3 sm:border-3 border-x-3 sm:border-x-3 border-gray-900
+          shadow-neo transform transition-all
+          
+          /* Mobile: bottom sheet with rounded top corners */
+          rounded-t-[28px] sm:rounded-2xl
+          max-h-[92vh] sm:max-h-[85vh]
+          flex flex-col z-10
+          
+          /* Animation */
+          animate-slide-up sm:animate-fade-in
+        `}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Drag Handle for Mobile */}
+        <div className="w-full pt-3 pb-1 flex justify-center sm:hidden">
+          <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
         </div>
+
+        {/* Header */}
+        <div className="px-5 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+          <h2 className="text-lg sm:text-xl font-black uppercase text-gray-900 tracking-tight">
+            {title}
+          </h2>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900 border border-gray-300 flex items-center justify-center transition-colors"
+            aria-label="Close"
+          >
+            <span className="material-symbols-outlined text-xl">close</span>
+          </button>
+        </div>
+
+        {/* Scrollable Body */}
+        <div className="overflow-y-auto p-5 sm:p-6 flex-1 space-y-4">
+          {children}
+        </div>
+
+        {/* Sticky Footer if provided */}
+        {footer && (
+          <div className="p-4 sm:p-5 border-t border-gray-200 bg-white rounded-b-2xl flex-shrink-0 sticky bottom-0">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

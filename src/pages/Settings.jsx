@@ -63,7 +63,7 @@ export default function Settings() {
   });
 
   const handleSubmit = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     updateMutation.mutate(formData);
   };
 
@@ -73,250 +73,261 @@ export default function Settings() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="font-bold text-xl text-gray-800">Loading...</div>
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
+        Loading pengaturan...
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="card">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="material-symbols-outlined text-4xl text-primary">settings</span>
-          <h1 className="font-bold text-2xl text-gray-800">Pengaturan Absensi</h1>
-        </div>
-        <p className="font-normal text-sm text-gray-600">
-          Atur jam absensi, toleransi keterlambatan, dan pengaturan lainnya untuk setiap lembaga.
-        </p>
-      </div>
-
-      <div className="card">
-        <div className="mb-6">
-          <label className="block font-semibold text-base text-gray-800 mb-3">Pilih Lembaga</label>
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() => handleLembagaChange('MA')}
-              className={`flex-1 py-3 px-6 font-semibold border-3 border-gray-900 transition-all neo-btn ${
-                selectedLembaga === 'MA'
-                  ? 'bg-primary-green text-gray-800 shadow-neo'
-                  : 'bg-white text-gray-800 shadow-neo hover:clean-shadow-md'
-              }`}
-            >
-              MA (Madrasah Aliyah)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleLembagaChange('MTs')}
-              className={`flex-1 py-3 px-6 font-semibold border-3 border-gray-900 transition-all neo-btn ${
-                selectedLembaga === 'MTs'
-                  ? 'bg-primary-green text-gray-800 shadow-neo'
-                  : 'bg-white text-gray-800 shadow-neo hover:clean-shadow-md'
-              }`}
-            >
-              MTs (Madrasah Tsanawiyah)
-            </button>
+    <div className="space-y-4 pb-40 md:pb-12">
+      {/* Header Compact */}
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 shadow-neo">
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-outlined text-3xl text-gray-800">settings</span>
+          <div>
+            <h1 className="font-black text-xl md:text-2xl text-gray-800 tracking-tight">Pengaturan Absensi</h1>
+            <p className="font-medium text-xs md:text-sm text-gray-500 mt-0.5">
+              Konfigurasi jam operasional & mode testing
+            </p>
           </div>
         </div>
+      </div>
 
-        <div className="p-4 bg-yellow-200 border-3 border-gray-900 mb-6">
-          <div className="flex items-start gap-3">
-            <span className="material-symbols-outlined text-2xl flex-shrink-0 text-gray-800">info</span>
-            <div>
-              <p className="font-semibold text-base text-gray-800 mb-1">Informasi Penting</p>
-              <p className="font-normal text-sm text-gray-800">
-                Pengaturan ini akan mempengaruhi sistem absensi untuk lembaga <strong>{selectedLembaga}</strong>.
-                Pastikan jam yang diatur sesuai dengan kebijakan sekolah.
+      {/* 1. Mode Testing Card / Banner (Top Priority) */}
+      <div
+        className={`border-2 md:border-3 rounded-2xl p-4 shadow-neo transition-all ${
+          formData.test_mode
+            ? 'bg-amber-100 border-amber-500 text-amber-900'
+            : 'bg-white border-gray-900 text-gray-900'
+        }`}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className={`material-symbols-outlined text-3xl flex-shrink-0 ${
+              formData.test_mode ? 'text-amber-700' : 'text-gray-700'
+            }`}>
+              science
+            </span>
+            <div className="min-w-0">
+              <h3 className="font-black text-base md:text-lg tracking-tight">
+                Mode Testing
+              </h3>
+              <p className="text-xs text-gray-600 font-medium">
+                Simulasi absensi tanpa mengganggu data asli
               </p>
             </div>
           </div>
+
+          {/* iOS Style Toggle Switch */}
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, test_mode: !formData.test_mode })}
+            className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-gray-900 transition-colors duration-200 ease-in-out focus:outline-none ${
+              formData.test_mode ? 'bg-amber-400' : 'bg-gray-200'
+            }`}
+            role="switch"
+            aria-checked={formData.test_mode}
+          >
+            <span
+              className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white border border-gray-900 shadow transition duration-200 ease-in-out mt-0.5 ${
+                formData.test_mode ? 'translate-x-6.5' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Dynamic Warning Message when Test Mode is Active */}
+        {formData.test_mode && (
+          <div className="mt-3 p-3 bg-amber-200/80 border border-amber-400 rounded-xl text-xs md:text-sm font-bold text-amber-900 flex items-start gap-2">
+            <span className="material-symbols-outlined text-base flex-shrink-0 text-amber-800">warning</span>
+            <span>Semua pengaturan di bawah ini sekarang berjalan dalam simulasi.</span>
+          </div>
+        )}
+      </div>
+
+      {/* 3. Segmented Tabs for Lembaga Selection */}
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 shadow-neo space-y-3">
+        <label className="block font-black text-xs md:text-sm text-gray-800 uppercase tracking-wider">
+          Pilih Lembaga
+        </label>
+        
+        <div className="grid grid-cols-2 p-1 bg-gray-100 border-2 border-gray-900 rounded-full shadow-neo">
+          <button
+            type="button"
+            onClick={() => handleLembagaChange('MA')}
+            className={`py-2.5 px-4 rounded-full text-xs md:text-sm font-black transition-all text-center select-none ${
+              selectedLembaga === 'MA'
+                ? 'bg-primary-green text-gray-900 shadow-sm border border-gray-900'
+                : 'text-gray-600 hover:text-gray-900 font-bold'
+            }`}
+          >
+            MA (Madrasah Aliyah)
+          </button>
+          <button
+            type="button"
+            onClick={() => handleLembagaChange('MTs')}
+            className={`py-2.5 px-4 rounded-full text-xs md:text-sm font-black transition-all text-center select-none ${
+              selectedLembaga === 'MTs'
+                ? 'bg-primary-green text-gray-900 shadow-sm border border-gray-900'
+                : 'text-gray-600 hover:text-gray-900 font-bold'
+            }`}
+          >
+            MTs (Tsanawiyah)
+          </button>
+        </div>
+      </div>
+
+      {/* Main Settings Form */}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-6 shadow-neo space-y-4">
+          <h3 className="font-black text-sm md:text-base text-gray-800 uppercase tracking-wider border-b border-gray-100 pb-2">
+            Jam Operasional ({selectedLembaga})
+          </h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-base text-gray-800 mb-2">
+              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
                 Jam Buka Absensi *
-                <span className="font-normal text-sm font-normal text-gray-600 ml-2">
-                  (Siswa bisa mulai absen)
-                </span>
               </label>
               <input
                 type="time"
-                value={formData.attendance_open}
+                value={formData.attendance_open?.slice(0, 5)}
                 onChange={(e) =>
                   setFormData({ ...formData, attendance_open: e.target.value + ':00' })
                 }
-                className="input"
+                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all"
                 required
               />
-              <p className="font-normal text-sm text-gray-600 mt-1">
-                Contoh: 06:00 (Absensi dibuka jam 6 pagi)
-              </p>
+              <p className="text-[11px] text-gray-500 font-medium mt-1">Siswa bisa mulai scan (Contoh: 06:00)</p>
             </div>
 
             <div>
-              <label className="block font-semibold text-base text-gray-800 mb-2">
-                Batas Waktu Hadir *
-                <span className="font-normal text-sm font-normal text-gray-600 ml-2">
-                  (Batas tepat waktu)
-                </span>
+              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
+                Batas Tepat Waktu *
               </label>
               <input
                 type="time"
-                value={formData.attendance_limit}
+                value={formData.attendance_limit?.slice(0, 5)}
                 onChange={(e) =>
                   setFormData({ ...formData, attendance_limit: e.target.value + ':00' })
                 }
-                className="input"
+                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all"
                 required
               />
-              <p className="font-normal text-sm text-gray-600 mt-1">
-                Contoh: 07:30 (Batas hadir tepat waktu)
-              </p>
+              <p className="text-[11px] text-gray-500 font-medium mt-1">Batas waktu status Hadir (Contoh: 07:30)</p>
             </div>
 
             <div>
-              <label className="block font-semibold text-base text-gray-800 mb-2">
+              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
                 Mulai Terlambat *
-                <span className="font-normal text-sm font-normal text-gray-600 ml-2">
-                  (Status berubah terlambat)
-                </span>
               </label>
               <input
                 type="time"
-                value={formData.late_after}
+                value={formData.late_after?.slice(0, 5)}
                 onChange={(e) =>
                   setFormData({ ...formData, late_after: e.target.value + ':00' })
                 }
-                className="input"
+                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all"
                 required
               />
-              <p className="font-normal text-sm text-gray-600 mt-1">
-                Contoh: 07:30 (Setelah jam ini dianggap terlambat)
-              </p>
+              <p className="text-[11px] text-gray-500 font-medium mt-1">Status otomatis Terlambat (Contoh: 07:31)</p>
             </div>
 
             <div>
-              <label className="block font-semibold text-base text-gray-800 mb-2">
+              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
                 Jam Tutup Absensi *
-                <span className="font-normal text-sm font-normal text-gray-600 ml-2">
-                  (Absensi ditutup)
-                </span>
               </label>
               <input
                 type="time"
-                value={formData.attendance_close}
+                value={formData.attendance_close?.slice(0, 5)}
                 onChange={(e) =>
                   setFormData({ ...formData, attendance_close: e.target.value + ':00' })
                 }
-                className="input"
+                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all"
                 required
               />
-              <p className="font-normal text-sm text-gray-600 mt-1">
-                Contoh: 08:00 (Absensi ditutup jam 8)
-              </p>
+              <p className="text-[11px] text-gray-500 font-medium mt-1">Absensi tidak menerima scan (Contoh: 08:00)</p>
             </div>
 
             <div className="md:col-span-2">
-              <label className="block font-semibold text-base text-gray-800 mb-2">
+              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
                 Timezone *
               </label>
               <select
                 value={formData.timezone}
                 onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                className="input"
+                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all cursor-pointer"
                 required
               >
                 <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
                 <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
                 <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
               </select>
-              <p className="font-normal text-sm text-gray-600 mt-1">
-                Zona waktu sekolah (default: WITA untuk Sulawesi)
-              </p>
+              <p className="text-[11px] text-gray-500 font-medium mt-1">Zona waktu sekolah (Default: WITA)</p>
             </div>
+          </div>
+        </div>
 
-            <div className="md:col-span-2">
-              <div className="card bg-yellow-200 border-2 border-gray-900">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <label className="block font-semibold text-base text-gray-800 mb-1">
-                      🧪 Mode Testing
-                    </label>
-                    <p className="font-normal text-sm text-gray-800">
-                      Aktifkan untuk testing sistem tanpa mempengaruhi data production. 
-                      Data absensi di mode testing akan ditandai khusus.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, test_mode: !formData.test_mode })}
-                    className={`relative w-14 h-8 rounded-full border-3 border-gray-900 transition-colors ${
-                      formData.test_mode ? 'bg-primary-green' : 'bg-gray-50'
-                    }`}
-                  >
-                    <div
-                      className={`absolute top-0.5 w-6 h-6 bg-white border-2 border-gray-900 rounded-full transition-transform ${
-                        formData.test_mode ? 'translate-x-7' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-                {formData.test_mode && (
-                  <div className="mt-3 p-2 bg-white border-2 border-gray-900 font-normal text-sm text-gray-800">
-                    ⚠️ Mode testing aktif - Sistem dalam mode percobaan
-                  </div>
-                )}
+        {/* 4. Preview Pengaturan (Grid Cards 2x2) */}
+        <div className="space-y-2">
+          <h3 className="font-black text-xs md:text-sm text-gray-800 uppercase tracking-wider pl-1">
+            Preview Pengaturan Jam
+          </h3>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+            <div className="bg-white border-2 border-gray-900 rounded-2xl p-3.5 text-center shadow-neo">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jam Buka</span>
+              <div className="font-black text-xl md:text-2xl text-gray-900 mt-1">
+                {formData.attendance_open?.slice(0, 5)}
+              </div>
+            </div>
+            <div className="bg-white border-2 border-gray-900 rounded-2xl p-3.5 text-center shadow-neo">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Batas Hadir</span>
+              <div className="font-black text-xl md:text-2xl text-gray-900 mt-1">
+                {formData.attendance_limit?.slice(0, 5)}
+              </div>
+            </div>
+            <div className="bg-white border-2 border-gray-900 rounded-2xl p-3.5 text-center shadow-neo">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Terlambat</span>
+              <div className="font-black text-xl md:text-2xl text-gray-900 mt-1">
+                {formData.late_after?.slice(0, 5)}
+              </div>
+            </div>
+            <div className="bg-white border-2 border-gray-900 rounded-2xl p-3.5 text-center shadow-neo">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jam Tutup</span>
+              <div className="font-black text-xl md:text-2xl text-gray-900 mt-1">
+                {formData.attendance_close?.slice(0, 5)}
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="border-t-3 border-gray-900 pt-6">
-            <h3 className="font-bold text-xl text-gray-800 mb-3">Preview Pengaturan</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="card bg-gray-50">
-                <div className="font-normal text-sm text-gray-600">Buka Absensi</div>
-                <div className="font-bold text-xl text-gray-800">{formData.attendance_open?.slice(0, 5)}</div>
-              </div>
-              <div className="card bg-gray-50">
-                <div className="font-normal text-sm text-gray-600">Batas Hadir</div>
-                <div className="font-bold text-xl text-gray-800">{formData.attendance_limit?.slice(0, 5)}</div>
-              </div>
-              <div className="card bg-gray-50">
-                <div className="font-normal text-sm text-gray-600">Mulai Terlambat</div>
-                <div className="font-bold text-xl text-gray-800">{formData.late_after?.slice(0, 5)}</div>
-              </div>
-              <div className="card bg-gray-50">
-                <div className="font-normal text-sm text-gray-600">Tutup Absensi</div>
-                <div className="font-bold text-xl text-gray-800">{formData.attendance_close?.slice(0, 5)}</div>
-              </div>
-            </div>
-          </div>
+        {/* Catatan Info Box */}
+        <div className="bg-white border-2 border-gray-900 rounded-2xl p-4 shadow-neo space-y-2">
+          <h4 className="font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-base text-gray-700">info</span>
+            Catatan Sistem
+          </h4>
+          <ul className="space-y-1 text-xs text-gray-600 font-medium leading-relaxed">
+            <li>• Berlaku khusus untuk lembaga <strong className="text-gray-900">{selectedLembaga}</strong>.</li>
+            <li>• Status <strong className="text-emerald-700">Hadir</strong> otomatis saat scan sebelum jam batas hadir.</li>
+            <li>• Status <strong className="text-amber-700">Terlambat</strong> otomatis saat scan setelah jam mulai terlambat.</li>
+            <li>• Scan ditolak di luar jam buka dan jam tutup operasional.</li>
+          </ul>
+        </div>
+      </form>
 
-          <div className="border-t-3 border-gray-900 pt-6">
-            <button
-              type="submit"
-              disabled={updateMutation.isPending}
-              className="w-full btn-primary neo-btn disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <span className="material-symbols-outlined">save</span>
-              <span>{updateMutation.isPending ? 'Menyimpan...' : 'Simpan Pengaturan'}</span>
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <div className="card bg-purple-100">
-        <h3 className="font-bold text-xl text-white mb-2">Catatan</h3>
-        <ul className="space-y-2 font-normal text-sm text-white">
-          <li>• Pengaturan ini berlaku untuk lembaga <strong>{selectedLembaga}</strong> saja</li>
-          <li>• Status "Hadir" akan otomatis diberikan jika scan sebelum jam batas hadir</li>
-          <li>• Status "Terlambat" akan otomatis diberikan jika scan setelah jam terlambat</li>
-          <li>• Siswa tidak bisa melakukan absensi di luar jam buka dan tutup</li>
-          <li>• Timezone mempengaruhi perhitungan waktu sistem</li>
-        </ul>
+      {/* 5. Sticky Submit Button (Fixed above Floating Bottom Nav) */}
+      <div className="fixed bottom-24 left-4 right-4 md:static z-40 md:z-auto">
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={updateMutation.isPending}
+          className="w-full py-3.5 px-6 bg-primary-green text-gray-900 font-black text-base md:text-lg rounded-full border-3 border-gray-900 shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <span className="material-symbols-outlined text-2xl">save</span>
+          <span>{updateMutation.isPending ? 'Menyimpan...' : 'Simpan Pengaturan'}</span>
+        </button>
       </div>
     </div>
   );
