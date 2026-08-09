@@ -98,7 +98,7 @@
   }
   
   .card {
-    @apply bg-white clean-border clean-shadow-sm p-6;
+    @apply bg-white clean-border clean-shadow-sm p-4;
   }
   
   .input {
