@@ -9,6 +9,7 @@ export default function Login({ onLogin }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
 
@@ -134,16 +135,24 @@ export default function Login({ onLogin }) {
                 <div className="relative w-full">
                   <i className="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
                   <input
-                    className="input w-full pl-10 pr-3 py-2.5 text-sm md:text-base"
+                    className="input w-full pl-10 pr-11 py-2.5 text-sm md:text-base"
                     id="password"
                     name="password"
                     placeholder="••••••••"
                     required
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                    disabled={loading}
+                  >
+                    <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                  </button>
                 </div>
               </div>
 

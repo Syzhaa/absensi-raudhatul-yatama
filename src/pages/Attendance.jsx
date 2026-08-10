@@ -92,6 +92,7 @@ export default function Attendance() {
         return [];
       }
     },
+    refetchInterval: 3000, // Auto-refresh every 3 seconds for realtime updates
   });
 
   const { data: teacherData, isLoading: isTeacherLoading } = useQuery({
@@ -105,6 +106,7 @@ export default function Attendance() {
         return [];
       }
     },
+    refetchInterval: 3000, // Auto-refresh every 3 seconds for realtime updates
   });
 
   const isLoading = isStudentLoading || isTeacherLoading;
