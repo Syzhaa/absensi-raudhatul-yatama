@@ -91,8 +91,7 @@ export default function Attendance() {
         console.error('Student attendance fetch failed:', err);
         return [];
       }
-    },
-    refetchInterval: 3000, // Auto-refresh every 3 seconds for realtime updates
+    }
   });
 
   const { data: teacherData, isLoading: isTeacherLoading } = useQuery({
@@ -105,8 +104,7 @@ export default function Attendance() {
         console.error('Teacher attendance fetch failed:', err);
         return [];
       }
-    },
-    refetchInterval: 3000, // Auto-refresh every 3 seconds for realtime updates
+    }
   });
 
   const isLoading = isStudentLoading || isTeacherLoading;
@@ -152,8 +150,81 @@ export default function Attendance() {
     setCurrentPage(1);
   }, [selectedDate, roleFilter, statusFilter, itemsPerPage]);
 
-  // SSE Realtime Updates disabled: backend stream endpoint is not available.
-  // We rely on standard polling or manual refresh if needed.
+  // SSE Realtime Updates using native fetch
+  useEffect(() => {
+    let active = true;
+    const abortController = new AbortController();
+
+    const connectSSE = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const isTestMode = localStorage.getItem('is_test_mode') === 'true';
+        
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/attendance/logs/stream?date=${selectedDate}${isTestMode ? '&is_test=1' : ''}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          signal: abortController.signal
+        });
+
+        if (!response.ok) return;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (active) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          
+          const chunks = decoder.decode(value).split('\n\n');
+          for (const chunk of chunks) {
+            if (chunk.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(chunk.substring(6));
+                
+                // Update React Query Cache dynamically
+                if (data.type === 'student') {
+                  queryClient.setQueryData(['attendance_students', selectedDate], (old) => {
+                    if (!old) return { data: [data] };
+                    const exists = old.data.findIndex(item => item.id === data.id);
+                    if (exists >= 0) {
+                      const newData = [...old.data];
+                      newData[exists] = data;
+                      return { ...old, data: newData };
+                    }
+                    return { ...old, data: [data, ...old.data] };
+                  });
+                } else if (data.type === 'teacher') {
+                  queryClient.setQueryData(['attendance_teachers', selectedDate], (old) => {
+                    if (!old) return { data: [data] };
+                    const exists = old.data.findIndex(item => item.id === data.id);
+                    if (exists >= 0) {
+                      const newData = [...old.data];
+                      newData[exists] = data;
+                      return { ...old, data: newData };
+                    }
+                    return { ...old, data: [data, ...old.data] };
+                  });
+                }
+              } catch(e) {}
+            }
+          }
+        }
+      } catch (error) {
+        if (active && error.name !== 'AbortError') {
+          // Reconnect after 3s on failure
+          setTimeout(connectSSE, 3000);
+        }
+      }
+    };
+
+    connectSSE();
+
+    return () => {
+      active = false;
+      abortController.abort();
+    };
+  }, [selectedDate, queryClient]);
 
   return (
     <div className="max-w-5xl mx-auto space-y-4 landscape:space-y-2">

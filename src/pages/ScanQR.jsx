@@ -19,12 +19,76 @@ export default function ScanQR() {
   const { data: recentLogs } = useQuery({
     queryKey: ['recentLogs'],
     queryFn: () => attendanceService.getRecentLogs(5),
-    refetchInterval: 10000,
   });
 
   useEffect(() => {
     scanTypeRef.current = scanType;
   }, [scanType]);
+
+  // SSE Realtime Updates for Scan logs
+  useEffect(() => {
+    let active = true;
+    const abortController = new AbortController();
+
+    const connectSSE = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const isTestMode = localStorage.getItem('is_test_mode') === 'true';
+        const today = new Date().toISOString().split('T')[0];
+        
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/attendance/logs/stream?date=${today}${isTestMode ? '&is_test=1' : ''}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          signal: abortController.signal
+        });
+
+        if (!response.ok) return;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (active) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          
+          const chunks = decoder.decode(value).split('\n\n');
+          for (const chunk of chunks) {
+            if (chunk.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(chunk.substring(6));
+                
+                queryClient.setQueryData(['recentLogs'], (old) => {
+                  const currentLogs = old?.data || [];
+                  // Remove if already exists
+                  const filteredLogs = currentLogs.filter(log => log.id !== data.id || (log.student?.id !== data.student?.id && log.teacher?.id !== data.teacher?.id));
+                  
+                  // Add to top and keep only 5
+                  const newLogs = [data, ...filteredLogs].slice(0, 5);
+                  return { ...old, data: newLogs };
+                });
+                
+                // Also invalidate the main attendance list so the dashboard is kept up to date
+                queryClient.invalidateQueries({ queryKey: ['attendance_students'] });
+                queryClient.invalidateQueries({ queryKey: ['attendance_teachers'] });
+              } catch(e) {}
+            }
+          }
+        }
+      } catch (error) {
+        if (active && error.name !== 'AbortError') {
+          setTimeout(connectSSE, 3000);
+        }
+      }
+    };
+
+    connectSSE();
+
+    return () => {
+      active = false;
+      abortController.abort();
+    };
+  }, [queryClient]);
 
   const scanMutation = useMutation({
     mutationFn: (uuid) => attendanceService.scan(uuid, scanTypeRef.current),
@@ -334,7 +398,8 @@ export default function ScanQR() {
           <h2 className="font-black text-base text-gray-800 uppercase tracking-tight">Riwayat Scan Hari Ini</h2>
           <div className="space-y-2.5">
             {recentLogs.data.map((log, index) => {
-              const isCheckIn = log.type === 'check_in';
+              // Determine if it was a check in or check out action based on check_out field
+              const isCheckIn = !log.check_out;
               const name = log.student?.nama || log.teacher?.nama || 'Unknown';
               const time = isCheckIn ? log.check_in : log.check_out;
               const badgeColor = isCheckIn ? 'bg-[#9bd47a] text-gray-900' : 'bg-primary-purple text-white';
