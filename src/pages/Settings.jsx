@@ -25,6 +25,7 @@ export default function Settings({ onLogout }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showTestModeModal, setShowTestModeModal] = useState(false);
   const [showClearDataModal, setShowClearDataModal] = useState(false);
+  const [showSuccessClearModal, setShowSuccessClearModal] = useState(false);
   const [isClearingTestLogs, setIsClearingTestLogs] = useState(false);
   const queryClient = useQueryClient();
   const setTestMode = useAppStore((state) => state.setTestMode);
@@ -53,13 +54,12 @@ export default function Settings({ onLogout }) {
     setIsClearingTestLogs(true);
     try {
       await api.delete('/attendance/logs/test');
-      alert('Semua data test berhasil dibersihkan!');
     } catch (err) {
       console.warn('Backend endpoint clear test response:', err);
-      alert('Data test simulasi dibersihkan!');
     } finally {
       setIsClearingTestLogs(false);
       setShowClearDataModal(false);
+      setShowSuccessClearModal(true);
       queryClient.invalidateQueries();
     }
   };
@@ -511,6 +511,33 @@ export default function Settings({ onLogout }) {
                 {isClearingTestLogs ? 'Menghapus...' : 'Ya, Hapus Data Test'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Clear Test Data Success Modal */}
+      {showSuccessClearModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black/50 animate-fade-in"
+            onClick={() => setShowSuccessClearModal(false)}
+          />
+          
+          <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-6 max-w-sm w-full space-y-4 z-10 animate-slide-up text-center">
+            <div className="w-14 h-14 bg-emerald-100 border-2 border-gray-900 rounded-full flex items-center justify-center text-emerald-600 mx-auto">
+              <span className="material-symbols-outlined text-3xl font-black">check_circle</span>
+            </div>
+            <h2 className="text-xl font-black text-gray-900">Data Test Dibersihkan!</h2>
+            <p className="text-sm text-gray-600 font-medium leading-relaxed">
+              Seluruh data & log absensi mode testing telah berhasil dihapus secara bersih dari sistem.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowSuccessClearModal(false)}
+              className="w-full py-3 px-4 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all"
+            >
+              Selesai
+            </button>
           </div>
         </div>
       )}

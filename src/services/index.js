@@ -26,8 +26,22 @@ export const attendanceService = {
   
   getRecentLogs: async (limit = 5) => {
     const today = new Date().toISOString().split('T')[0];
-    const response = await api.get('/attendance/logs/students', { params: { date: today, limit } });
-    return response.data;
+    const [studentsRes, teachersRes] = await Promise.all([
+      api.get('/attendance/logs/students', { params: { date: today } }),
+      api.get('/attendance/logs/teachers', { params: { date: today } })
+    ]);
+    
+    const students = (studentsRes.data?.data || []).map(s => ({ ...s, role: 'student' }));
+    const teachers = (teachersRes.data?.data || []).map(t => ({ ...t, role: 'teacher' }));
+    
+    const combined = [...students, ...teachers].sort((a, b) => {
+      const timeA = new Date(a.created_at || 0).getTime();
+      const timeB = new Date(b.created_at || 0).getTime();
+      if (timeA !== timeB) return timeB - timeA;
+      return (b.id || 0) - (a.id || 0);
+    });
+    
+    return { success: true, data: combined.slice(0, limit) };
   },
 
   // New: Auto-detect scan (student or teacher) with Anti-Bypass Signature

@@ -157,7 +157,7 @@ export default function Attendance() {
 
     const connectSSE = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
         const isTestMode = localStorage.getItem('is_test_mode') === 'true';
         
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/attendance/logs/stream?date=${selectedDate}${isTestMode ? '&is_test=1' : ''}`, {
@@ -183,7 +183,7 @@ export default function Attendance() {
                 const data = JSON.parse(chunk.substring(6));
                 
                 // Update React Query Cache dynamically
-                if (data.type === 'student') {
+                if (data.role === 'student') {
                   queryClient.setQueryData(['attendance_students', selectedDate], (old) => {
                     if (!old) return { data: [data] };
                     const exists = old.data.findIndex(item => item.id === data.id);
@@ -194,7 +194,7 @@ export default function Attendance() {
                     }
                     return { ...old, data: [data, ...old.data] };
                   });
-                } else if (data.type === 'teacher') {
+                } else if (data.role === 'teacher') {
                   queryClient.setQueryData(['attendance_teachers', selectedDate], (old) => {
                     if (!old) return { data: [data] };
                     const exists = old.data.findIndex(item => item.id === data.id);

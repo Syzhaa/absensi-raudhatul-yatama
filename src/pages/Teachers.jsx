@@ -12,6 +12,7 @@ export default function Teachers() {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [downloadSuccessModal, setDownloadSuccessModal] = useState({ isOpen: false, count: 0 });
   const [formData, setFormData] = useState({
     lembaga: 'MA',
     nama: '',
@@ -136,8 +137,9 @@ export default function Teachers() {
       const zipContent = await zip.generateAsync({ type: 'blob' });
       saveAs(zipContent, `QR-Guru-${new Date().getTime()}.zip`);
       
-      alert(`Berhasil mengunduh ${selectedTeachers.length} QR code dalam file ZIP`);
+      const count = selectedTeachers.length;
       setSelectedTeachers([]);
+      setDownloadSuccessModal({ isOpen: true, count });
     } catch (error) {
       alert('Gagal generate QR: ' + error.message);
     }
@@ -521,6 +523,32 @@ export default function Teachers() {
           add
         </span>
       </button>
+
+      {/* Download ZIP Success Modal */}
+      {downloadSuccessModal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black/50 animate-fade-in"
+            onClick={() => setDownloadSuccessModal({ isOpen: false, count: 0 })}
+          />
+          <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-6 max-w-sm w-full space-y-4 z-10 animate-slide-up text-center">
+            <div className="w-14 h-14 bg-emerald-100 border-2 border-gray-900 rounded-full flex items-center justify-center text-emerald-600 mx-auto">
+              <span className="material-symbols-outlined text-3xl font-black">folder_zip</span>
+            </div>
+            <h2 className="text-xl font-black text-gray-900">Download Berhasil!</h2>
+            <p className="text-sm text-gray-600 font-medium leading-relaxed">
+              Berhasil mengunduh <span className="font-bold text-gray-900">{downloadSuccessModal.count} QR Code</span> guru ke dalam berkas ZIP.
+            </p>
+            <button
+              type="button"
+              onClick={() => setDownloadSuccessModal({ isOpen: false, count: 0 })}
+              className="w-full py-3 px-4 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all"
+            >
+              Selesai
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

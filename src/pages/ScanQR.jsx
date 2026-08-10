@@ -32,7 +32,7 @@ export default function ScanQR() {
 
     const connectSSE = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
         const isTestMode = localStorage.getItem('is_test_mode') === 'true';
         const today = new Date().toISOString().split('T')[0];
         
