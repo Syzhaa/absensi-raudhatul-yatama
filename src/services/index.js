@@ -30,9 +30,23 @@ export const attendanceService = {
     return response.data;
   },
 
-  // New: Auto-detect scan (student or teacher)
+  // New: Auto-detect scan (student or teacher) with Anti-Bypass Signature
   scan: async (uuid, scanType = null) => {
-    const response = await api.post('/attendance/scan', { uuid, scan_type: scanType });
+    const timestamp = Date.now();
+    const secret = import.meta.env.VITE_SCAN_SECRET || 'yatama123secret';
+    
+    // Generate SHA-256 Hash
+    const msgBuffer = new TextEncoder().encode(uuid + timestamp + secret);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    const response = await api.post('/attendance/scan', { 
+      uuid, 
+      scan_type: scanType,
+      timestamp,
+      signature 
+    });
     return response.data;
   },
   

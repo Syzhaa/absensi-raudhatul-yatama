@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 
-function AttendanceItem({ item }) {
+const AttendanceItem = memo(function AttendanceItem({ item }) {
   const isStudent = item.role === 'student';
   const person = isStudent ? item.student : item.teacher;
   const subtitle = isStudent 
@@ -70,12 +70,14 @@ function AttendanceItem({ item }) {
       </div>
     </div>
   );
-}
+});
 
 export default function Attendance() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [roleFilter, setRoleFilter] = useState('all'); // all | student | teacher
   const [statusFilter, setStatusFilter] = useState('all'); // all | masuk | pulang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const queryClient = useQueryClient();
   const eventSourceRef = useRef(null);
 
@@ -108,62 +110,55 @@ export default function Attendance() {
   const isLoading = isStudentLoading || isTeacherLoading;
 
   // Combine + sort newest first
-  const allItems = [
-    ...(studentData?.data || []).map((a) => ({ ...a, role: 'student' })),
-    ...(teacherData?.data || []).map((a) => ({ ...a, role: 'teacher' })),
-  ];
+  const allItems = useMemo(() => {
+    return [
+      ...(studentData?.data || []).map((a) => ({ ...a, role: 'student' })),
+      ...(teacherData?.data || []).map((a) => ({ ...a, role: 'teacher' })),
+    ];
+  }, [studentData, teacherData]);
 
-  const records = allItems
-    .filter((a) => {
-      // Role filter
-      if (roleFilter !== 'all' && a.role !== roleFilter) return false;
-      
-      // Status filter
-      if (statusFilter === 'masuk' && !a.check_in) return false;
-      if (statusFilter === 'pulang' && !a.check_out) return false;
-      
-      return true;
-    })
-    .sort((a, b) => {
-      const ta = new Date(a.created_at || 0).getTime();
-      const tb = new Date(b.created_at || 0).getTime();
-      if (ta !== tb) return tb - ta;
-      return (b.id || 0) - (a.id || 0);
-    });
+  const records = useMemo(() => {
+    return allItems
+      .filter((a) => {
+        // Role filter
+        if (roleFilter !== 'all' && a.role !== roleFilter) return false;
+        
+        // Status filter
+        if (statusFilter === 'masuk' && !a.check_in) return false;
+        if (statusFilter === 'pulang' && !a.check_out) return false;
+        
+        return true;
+      })
+      .sort((a, b) => {
+        const ta = new Date(a.created_at || 0).getTime();
+        const tb = new Date(b.created_at || 0).getTime();
+        if (ta !== tb) return tb - ta;
+        return (b.id || 0) - (a.id || 0);
+      });
+  }, [allItems, roleFilter, statusFilter]);
 
-  // SSE realtime updates
+  const totalPages = Math.ceil(records.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedRecords = records.slice(startIndex, startIndex + itemsPerPage);
+
+  const renderedRecords = useMemo(() => {
+    return paginatedRecords.map((a) => <AttendanceItem key={`${a.role}-${a.id}`} item={a} />);
+  }, [paginatedRecords]);
+
+  // Reset pagination when filters change
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) return;
+    setCurrentPage(1);
+  }, [selectedDate, roleFilter, statusFilter, itemsPerPage]);
 
-    const baseURL = api.defaults.baseURL || '';
-    const url = `${baseURL}/attendance/logs/stream?date=${selectedDate}`;
-
-    try {
-      eventSourceRef.current = new EventSource(url);
-      eventSourceRef.current.onmessage = () => {
-        queryClient.invalidateQueries(['attendance_students']);
-        queryClient.invalidateQueries(['attendance_teachers']);
-      };
-      eventSourceRef.current.onerror = (err) => {
-        console.warn('SSE stream error:', err);
-        eventSourceRef.current?.close();
-      };
-    } catch (err) {
-      console.warn('SSE connection failed, real-time updates disabled:', err);
-    }
-
-    return () => {
-      eventSourceRef.current?.close();
-    };
-  }, [selectedDate, queryClient]);
+  // SSE Realtime Updates disabled: backend stream endpoint is not available.
+  // We rely on standard polling or manual refresh if needed.
 
   return (
-    <div className="space-y-4">
+    <div className="max-w-5xl mx-auto space-y-4 landscape:space-y-2">
       {/* Header Compact + Modern Date Picker */}
-      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 shadow-neo flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 landscape:py-2 shadow-neo flex flex-col sm:flex-row sm:items-center justify-between gap-3 landscape:mb-1">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight">Log Absensi</h1>
+          <h1 className="text-xl md:text-2xl landscape:text-lg font-black text-gray-800 tracking-tight">Log Absensi</h1>
           <span className="px-2.5 py-0.5 text-xs font-bold bg-gray-100 text-gray-700 border-2 border-gray-900 rounded-full">
             Total: {records.length}
           </span>
@@ -259,9 +254,51 @@ export default function Attendance() {
             </p>
           </div>
         ) : (
-          records.map((a) => <AttendanceItem key={`${a.role}-${a.id}`} item={a} />)
+          renderedRecords
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {records.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 pb-12">
+          <div className="flex items-center gap-2">
+            <span className="text-xs md:text-sm font-bold text-gray-700">Tampilkan:</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+              }}
+              className="border-2 border-gray-400 rounded-lg px-2 py-1 font-bold text-xs md:text-sm text-gray-900 bg-transparent focus:outline-none focus:border-primary-green cursor-pointer"
+            >
+              <option value={10}>10</option>
+              <option value={15}>15</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+            <span className="text-xs md:text-sm font-bold text-gray-700">data</span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 md:p-2 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <span className="material-symbols-outlined text-sm md:text-base">chevron_left</span>
+            </button>
+            <span className="text-xs md:text-sm font-bold text-gray-700">
+              Halaman {currentPage} dari {totalPages || 1}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="p-1.5 md:p-2 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <span className="material-symbols-outlined text-sm md:text-base">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

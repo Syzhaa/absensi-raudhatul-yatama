@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { attendanceService } from '../services';
+import { saveOfflineScan } from '../services/db';
 
 export default function ScanQR() {
   const [scanning, setScanning] = useState(false);
@@ -57,10 +58,43 @@ export default function ScanQR() {
           await html5QrCodeRef.current.start(
             { facingMode: 'environment' },
             { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1.0 },
-            (decodedText) => {
+            async (decodedText) => {
               if (scanMutation.isPending || lastScannedRef.current === decodedText) return;
               lastScannedRef.current = decodedText;
-              scanMutation.mutate(decodedText);
+              
+              if (!navigator.onLine) {
+                // Offline fallback
+                const timestamp = Date.now();
+                const secret = import.meta.env.VITE_SCAN_SECRET || 'yatama123secret';
+                const msgBuffer = new TextEncoder().encode(decodedText + timestamp + secret);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                await saveOfflineScan({
+                  uuid: decodedText,
+                  scan_type: scanTypeRef.current,
+                  timestamp,
+                  signature
+                });
+                
+                setResult({ 
+                  success: true, 
+                  message: 'Tersimpan offline (Tunggu koneksi untuk sinkronisasi)',
+                  scanType: scanTypeRef.current,
+                  data: { type: 'offline' } 
+                });
+                stopScanning();
+              } else {
+                scanMutation.mutate(decodedText);
+              }
+              
+              // Anti-spam debounce: allow scanning the same code again after 3 seconds
+              setTimeout(() => {
+                if (lastScannedRef.current === decodedText) {
+                  lastScannedRef.current = null;
+                }
+              }, 3000);
             },
             () => {}
           );
@@ -125,7 +159,7 @@ export default function ScanQR() {
     <div className="flex flex-col items-center justify-center px-4 py-2 pb-28 md:pb-8 max-w-lg mx-auto">
       
       {/* 1. Navigasi Mode (Toggle Tabs) di Atas Kamera */}
-      <div className="w-full max-w-sm bg-white/90 p-1.5 rounded-full border-3 border-gray-900 shadow-neo flex items-center mb-5">
+      <div className="w-full max-w-sm bg-white/90 p-1.5 rounded-full border-3 border-gray-900 shadow-neo flex items-center mb-5 landscape:mb-2">
         <button
           onClick={() => handleSwitchTab('check_in')}
           className={`flex-1 py-2.5 px-4 rounded-full font-black text-sm sm:text-base flex items-center justify-center gap-2 transition-all select-none ${

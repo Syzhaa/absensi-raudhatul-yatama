@@ -3,28 +3,31 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { authService } from '../services';
 
+import { useAppStore } from '../store/useAppStore';
+
 const settingsService = {
   getAll: async () => {
     const response = await api.get('/attendance/settings');
     return response.data;
   },
-  getByLembaga: async (lembaga) => {
-    const response = await api.get(`/attendance/settings/${lembaga}`);
+  getByMyLembaga: async () => {
+    const response = await api.get(`/attendance/settings/my`);
     return response.data;
   },
-  update: async (lembaga, data) => {
-    const response = await api.put(`/attendance/settings/${lembaga}`, data);
+  updateMyLembaga: async (data) => {
+    const response = await api.put(`/attendance/settings/my`, data);
     return response.data;
   },
 };
 
 export default function Settings({ onLogout }) {
-  const [selectedLembaga, setSelectedLembaga] = useState('MA');
+  const userLembaga = useAppStore((state) => state.userLembaga);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showTestModeModal, setShowTestModeModal] = useState(false);
   const [showClearDataModal, setShowClearDataModal] = useState(false);
   const [isClearingTestLogs, setIsClearingTestLogs] = useState(false);
   const queryClient = useQueryClient();
+  const setTestMode = useAppStore((state) => state.setTestMode);
 
   const handleLogout = async () => {
     try {
@@ -41,8 +44,7 @@ export default function Settings({ onLogout }) {
   const confirmToggleTestMode = () => {
     const nextMode = !formData.test_mode;
     setFormData((prev) => ({ ...prev, test_mode: nextMode }));
-    localStorage.setItem('is_test_mode', nextMode ? 'true' : 'false');
-    window.dispatchEvent(new Event('test_mode_change'));
+    setTestMode(nextMode);
     queryClient.invalidateQueries();
     setShowTestModeModal(false);
   };
@@ -63,37 +65,41 @@ export default function Settings({ onLogout }) {
   };
 
   const { data: settingsData, isLoading } = useQuery({
-    queryKey: ['settings', selectedLembaga],
-    queryFn: () => settingsService.getByLembaga(selectedLembaga),
+    queryKey: ['settings', 'my'],
+    queryFn: () => settingsService.getByMyLembaga(),
   });
 
   const settings = settingsData?.data || {};
 
+  const isTestMode = useAppStore((state) => state.isTestMode);
+
   const [formData, setFormData] = useState({
-    attendance_open: settings.attendance_open || '06:00:00',
-    attendance_limit: settings.attendance_limit || '07:30:00',
-    late_after: settings.late_after || '07:30:00',
-    attendance_close: settings.attendance_close || '08:00:00',
-    timezone: settings.timezone || 'Asia/Makassar',
-    test_mode: settings.test_mode || false,
+    attendance_open: settingsData?.data?.attendance_open || '06:00:00',
+    attendance_limit: settingsData?.data?.attendance_limit || '07:30:00',
+    late_after: settingsData?.data?.late_after || '07:30:00',
+    attendance_close: settingsData?.data?.attendance_close || '08:00:00',
+    timezone: settingsData?.data?.timezone || 'Asia/Makassar',
+    test_mode: isTestMode,
   });
 
   // Update form when settings data changes
   useEffect(() => {
-    if (settings) {
-      setFormData({
-        attendance_open: settings.attendance_open || '06:00:00',
-        attendance_limit: settings.attendance_limit || '07:30:00',
-        late_after: settings.late_after || '07:30:00',
-        attendance_close: settings.attendance_close || '08:00:00',
-        timezone: settings.timezone || 'Asia/Makassar',
-        test_mode: settings.test_mode || false,
-      });
+    const currentSettings = settingsData?.data;
+    if (currentSettings) {
+      setFormData((prev) => ({
+        ...prev,
+        attendance_open: currentSettings.attendance_open || '06:00:00',
+        attendance_limit: currentSettings.attendance_limit || '07:30:00',
+        late_after: currentSettings.late_after || '07:30:00',
+        attendance_close: currentSettings.attendance_close || '08:00:00',
+        timezone: currentSettings.timezone || 'Asia/Makassar',
+        test_mode: isTestMode, // Pertahankan state lokal dari Zustand
+      }));
     }
-  }, [settings]);
+  }, [settingsData?.data, isTestMode]);
 
   const updateMutation = useMutation({
-    mutationFn: (data) => settingsService.update(selectedLembaga, data),
+    mutationFn: (data) => settingsService.updateMyLembaga(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['settings']);
       alert('Pengaturan berhasil disimpan!');
@@ -108,10 +114,6 @@ export default function Settings({ onLogout }) {
     updateMutation.mutate(formData);
   };
 
-  const handleLembagaChange = (lembaga) => {
-    setSelectedLembaga(lembaga);
-  };
-
   if (isLoading) {
     return (
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
@@ -121,14 +123,14 @@ export default function Settings({ onLogout }) {
   }
 
   return (
-    <div className="space-y-4 pb-40 md:pb-12">
+    <div className="space-y-4 landscape:space-y-2 pb-40 md:pb-12 landscape:pb-8">
       {/* Header Compact */}
-      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 shadow-neo">
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 landscape:py-2 shadow-neo landscape:mb-1">
         <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-3xl text-gray-800">settings</span>
+          <span className="material-symbols-outlined text-3xl landscape:text-2xl text-gray-800">settings</span>
           <div>
-            <h1 className="font-black text-xl md:text-2xl text-gray-800 tracking-tight">Pengaturan Absensi</h1>
-            <p className="font-medium text-xs md:text-sm text-gray-500 mt-0.5">
+            <h1 className="font-black text-xl md:text-2xl landscape:text-lg text-gray-800 tracking-tight">Pengaturan Absensi</h1>
+            <p className="font-medium text-xs md:text-sm text-gray-500 mt-0.5 landscape:hidden">
               Konfigurasi jam operasional & mode testing
             </p>
           </div>
@@ -199,35 +201,18 @@ export default function Settings({ onLogout }) {
         )}
       </div>
 
-      {/* 3. Segmented Tabs for Lembaga Selection */}
-      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 shadow-neo space-y-3">
-        <label className="block font-black text-xs md:text-sm text-gray-800 uppercase tracking-wider">
-          Pilih Lembaga
-        </label>
-        
-        <div className="grid grid-cols-2 p-1 bg-gray-100 border-2 border-gray-900 rounded-full shadow-neo">
-          <button
-            type="button"
-            onClick={() => handleLembagaChange('MA')}
-            className={`py-2.5 px-4 rounded-full text-xs md:text-sm font-black transition-all text-center select-none ${
-              selectedLembaga === 'MA'
-                ? 'bg-primary-green text-gray-900 shadow-sm border border-gray-900'
-                : 'text-gray-600 hover:text-gray-900 font-bold'
-            }`}
-          >
-            MA (Madrasah Aliyah)
-          </button>
-          <button
-            type="button"
-            onClick={() => handleLembagaChange('MTs')}
-            className={`py-2.5 px-4 rounded-full text-xs md:text-sm font-black transition-all text-center select-none ${
-              selectedLembaga === 'MTs'
-                ? 'bg-primary-green text-gray-900 shadow-sm border border-gray-900'
-                : 'text-gray-600 hover:text-gray-900 font-bold'
-            }`}
-          >
-            MTs (Tsanawiyah)
-          </button>
+      {/* 3. Static Lembaga Badge */}
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 shadow-neo">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 bg-primary-green/20 border-2 border-primary-green rounded-full flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-primary-green">verified_user</span>
+          </div>
+          <div>
+            <h3 className="font-black text-sm md:text-base text-gray-900 tracking-tight">Otorisasi Lembaga</h3>
+            <p className="font-bold text-xs md:text-sm text-gray-600 mt-1">
+              Anda sedang mengatur sistem operasional untuk lembaga: <span className="text-gray-900 font-black px-1.5 py-0.5 bg-gray-100 rounded border border-gray-300">{userLembaga ? userLembaga.toUpperCase() : '-'}</span>
+            </p>
+          </div>
         </div>
       </div>
 
@@ -235,7 +220,7 @@ export default function Settings({ onLogout }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-6 shadow-neo space-y-4">
           <h3 className="font-black text-sm md:text-base text-gray-800 uppercase tracking-wider border-b border-gray-100 pb-2">
-            Jam Operasional ({selectedLembaga})
+            Jam Operasional
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -362,7 +347,7 @@ export default function Settings({ onLogout }) {
             Catatan Sistem
           </h4>
           <ul className="space-y-1 text-xs text-gray-600 font-medium leading-relaxed">
-            <li>• Berlaku khusus untuk lembaga <strong className="text-gray-900">{selectedLembaga}</strong>.</li>
+            <li>• Berlaku khusus untuk otoritas Anda (<strong className="text-gray-900">{userLembaga ? userLembaga.toUpperCase() : 'Lembaga Aktif'}</strong>).</li>
             <li>• Status <strong className="text-emerald-700">Hadir</strong> otomatis saat scan sebelum jam batas hadir.</li>
             <li>• Status <strong className="text-amber-700">Terlambat</strong> otomatis saat scan setelah jam mulai terlambat.</li>
             <li>• Scan ditolak di luar jam buka dan jam tutup operasional.</li>
@@ -393,7 +378,7 @@ export default function Settings({ onLogout }) {
       </form>
 
       {/* 5. Sticky Submit Button (Fixed above Floating Bottom Nav) */}
-      <div className="fixed bottom-24 left-4 right-4 md:static z-40 md:z-auto">
+      <div className="fixed portrait:bottom-24 left-4 right-4 md:static landscape:static landscape:mt-4 z-40 md:z-auto">
         <button
           type="button"
           onClick={handleSubmit}

@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import { authService } from '../services';
 
+import { useAppStore } from '../store/useAppStore';
+
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  
+  const setUserLembaga = useAppStore((state) => state.setUserLembaga);
 
   // Load remembered email on mount
   useEffect(() => {
@@ -25,8 +29,11 @@ export default function Login({ onLogin }) {
     try {
       const response = await authService.login(email, password);
       const token = response.data?.token || response.token || response.data?.data?.token;
+      const lembaga = response.data?.user?.lembaga || response.data?.data?.user?.lembaga;
+      
       if (token) {
         localStorage.setItem('auth_token', token);
+        if (lembaga) setUserLembaga(lembaga);
       } else {
         console.error('Token tidak ditemukan dalam respon:', response);
       }

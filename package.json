@@ -12,12 +12,17 @@
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",
     "axios": "^1.19.0",
+    "file-saver": "^2.0.5",
     "html5-qrcode": "^2.3.8",
+    "idb": "^8.0.3",
+    "jszip": "^3.10.1",
     "lucide-react": "^1.30.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.2"
+    "react-router-dom": "^7.18.2",
+    "vite-plugin-pwa": "^1.3.0",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",

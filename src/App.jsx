@@ -1,20 +1,25 @@
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import ScanQR from './pages/ScanQR';
-import Students from './pages/Students';
-import Teachers from './pages/Teachers';
 import Settings from './pages/Settings';
-import Attendance from './pages/Attendance';
+import { useBackgroundSync } from './hooks/useBackgroundSync';
+
+// Lazy load heavy components
+const ScanQR = lazy(() => import('./pages/ScanQR'));
+const Students = lazy(() => import('./pages/Students'));
+const Teachers = lazy(() => import('./pages/Teachers'));
+const Attendance = lazy(() => import('./pages/Attendance'));
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  useBackgroundSync();
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -73,15 +78,21 @@ function App() {
 
   return (
     <Layout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/scan" element={<ScanQR />} />
-        <Route path="/students" element={<Students />} />
-        <Route path="/teachers" element={<Teachers />} />
-        <Route path="/attendance" element={<Attendance />} />
-        <Route path="/settings" element={<Settings onLogout={() => setIsAuthenticated(false)} />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={
+        <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin w-10 h-10 border-4 border-primary-green border-t-gray-900 rounded-full"></div>
+        </div>
+      }>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/scan" element={<ScanQR />} />
+          <Route path="/students" element={<Students />} />
+          <Route path="/teachers" element={<Teachers />} />
+          <Route path="/attendance" element={<Attendance />} />
+          <Route path="/settings" element={<Settings onLogout={() => setIsAuthenticated(false)} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </Layout>
   );
 }
