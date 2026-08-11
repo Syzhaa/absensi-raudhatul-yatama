@@ -138,6 +138,11 @@ export const teacherService = {
     const response = await api.get(`/attendance/teachers/${id}/qr`);
     return response.data;
   },
+  
+  setAttendanceStatus: async (id, data) => {
+    const response = await api.post(`/attendance/teachers/${id}/attendance-status`, data);
+    return response.data;
+  },
 };
 
 export const settingsService = {
