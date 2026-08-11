@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { studentService } from '../services';
+import { useEffectiveLembaga } from '../hooks/useEffectiveLembaga';
 import Modal from '../components/Modal';
 import QRCode from 'qrcode';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 export default function Students() {
+  const { effectiveLembaga } = useEffectiveLembaga();
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -31,18 +33,22 @@ export default function Students() {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['students'],
+    queryKey: ['students', effectiveLembaga],
     queryFn: () => studentService.getAll(),
+    enabled: !!effectiveLembaga,
   });
 
   // Fetch kelas list for dropdown
   const { data: kelasData } = useQuery({
-    queryKey: ['kelas'],
+    queryKey: ['kelas', effectiveLembaga],
     queryFn: async () => {
       const api = await import('../services/api').then(m => m.default);
-      const response = await api.get('/admin/kelas');
+      const response = await api.get('/admin/kelas', {
+        params: { lembaga: effectiveLembaga }
+      });
       return response.data;
     },
+    enabled: !!effectiveLembaga,
   });
 
   const createMutation = useMutation({
@@ -96,7 +102,7 @@ export default function Students() {
     setShowForm(false);
     setEditingStudent(null);
     setFormData({
-      lembaga: 'MA',
+      lembaga: effectiveLembaga || 'MA',
       nama: '',
       nisn: '',
       tempat_lahir: '',

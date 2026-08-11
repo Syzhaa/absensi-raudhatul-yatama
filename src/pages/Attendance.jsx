@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../services/api';
 import { logsService } from '../services';
 import { useAppStore } from '../store/useAppStore';
+import { useEffectiveLembaga } from '../hooks/useEffectiveLembaga';
 import AttendanceModal from '../components/AttendanceModal';
 
 const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
@@ -118,10 +119,10 @@ export default function Attendance() {
   const queryClient = useQueryClient();
   const eventSourceRef = useRef(null);
   const selectedKelas = useAppStore((state) => state.selectedKelas);
-  const userLembaga = useAppStore((state) => state.userLembaga);
+  const { effectiveLembaga } = useEffectiveLembaga();
 
   const { data: studentData, isLoading: isStudentLoading } = useQuery({
-    queryKey: ['attendance_students', selectedDate],
+    queryKey: ['attendance_students', selectedDate, effectiveLembaga],
     queryFn: async () => {
       try {
         const res = await api.get('/attendance/logs/students', { params: { date: selectedDate } });
@@ -130,11 +131,12 @@ export default function Attendance() {
         console.error('Student attendance fetch failed:', err);
         return [];
       }
-    }
+    },
+    enabled: !!effectiveLembaga,
   });
 
   const { data: teacherData, isLoading: isTeacherLoading } = useQuery({
-    queryKey: ['attendance_teachers', selectedDate],
+    queryKey: ['attendance_teachers', selectedDate, effectiveLembaga],
     queryFn: async () => {
       try {
         const res = await api.get('/attendance/logs/teachers', { params: { date: selectedDate } });
@@ -143,15 +145,16 @@ export default function Attendance() {
         console.error('Teacher attendance fetch failed:', err);
         return [];
       }
-    }
+    },
+    enabled: !!effectiveLembaga,
   });
 
   const { data: absentData, isLoading: isAbsentLoading } = useQuery({
-    queryKey: ['attendance_absent_students', selectedDate, kelasFilter, userLembaga],
+    queryKey: ['attendance_absent_students', selectedDate, kelasFilter, effectiveLembaga],
     queryFn: async () => {
       try {
         const params = { date: selectedDate };
-        if (userLembaga) params.lembaga = userLembaga;
+        if (effectiveLembaga) params.lembaga = effectiveLembaga;
         if (kelasFilter && kelasFilter !== 'all') params.kelas = kelasFilter;
         
         const res = await logsService.getAbsentStudents(params);

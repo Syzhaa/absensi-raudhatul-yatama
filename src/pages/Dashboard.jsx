@@ -1,10 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { attendanceService } from '../services';
+import { useEffectiveLembaga } from '../hooks/useEffectiveLembaga';
 
 export default function Dashboard() {
+  const { effectiveLembaga } = useEffectiveLembaga();
+  
   const { data, isLoading } = useQuery({
-    queryKey: ['dashboard'],
+    queryKey: ['dashboard', effectiveLembaga],
     queryFn: () => attendanceService.getDashboard(),
+    enabled: !!effectiveLembaga,
   });
 
   const stats = data?.data || {};

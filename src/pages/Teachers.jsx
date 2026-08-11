@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { teacherService } from '../services';
+import { useEffectiveLembaga } from '../hooks/useEffectiveLembaga';
 import Modal from '../components/Modal';
 import QRCode from 'qrcode';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 export default function Teachers() {
+  const { effectiveLembaga } = useEffectiveLembaga();
   const [showForm, setShowForm] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [selectedTeachers, setSelectedTeachers] = useState([]);
@@ -27,8 +29,9 @@ export default function Teachers() {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['teachers'],
+    queryKey: ['teachers', effectiveLembaga],
     queryFn: () => teacherService.getAll(),
+    enabled: !!effectiveLembaga,
   });
 
   const createMutation = useMutation({
@@ -96,7 +99,7 @@ export default function Teachers() {
     setShowForm(false);
     setEditingTeacher(null);
     setFormData({
-      lembaga: 'MA',
+      lembaga: effectiveLembaga || 'MA',
       nama: '',
       nip: '',
       mata_pelajaran: '',
