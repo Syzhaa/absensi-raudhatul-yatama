@@ -13,6 +13,8 @@ export default function Teachers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [downloadSuccessModal, setDownloadSuccessModal] = useState({ isOpen: false, count: 0 });
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [generatedCredentials, setGeneratedCredentials] = useState(null);
   const [formData, setFormData] = useState({
     lembaga: 'MA',
     nama: '',
@@ -58,6 +60,22 @@ export default function Teachers() {
     },
   });
 
+  const activateAccessMutation = useMutation({
+    mutationFn: async (teacherId) => {
+      const api = await import('../services/api').then(m => m.default);
+      const response = await api.post(`/attendance/teachers/${teacherId}/activate-access`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['teachers']);
+      setGeneratedCredentials(data.data.credentials);
+      setShowCredentialsModal(true);
+    },
+    onError: (error) => {
+      alert(error.response?.data?.message || 'Gagal mengaktifkan akses guru');
+    },
+  });
+
   const resetForm = () => {
     setShowForm(false);
     setEditingTeacher(null);
@@ -97,6 +115,23 @@ export default function Teachers() {
     if (confirm('Yakin ingin menghapus guru ini?')) {
       deleteMutation.mutate(id);
     }
+  };
+
+  const handleActivateAccess = (teacher) => {
+    if (teacher.user_id) {
+      alert('Guru ini sudah memiliki akun aktif');
+      return;
+    }
+    
+    if (confirm(`Aktifkan akses login untuk ${teacher.nama}?\n\nSistem akan membuat akun otomatis dengan kredensial default.`)) {
+      activateAccessMutation.mutate(teacher.id);
+    }
+  };
+
+  const handleCopyCredentials = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Kredensial berhasil disalin!');
+    });
   };
 
   const handleSelectAll = (e) => {
@@ -399,6 +434,16 @@ export default function Teachers() {
                   <div className="relative flex items-center gap-1.5 flex-shrink-0">
                     {/* Desktop Actions */}
                     <div className="hidden md:flex items-center gap-1.5">
+                      {!teacher.user_id && (
+                        <button
+                          onClick={() => handleActivateAccess(teacher)}
+                          disabled={activateAccessMutation.isPending}
+                          className="p-1.5 md:p-2 bg-emerald-100 text-emerald-700 border-2 border-gray-900 rounded-lg hover:bg-emerald-200 transition-colors shadow-sm disabled:opacity-50"
+                          title="Aktifkan Akses Login"
+                        >
+                          <span className="material-symbols-outlined text-lg">lock_open</span>
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDownloadSingleQR(teacher)}
                         className="p-1.5 md:p-2 bg-blue-100 text-blue-700 border-2 border-gray-900 rounded-lg hover:bg-blue-200 transition-colors shadow-sm"
@@ -434,6 +479,16 @@ export default function Teachers() {
 
                       {activeDropdown === teacher.id && (
                         <div className="absolute right-0 top-full mt-1 w-40 bg-white border-2 border-gray-900 rounded-xl shadow-neo z-10 overflow-hidden">
+                          {!teacher.user_id && (
+                            <button
+                              onClick={() => { handleActivateAccess(teacher); setActiveDropdown(null); }}
+                              disabled={activateAccessMutation.isPending}
+                              className="w-full text-left px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50 border-b border-gray-100 flex items-center gap-2 disabled:opacity-50"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">lock_open</span>
+                              Aktifkan Akses
+                            </button>
+                          )}
                           <button
                             onClick={() => { handleDownloadSingleQR(teacher); setActiveDropdown(null); }}
                             className="w-full text-left px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-50 border-b border-gray-100 flex items-center gap-2"
@@ -545,6 +600,84 @@ export default function Teachers() {
               className="w-full py-3 px-4 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all"
             >
               Selesai
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Credentials Modal - Show generated login credentials */}
+      {showCredentialsModal && generatedCredentials && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="fixed inset-0 bg-black/50 animate-fade-in"
+            onClick={() => { setShowCredentialsModal(false); setGeneratedCredentials(null); }}
+          />
+          <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-6 max-w-md w-full space-y-4 z-10 animate-slide-up">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-black text-gray-900">Akun Berhasil Diaktifkan</h2>
+              <button
+                onClick={() => { setShowCredentialsModal(false); setGeneratedCredentials(null); }}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <span className="material-symbols-outlined text-gray-600">close</span>
+              </button>
+            </div>
+
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-3 text-xs text-amber-900 font-medium">
+              <strong>⚠️ PENTING:</strong> Catat kredensial berikut. Informasi ini hanya ditampilkan sekali!
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-gray-700">Nama Guru</label>
+                <div className="px-3 py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm text-gray-900">
+                  {generatedCredentials.name}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-gray-700">Email Login</label>
+                <div className="flex gap-2">
+                  <div className="flex-1 px-3 py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-mono text-sm text-gray-900 break-all">
+                    {generatedCredentials.email}
+                  </div>
+                  <button
+                    onClick={() => handleCopyCredentials(generatedCredentials.email)}
+                    className="px-3 py-2 bg-blue-100 text-blue-700 border-2 border-gray-900 rounded-lg hover:bg-blue-200 transition-colors flex-shrink-0"
+                    title="Salin Email"
+                  >
+                    <span className="material-symbols-outlined text-lg">content_copy</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-bold text-gray-700">Password</label>
+                <div className="flex gap-2">
+                  <div className="flex-1 px-3 py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-mono text-sm text-gray-900">
+                    {generatedCredentials.password}
+                  </div>
+                  <button
+                    onClick={() => handleCopyCredentials(generatedCredentials.password)}
+                    className="px-3 py-2 bg-blue-100 text-blue-700 border-2 border-gray-900 rounded-lg hover:bg-blue-200 transition-colors flex-shrink-0"
+                    title="Salin Password"
+                  >
+                    <span className="material-symbols-outlined text-lg">content_copy</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-3 text-xs text-emerald-900">
+              <p className="font-medium">✓ Guru dapat login ke sistem menggunakan kredensial di atas.</p>
+              <p className="mt-1">Sarankan guru untuk mengganti password setelah login pertama kali.</p>
+            </div>
+
+            <button
+              onClick={() => { setShowCredentialsModal(false); setGeneratedCredentials(null); }}
+              className="w-full py-3 px-4 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all"
+            >
+              Tutup
             </button>
           </div>
         </div>
