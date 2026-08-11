@@ -17,6 +17,22 @@ export const authService = {
   },
 };
 
+export const logsService = {
+  getAbsentStudents: async (params = {}) => {
+    const response = await api.get('/attendance/logs/absent-students', { params });
+    return response.data;
+  },
+  
+  createManual: async (data) => {
+    const response = await api.post('/attendance/logs/manual', data);
+    return response.data;
+  },
+  
+  updateStatus: async (id, data) => {
+    const response = await api.put(`/attendance/logs/${id}/status`, data);
+    return response.data;
+  },
+};
 export const attendanceService = {
   getDashboard: async (lembaga = null) => {
     const params = lembaga ? { lembaga } : {};

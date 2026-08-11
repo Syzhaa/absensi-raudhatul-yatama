@@ -6,9 +6,11 @@ export const useAppStore = create(
     (set) => ({
       isTestMode: false,
       userLembaga: null,
+      selectedKelas: null,
       toggleTestMode: () => set((state) => ({ isTestMode: !state.isTestMode })),
       setTestMode: (value) => set({ isTestMode: value }),
       setUserLembaga: (lembaga) => set({ userLembaga: lembaga }),
+      setSelectedKelas: (kelas) => set({ selectedKelas: kelas }),
     }),
     {
       name: 'yatama-app-settings', // unique name for localStorage key

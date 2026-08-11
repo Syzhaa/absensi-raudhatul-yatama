@@ -12,6 +12,7 @@ const ScanQR = lazy(() => import('./pages/ScanQR'));
 const Students = lazy(() => import('./pages/Students'));
 const Teachers = lazy(() => import('./pages/Teachers'));
 const Attendance = lazy(() => import('./pages/Attendance'));
+const Users = lazy(() => import('./pages/Users'));
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -89,6 +90,7 @@ function App() {
           <Route path="/students" element={<Students />} />
           <Route path="/teachers" element={<Teachers />} />
           <Route path="/attendance" element={<Attendance />} />
+          <Route path="/users" element={<Users />} />
           <Route path="/settings" element={<Settings onLogout={() => setIsAuthenticated(false)} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
