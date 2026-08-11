@@ -13,8 +13,6 @@ export default function Teachers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [downloadSuccessModal, setDownloadSuccessModal] = useState({ isOpen: false, count: 0 });
-  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
-  const [selectedTeacherForStatus, setSelectedTeacherForStatus] = useState(null);
   const [formData, setFormData] = useState({
     lembaga: 'MA',
     nama: '',
@@ -60,20 +58,6 @@ export default function Teachers() {
     },
   });
 
-  const setStatusMutation = useMutation({
-    mutationFn: ({ id, data }) => teacherService.setAttendanceStatus(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['teachers']);
-      queryClient.invalidateQueries(['attendance_teachers']);
-      setShowAttendanceModal(false);
-      setSelectedTeacherForStatus(null);
-      alert('Status kehadiran berhasil diperbarui');
-    },
-    onError: (error) => {
-      alert('Gagal update status: ' + (error.response?.data?.message || error.message));
-    },
-  });
-
   const resetForm = () => {
     setShowForm(false);
     setEditingTeacher(null);
@@ -113,27 +97,6 @@ export default function Teachers() {
     if (confirm('Yakin ingin menghapus guru ini?')) {
       deleteMutation.mutate(id);
     }
-  };
-
-  const handleSetAttendanceStatus = (teacher) => {
-    setSelectedTeacherForStatus(teacher);
-    setShowAttendanceModal(true);
-  };
-
-  const handleSubmitStatus = (status) => {
-    if (!selectedTeacherForStatus) return;
-    
-    const today = new Date().toISOString().split('T')[0];
-    const isTestMode = localStorage.getItem('is_test_mode') === 'true';
-    
-    setStatusMutation.mutate({
-      id: selectedTeacherForStatus.id,
-      data: {
-        status,
-        date: today,
-        is_test: isTestMode,
-      },
-    });
   };
 
   const handleSelectAll = (e) => {
@@ -437,13 +400,6 @@ export default function Teachers() {
                     {/* Desktop Actions */}
                     <div className="hidden md:flex items-center gap-1.5">
                       <button
-                        onClick={() => handleSetAttendanceStatus(teacher)}
-                        className="p-1.5 md:p-2 bg-purple-100 text-purple-700 border-2 border-gray-900 rounded-lg hover:bg-purple-200 transition-colors shadow-sm"
-                        title="Set Status Kehadiran"
-                      >
-                        <span className="material-symbols-outlined text-lg">event_busy</span>
-                      </button>
-                      <button
                         onClick={() => handleDownloadSingleQR(teacher)}
                         className="p-1.5 md:p-2 bg-blue-100 text-blue-700 border-2 border-gray-900 rounded-lg hover:bg-blue-200 transition-colors shadow-sm"
                         title="Download QR"
@@ -478,13 +434,6 @@ export default function Teachers() {
 
                       {activeDropdown === teacher.id && (
                         <div className="absolute right-0 top-full mt-1 w-40 bg-white border-2 border-gray-900 rounded-xl shadow-neo z-10 overflow-hidden">
-                          <button
-                            onClick={() => { handleSetAttendanceStatus(teacher); setActiveDropdown(null); }}
-                            className="w-full text-left px-4 py-2 text-sm font-bold text-purple-700 hover:bg-purple-50 border-b border-gray-100 flex items-center gap-2"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">event_busy</span>
-                            Set Status
-                          </button>
                           <button
                             onClick={() => { handleDownloadSingleQR(teacher); setActiveDropdown(null); }}
                             className="w-full text-left px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-50 border-b border-gray-100 flex items-center gap-2"
@@ -597,73 +546,6 @@ export default function Teachers() {
             >
               Selesai
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Set Attendance Status Modal */}
-      {showAttendanceModal && selectedTeacherForStatus && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div 
-            className="fixed inset-0 bg-black/50 animate-fade-in"
-            onClick={() => { setShowAttendanceModal(false); setSelectedTeacherForStatus(null); }}
-          />
-          <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-6 max-w-md w-full space-y-4 z-10 animate-slide-up">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black text-gray-900">Set Status Kehadiran</h2>
-              <button
-                onClick={() => { setShowAttendanceModal(false); setSelectedTeacherForStatus(null); }}
-                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <span className="material-symbols-outlined text-gray-600">close</span>
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm text-gray-600">
-                Guru: <span className="font-bold text-gray-900">{selectedTeacherForStatus.nama}</span>
-              </p>
-              <p className="text-xs text-gray-500">
-                Pilih status kehadiran untuk hari ini:
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <button
-                onClick={() => handleSubmitStatus('izin')}
-                disabled={setStatusMutation.isPending}
-                className="w-full py-3 px-4 bg-blue-100 hover:bg-blue-200 text-blue-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <span className="material-symbols-outlined">event_available</span>
-                IZIN
-              </button>
-
-              <button
-                onClick={() => handleSubmitStatus('sakit')}
-                disabled={setStatusMutation.isPending}
-                className="w-full py-3 px-4 bg-yellow-100 hover:bg-yellow-200 text-yellow-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <span className="material-symbols-outlined">medication</span>
-                SAKIT
-              </button>
-
-              <button
-                onClick={() => handleSubmitStatus('alpha')}
-                disabled={setStatusMutation.isPending}
-                className="w-full py-3 px-4 bg-red-100 hover:bg-red-200 text-red-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                <span className="material-symbols-outlined">cancel</span>
-                ALPHA (Tidak Hadir)
-              </button>
-
-              <button
-                onClick={() => { setShowAttendanceModal(false); setSelectedTeacherForStatus(null); }}
-                disabled={setStatusMutation.isPending}
-                className="w-full py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold border-2 border-gray-900 rounded-xl transition-all disabled:opacity-50"
-              >
-                Batal
-              </button>
-            </div>
           </div>
         </div>
       )}
