@@ -33,6 +33,16 @@ export default function Students() {
     queryFn: () => studentService.getAll(),
   });
 
+  // Fetch kelas list for dropdown
+  const { data: kelasData } = useQuery({
+    queryKey: ['kelas'],
+    queryFn: async () => {
+      const api = await import('../services/api').then(m => m.default);
+      const response = await api.get('/admin/kelas');
+      return response.data;
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: studentService.create,
     onSuccess: () => {
@@ -326,13 +336,18 @@ export default function Students() {
 
             <div>
               <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Kelas</label>
-              <input
-                type="text"
+              <select
                 value={formData.kelas}
                 onChange={(e) => setFormData({ ...formData, kelas: e.target.value })}
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400"
-                placeholder="Misal: X IPA 1"
-              />
+                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all cursor-pointer"
+              >
+                <option value="">-- Pilih Kelas --</option>
+                {kelasData?.data?.map((kelas) => (
+                  <option key={kelas.id} value={kelas.nama}>
+                    {kelas.nama}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
