@@ -76,6 +76,22 @@ export default function Teachers() {
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (teacherId) => {
+      const api = await import('../services/api').then(m => m.default);
+      const response = await api.post(`/attendance/teachers/${teacherId}/reset-password`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['teachers']);
+      setGeneratedCredentials(data.data.credentials);
+      setShowCredentialsModal(true);
+    },
+    onError: (error) => {
+      alert(error.response?.data?.message || 'Gagal mereset password guru');
+    },
+  });
+
   const resetForm = () => {
     setShowForm(false);
     setEditingTeacher(null);
@@ -125,6 +141,17 @@ export default function Teachers() {
     
     if (confirm(`Aktifkan akses login untuk ${teacher.nama}?\n\nSistem akan membuat akun otomatis dengan kredensial default.`)) {
       activateAccessMutation.mutate(teacher.id);
+    }
+  };
+
+  const handleResetPassword = (teacher) => {
+    if (!teacher.user_id) {
+      alert('Guru ini belum memiliki akun. Gunakan fitur Aktifkan Akses terlebih dahulu.');
+      return;
+    }
+    
+    if (confirm(`Reset password untuk ${teacher.nama}?\n\nPassword akan direset ke default dan semua sesi login aktif akan diakhiri.`)) {
+      resetPasswordMutation.mutate(teacher.id);
     }
   };
 
@@ -434,7 +461,7 @@ export default function Teachers() {
                   <div className="relative flex items-center gap-1.5 flex-shrink-0">
                     {/* Desktop Actions */}
                     <div className="hidden md:flex items-center gap-1.5">
-                      {!teacher.user_id && (
+                      {!teacher.user_id ? (
                         <button
                           onClick={() => handleActivateAccess(teacher)}
                           disabled={activateAccessMutation.isPending}
@@ -442,6 +469,15 @@ export default function Teachers() {
                           title="Aktifkan Akses Login"
                         >
                           <span className="material-symbols-outlined text-lg">lock_open</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleResetPassword(teacher)}
+                          disabled={resetPasswordMutation.isPending}
+                          className="p-1.5 md:p-2 bg-orange-100 text-orange-700 border-2 border-gray-900 rounded-lg hover:bg-orange-200 transition-colors shadow-sm disabled:opacity-50"
+                          title="Reset Password"
+                        >
+                          <span className="material-symbols-outlined text-lg">lock_reset</span>
                         </button>
                       )}
                       <button
@@ -479,7 +515,7 @@ export default function Teachers() {
 
                       {activeDropdown === teacher.id && (
                         <div className="absolute right-0 top-full mt-1 w-40 bg-white border-2 border-gray-900 rounded-xl shadow-neo z-10 overflow-hidden">
-                          {!teacher.user_id && (
+                          {!teacher.user_id ? (
                             <button
                               onClick={() => { handleActivateAccess(teacher); setActiveDropdown(null); }}
                               disabled={activateAccessMutation.isPending}
@@ -487,6 +523,15 @@ export default function Teachers() {
                             >
                               <span className="material-symbols-outlined text-[18px]">lock_open</span>
                               Aktifkan Akses
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => { handleResetPassword(teacher); setActiveDropdown(null); }}
+                              disabled={resetPasswordMutation.isPending}
+                              className="w-full text-left px-4 py-2 text-sm font-bold text-orange-700 hover:bg-orange-50 border-b border-gray-100 flex items-center gap-2 disabled:opacity-50"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">lock_reset</span>
+                              Reset Password
                             </button>
                           )}
                           <button
