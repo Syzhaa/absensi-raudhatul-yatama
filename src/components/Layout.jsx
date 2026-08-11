@@ -4,6 +4,39 @@ import { useAppStore } from '../store/useAppStore';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 
+function LembagaSelector() {
+  const superAdminLembaga = useAppStore((state) => state.superAdminLembaga);
+  const setSuperAdminLembaga = useAppStore((state) => state.setSuperAdminLembaga);
+
+  // Check if user is Super Admin
+  const { data: userData } = useQuery({
+    queryKey: ['me'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  const isSuperAdmin = userData?.data?.role === 'super_admin';
+
+  if (!isSuperAdmin) return null;
+
+  return (
+    <div className="px-4 pb-3 border-b-2 border-gray-100">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lembaga (Super Admin)</p>
+      <select
+        value={superAdminLembaga}
+        onChange={(e) => setSuperAdminLembaga(e.target.value)}
+        className="w-full px-3 py-2 bg-gradient-to-r from-purple-100 to-pink-100 border-2 border-gray-900 rounded-xl font-black text-sm text-gray-900 focus:border-purple-500 focus:outline-none cursor-pointer transition-all shadow-sm"
+      >
+        <option value="MA">🎓 MA (Madrasah Aliyah)</option>
+        <option value="MTs">📚 MTs (Madrasah Tsanawiyah)</option>
+      </select>
+    </div>
+  );
+}
+
 function KelasSelector() {
   const selectedKelas = useAppStore((state) => state.selectedKelas);
   const setSelectedKelas = useAppStore((state) => state.setSelectedKelas);
@@ -101,7 +134,7 @@ export default function Layout({ children }) {
                   <span className="material-symbols-outlined text-xl">close</span>
                 </button>
               </div>
-              <div className="pt-3"><KelasSelector /></div>
+              <div className="pt-3"><LembagaSelector /><KelasSelector /></div>
               <nav className="p-4 space-y-3 overflow-y-auto flex-1 bg-gray-50/50">
                 {menuItems.map((item) => {
                   const isActive = location.pathname === item.path;
@@ -135,7 +168,7 @@ export default function Layout({ children }) {
               <p className="font-bold text-xs text-gray-500">Raudhatul Yatama</p>
             </div>
           </div>
-          <div className="pt-3"><KelasSelector /></div>
+          <div className="pt-3"><LembagaSelector /><KelasSelector /></div>
           <nav className="p-4 space-y-2 flex-1">
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path;

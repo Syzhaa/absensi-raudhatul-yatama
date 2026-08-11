@@ -7,10 +7,12 @@ export const useAppStore = create(
       isTestMode: false,
       userLembaga: null,
       selectedKelas: null,
+      superAdminLembaga: 'MA', // Super Admin lembaga override (MA or MTs)
       toggleTestMode: () => set((state) => ({ isTestMode: !state.isTestMode })),
       setTestMode: (value) => set({ isTestMode: value }),
       setUserLembaga: (lembaga) => set({ userLembaga: lembaga }),
       setSelectedKelas: (kelas) => set({ selectedKelas: kelas }),
+      setSuperAdminLembaga: (lembaga) => set({ superAdminLembaga: lembaga }),
     }),
     {
       name: 'yatama-app-settings', // unique name for localStorage key
