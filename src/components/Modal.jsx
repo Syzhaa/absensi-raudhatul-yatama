@@ -1,43 +1,36 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
-export default function Modal({
-  isOpen,
-  onClose,
-  title,
-  children,
-  footer,
-  size = "lg",
-}) {
+export default function Modal({ isOpen, onClose, title, children, footer, size = 'lg' }) {
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: "max-w-md",
-    md: "max-w-2xl",
-    lg: "max-w-3xl",
-    xl: "max-w-5xl",
+    sm: 'max-w-md',
+    md: 'max-w-2xl',
+    lg: 'max-w-3xl',
+    xl: 'max-w-5xl',
   };
 
   return (
     <div className="fixed inset-0 z-[60] overflow-hidden flex items-end sm:items-center justify-center">
       {/* Backdrop */}
-      <div
+      <div 
         className="fixed inset-0 bg-black/50 transition-opacity animate-fade-in"
         onClick={onClose}
       />
 
       {/* Bottom Sheet Container */}
-      <div
+      <div 
         className={`
           relative w-full ${sizeClasses[size]} 
           bg-white border-t-3 sm:border-3 border-x-3 sm:border-x-3 border-gray-900
