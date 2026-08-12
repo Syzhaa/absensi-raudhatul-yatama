@@ -5,11 +5,19 @@ import { useAppStore } from "../store/useAppStore";
 
 function getDeviceId() {
   const storageKey = "yatama_device_id";
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   let deviceId = localStorage.getItem(storageKey);
 
-  if (!deviceId) {
-    deviceId = crypto.randomUUID?.() ??
-      `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  if (!deviceId || !uuidPattern.test(deviceId)) {
+    if (crypto.randomUUID) {
+      deviceId = crypto.randomUUID();
+    } else {
+      const bytes = crypto.getRandomValues(new Uint8Array(16));
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, "0"));
+      deviceId = `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
+    }
     localStorage.setItem(storageKey, deviceId);
   }
 
@@ -51,7 +59,7 @@ export default function Login({ onLogin }) {
         localStorage.setItem("auth_token", token);
         if (lembaga) setUserLembaga(lembaga);
       } else {
-        console.error("Token tidak ditemukan dalam respon:", response);
+        throw new Error("Token tidak ditemukan dalam respons login.");
       }
 
       // Remember me functionality
