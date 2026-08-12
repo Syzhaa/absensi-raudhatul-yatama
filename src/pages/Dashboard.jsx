@@ -93,7 +93,11 @@ export default function Dashboard() {
             <span className="text-xs md:text-sm font-black uppercase tracking-wide text-gray-700">
               {stat.label}
             </span>
-            <span className={`material-icons ${stat.iconColor}`} style={{ fontSize: '28px' }}>
+            <span
+              className={`material-symbols-outlined ${stat.iconColor}`}
+              style={{ fontSize: "28px" }}
+              aria-hidden="true"
+            >
               {stat.icon}
             </span>
           </div>
