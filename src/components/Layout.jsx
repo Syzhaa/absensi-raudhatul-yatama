@@ -4,6 +4,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { useEffectiveLembaga } from '../hooks/useEffectiveLembaga';
+import { menuForRole } from '../auth/accessPolicy';
 
 function LembagaSelector() {
   const superAdminLembaga = useAppStore((state) => state.superAdminLembaga);
@@ -46,14 +47,19 @@ function KelasSelector() {
   const selectedKelas = useAppStore((state) => state.selectedKelas);
   const setSelectedKelas = useAppStore((state) => state.setSelectedKelas);
   const { effectiveLembaga } = useEffectiveLembaga();
+  const userRole = useAppStore((state) => state.userRole);
 
   // Get kelas from students list (already auth-protected)
   const { data: studentData } = useQuery({
-    queryKey: ['students_for_kelas', effectiveLembaga],
+    queryKey: ['students_for_kelas', effectiveLembaga, userRole],
     queryFn: async () => {
-      const res = await api.get('/attendance/students', {
-        params: { per_page: 100, lembaga: effectiveLembaga },
-      });
+      const res = userRole === 'guru'
+        ? await api.get('/attendance/logs/roster', {
+            params: { lembaga: effectiveLembaga },
+          })
+        : await api.get('/attendance/students', {
+            params: { per_page: 100, lembaga: effectiveLembaga },
+          });
       return res.data;
     },
     staleTime: 5 * 60 * 1000,
@@ -61,7 +67,7 @@ function KelasSelector() {
 
   // Extract unique kelas from students
   const kelasList = [...new Set(
-    (studentData?.data || [])
+    (userRole === 'guru' ? studentData?.data?.data || [] : studentData?.data || [])
       .map(s => s.kelas)
       .filter(Boolean)
   )].sort();
@@ -87,16 +93,9 @@ export default function Layout({ children }) {
   const location = useLocation();
   const isTestMode = useAppStore((state) => state.isTestMode);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const userRole = useAppStore((state) => state.userRole);
 
-  const menuItems = [
-    { path: '/', label: 'Dashboard', icon: 'home' },
-    { path: '/scan', label: 'Scan QR', icon: 'qr_code_scanner' },
-    { path: '/students', label: 'Siswa', icon: 'group' },
-    { path: '/teachers', label: 'Guru', icon: 'badge' },
-    { path: '/attendance', label: 'Absensi', icon: 'calendar_month' },
-    { path: '/users', label: 'Users', icon: 'manage_accounts' },
-    { path: '/settings', label: 'Pengaturan', icon: 'settings' },
-  ];
+  const menuItems = menuForRole(userRole);
 
   return (
     <div className="min-h-screen">

@@ -33,6 +33,7 @@ export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
+  const setUserRole = useAppStore((state) => state.setUserRole);
 
   // Load remembered email on mount
   useEffect(() => {
@@ -54,10 +55,12 @@ export default function Login({ onLogin }) {
         response.data?.token || response.token || response.data?.data?.token;
       const lembaga =
         response.data?.user?.lembaga || response.data?.data?.user?.lembaga;
+      const role = response.data?.user?.role || response.data?.data?.user?.role;
 
       if (token) {
         localStorage.setItem("auth_token", token);
         if (lembaga) setUserLembaga(lembaga);
+        if (role) setUserRole(role);
       } else {
         throw new Error("Token tidak ditemukan dalam respons login.");
       }
