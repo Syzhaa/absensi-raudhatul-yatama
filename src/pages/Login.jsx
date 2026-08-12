@@ -1,21 +1,34 @@
-import { useState, useEffect } from 'react';
-import { authService } from '../services';
+import { useState, useEffect } from "react";
+import { authService } from "../services";
 
-import { useAppStore } from '../store/useAppStore';
+import { useAppStore } from "../store/useAppStore";
+
+function getDeviceId() {
+  const storageKey = "yatama_device_id";
+  let deviceId = localStorage.getItem(storageKey);
+
+  if (!deviceId) {
+    deviceId = crypto.randomUUID?.() ??
+      `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem(storageKey, deviceId);
+  }
+
+  return deviceId;
+}
 
 export default function Login({ onLogin }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
 
   // Load remembered email on mount
   useEffect(() => {
-    const rememberedEmail = localStorage.getItem('remembered_email');
+    const rememberedEmail = localStorage.getItem("remembered_email");
     if (rememberedEmail) {
       setEmail(rememberedEmail);
       setRememberMe(true);
@@ -24,31 +37,35 @@ export default function Login({ onLogin }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
-      const response = await authService.login(email, password);
-      const token = response.data?.token || response.token || response.data?.data?.token;
-      const lembaga = response.data?.user?.lembaga || response.data?.data?.user?.lembaga;
-      
+      const response = await authService.login(email, password, getDeviceId());
+      const token =
+        response.data?.token || response.token || response.data?.data?.token;
+      const lembaga =
+        response.data?.user?.lembaga || response.data?.data?.user?.lembaga;
+
       if (token) {
-        localStorage.setItem('auth_token', token);
+        localStorage.setItem("auth_token", token);
         if (lembaga) setUserLembaga(lembaga);
       } else {
-        console.error('Token tidak ditemukan dalam respon:', response);
+        console.error("Token tidak ditemukan dalam respon:", response);
       }
-      
+
       // Remember me functionality
       if (rememberMe) {
-        localStorage.setItem('remembered_email', email);
+        localStorage.setItem("remembered_email", email);
       } else {
-        localStorage.removeItem('remembered_email');
+        localStorage.removeItem("remembered_email");
       }
-      
+
       onLogin();
     } catch (err) {
-      setError(err.response?.data?.message || 'Login gagal. Silakan coba lagi.');
+      setError(
+        err.response?.data?.message || "Login gagal. Silakan coba lagi.",
+      );
     } finally {
       setLoading(false);
     }
@@ -58,13 +75,12 @@ export default function Login({ onLogin }) {
     <div className="min-h-screen flex items-center justify-center p-4 md:p-8">
       <main className="w-full max-w-md md:max-w-4xl lg:max-w-5xl transition-all duration-300">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-center">
-          
           {/* Branding Section (Centered on Mobile, Split Left Hero on Desktop) */}
           <div className="md:col-span-6 lg:col-span-7 flex flex-col items-center md:items-start text-center md:text-left mb-2 md:mb-0">
             <div className="w-28 h-28 md:w-36 md:h-36 mb-4 md:mb-6 p-2 bg-white clean-border rounded-full clean-shadow-sm overflow-hidden flex items-center justify-center">
-              <img 
-                alt="MA Raudhatul Yatama Logo" 
-                className="w-full h-full object-contain" 
+              <img
+                alt="MA Raudhatul Yatama Logo"
+                className="w-full h-full object-contain"
                 src="/logo.jpg"
               />
             </div>
@@ -75,7 +91,9 @@ export default function Login({ onLogin }) {
               RAUDHATUL YATAMA
             </p>
             <p className="hidden md:block text-gray-600 mt-4 text-sm md:text-base leading-relaxed max-w-lg">
-              Selamat Datang di Portal Presensi Digital. Silakan masuk dengan akun admin Anda untuk mengelola kehadiran siswa, guru, dan pemindaian QR Code.
+              Selamat Datang di Portal Presensi Digital. Silakan masuk dengan
+              akun admin Anda untuk mengelola kehadiran siswa, guru, dan
+              pemindaian QR Code.
             </p>
 
             {/* Desktop Feature Badges */}
@@ -96,7 +114,9 @@ export default function Login({ onLogin }) {
           <div className="md:col-span-6 lg:col-span-5 bg-white clean-border p-6 md:p-8 rounded-xl relative z-10 clean-shadow-md">
             <div className="hidden md:block mb-6">
               <h2 className="text-xl font-bold text-gray-800">Login Admin</h2>
-              <p className="text-xs text-gray-500 mt-1">Masukkan email dan kata sandi Anda</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Masukkan email dan kata sandi Anda
+              </p>
             </div>
 
             {error && (
@@ -108,7 +128,10 @@ export default function Login({ onLogin }) {
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email Input */}
               <div className="space-y-2">
-                <label className="block font-bold text-gray-800 text-xs md:text-sm uppercase tracking-wider" htmlFor="email">
+                <label
+                  className="block font-bold text-gray-800 text-xs md:text-sm uppercase tracking-wider"
+                  htmlFor="email"
+                >
                   EMAIL
                 </label>
                 <div className="relative w-full">
@@ -129,7 +152,10 @@ export default function Login({ onLogin }) {
 
               {/* Password Input */}
               <div className="space-y-2">
-                <label className="block font-bold text-gray-800 text-xs md:text-sm uppercase tracking-wider" htmlFor="password">
+                <label
+                  className="block font-bold text-gray-800 text-xs md:text-sm uppercase tracking-wider"
+                  htmlFor="password"
+                >
                   PASSWORD
                 </label>
                 <div className="relative w-full">
@@ -140,7 +166,7 @@ export default function Login({ onLogin }) {
                     name="password"
                     placeholder="••••••••"
                     required
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
@@ -151,7 +177,9 @@ export default function Login({ onLogin }) {
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
                     disabled={loading}
                   >
-                    <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'} text-sm`}></i>
+                    <i
+                      className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"} text-sm`}
+                    ></i>
                   </button>
                 </div>
               </div>
@@ -168,7 +196,10 @@ export default function Login({ onLogin }) {
                     onChange={(e) => setRememberMe(e.target.checked)}
                     disabled={loading}
                   />
-                  <label className="ml-2.5 block font-medium text-sm text-gray-800 cursor-pointer select-none" htmlFor="remember-me">
+                  <label
+                    className="ml-2.5 block font-medium text-sm text-gray-800 cursor-pointer select-none"
+                    htmlFor="remember-me"
+                  >
                     Ingat Saya
                   </label>
                 </div>
@@ -180,11 +211,10 @@ export default function Login({ onLogin }) {
                 type="submit"
                 disabled={loading}
               >
-                {loading ? 'MEMPROSES...' : 'LOGIN'}
+                {loading ? "MEMPROSES..." : "LOGIN"}
               </button>
             </form>
           </div>
-
         </div>
       </main>
     </div>
