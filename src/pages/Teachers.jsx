@@ -1,97 +1,166 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { teacherService } from '../services';
-import { useEffectiveLembaga } from '../hooks/useEffectiveLembaga';
-import Modal from '../components/Modal';
-import QRCode from 'qrcode';
-import JSZip from 'jszip';
-import { saveAs } from 'file-saver';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { teacherService } from "../services";
+import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
+import TeacherForm from "../components/TeacherForm";
+import TeacherCard from "../components/TeacherCard";
+import CredentialsModal from "../components/CredentialsModal";
+import ConfirmModal from "../components/ConfirmModal";
+import QRCode from "qrcode";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 export default function Teachers() {
   const { effectiveLembaga } = useEffectiveLembaga();
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "confirm",
+    onConfirm: null,
+  });
+  const showAlert = (title, message) =>
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      type: "alert",
+      onConfirm: null,
+    });
+  const showConfirm = (title, message, onConfirm, isDanger = false) =>
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      type: isDanger ? "danger" : "confirm",
+      onConfirm,
+    });
+
   const [showForm, setShowForm] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [selectedTeachers, setSelectedTeachers] = useState([]);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [downloadSuccessModal, setDownloadSuccessModal] = useState({ isOpen: false, count: 0 });
+  const [downloadSuccessModal, setDownloadSuccessModal] = useState({
+    isOpen: false,
+    count: 0,
+  });
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
   const [generatedCredentials, setGeneratedCredentials] = useState(null);
+  const [credentialsTeacher, setCredentialsTeacher] = useState(null);
   const [formData, setFormData] = useState({
-    lembaga: 'MA',
-    nama: '',
-    nip: '',
-    mata_pelajaran: '',
-    nomor_hp: '',
-    status: 'aktif',
+    lembaga: "MA",
+    nama: "",
+    nip: "",
+    mata_pelajaran: "",
+    nomor_hp: "",
+    status: "aktif",
   });
 
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['teachers', effectiveLembaga],
-    queryFn: () => teacherService.getAll(),
+    queryKey: ["teachers", effectiveLembaga],
+    queryFn: () => teacherService.getAll({ lembaga: effectiveLembaga }),
     enabled: !!effectiveLembaga,
   });
 
   const createMutation = useMutation({
     mutationFn: teacherService.create,
     onSuccess: () => {
-      queryClient.invalidateQueries(['teachers']);
+      queryClient.invalidateQueries(["teachers"]);
       resetForm();
-      alert('Guru berhasil ditambahkan');
+      showAlert("Berhasil", "Guru berhasil ditambahkan");
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => teacherService.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['teachers']);
+      queryClient.invalidateQueries(["teachers"]);
       resetForm();
-      alert('Guru berhasil diupdate');
+      showAlert("Berhasil", "Guru berhasil diupdate");
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: teacherService.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries(['teachers']);
-      alert('Guru berhasil dihapus');
+      queryClient.invalidateQueries(["teachers"]);
+      showAlert("Berhasil", "Guru berhasil dihapus");
     },
     onError: (error) => {
-      alert('Gagal menghapus guru: ' + (error.message || 'Unknown error'));
+      showAlert(
+        "Error",
+        "Gagal menghapus guru: " + (error.message || "Unknown error"),
+      );
     },
   });
 
   const activateAccessMutation = useMutation({
     mutationFn: async (teacherId) => {
-      const api = await import('../services/api').then(m => m.default);
-      const response = await api.post(`/attendance/teachers/${teacherId}/activate-access`);
+      const api = await import("../services/api").then((m) => m.default);
+      const response = await api.post(
+        `/attendance/teachers/${teacherId}/activate-access`,
+      );
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries(['teachers']);
+      queryClient.invalidateQueries(["teachers"]);
       setGeneratedCredentials(data.data.credentials);
+      setCredentialsTeacher(data.data.teacher);
       setShowCredentialsModal(true);
     },
     onError: (error) => {
-      alert(error.response?.data?.message || 'Gagal mengaktifkan akses guru');
+      showAlert(
+        "Error",
+        error.response?.data?.message || "Gagal mengaktifkan akses guru",
+      );
     },
   });
 
   const resetPasswordMutation = useMutation({
     mutationFn: async (teacherId) => {
-      const api = await import('../services/api').then(m => m.default);
-      const response = await api.post(`/attendance/teachers/${teacherId}/reset-password`);
+      const api = await import("../services/api").then((m) => m.default);
+      const response = await api.post(
+        `/attendance/teachers/${teacherId}/reset-password`,
+      );
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries(['teachers']);
+      queryClient.invalidateQueries(["teachers"]);
       setGeneratedCredentials(data.data.credentials);
+      setCredentialsTeacher(data.data.teacher);
       setShowCredentialsModal(true);
     },
     onError: (error) => {
-      alert(error.response?.data?.message || 'Gagal mereset password guru');
+      showAlert(
+        "Error",
+        error.response?.data?.message || "Gagal mereset password guru",
+      );
+    },
+  });
+
+  const deactivateAccessMutation = useMutation({
+    mutationFn: async (teacherId) => {
+      const api = await import("../services/api").then((m) => m.default);
+      const response = await api.delete(
+        `/attendance/teachers/${teacherId}/deactivate-access`,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(["teachers"]);
+      setShowCredentialsModal(false);
+      setGeneratedCredentials(null);
+      setCredentialsTeacher(null);
+      showAlert("Berhasil", "Akses login guru berhasil dinonaktifkan");
+    },
+    onError: (error) => {
+      showAlert(
+        "Error",
+        error.response?.data?.message || "Gagal menonaktifkan akses guru",
+      );
     },
   });
 
@@ -99,12 +168,12 @@ export default function Teachers() {
     setShowForm(false);
     setEditingTeacher(null);
     setFormData({
-      lembaga: effectiveLembaga || 'MA',
-      nama: '',
-      nip: '',
-      mata_pelajaran: '',
-      nomor_hp: '',
-      status: 'aktif',
+      lembaga: effectiveLembaga || "MA",
+      nama: "",
+      nip: "",
+      mata_pelajaran: "",
+      nomor_hp: "",
+      status: "aktif",
     });
   };
 
@@ -113,9 +182,9 @@ export default function Teachers() {
     setFormData({
       lembaga: teacher.lembaga,
       nama: teacher.nama,
-      nip: teacher.nip || '',
-      mata_pelajaran: teacher.mata_pelajaran || '',
-      nomor_hp: teacher.nomor_hp || '',
+      nip: teacher.nip || "",
+      mata_pelajaran: teacher.mata_pelajaran || "",
+      nomor_hp: teacher.nomor_hp || "",
       status: teacher.status,
     });
     setShowForm(true);
@@ -131,42 +200,70 @@ export default function Teachers() {
   };
 
   const handleDelete = (id) => {
-    if (confirm('Yakin ingin menghapus guru ini?')) {
-      deleteMutation.mutate(id);
-    }
+    showConfirm(
+      "Hapus Guru",
+      "Yakin ingin menghapus guru ini?",
+      () => deleteMutation.mutate(id),
+      true,
+    );
   };
 
   const handleActivateAccess = (teacher) => {
     if (teacher.user_id) {
-      alert('Guru ini sudah memiliki akun aktif');
+      showAlert("Peringatan", "Guru ini sudah memiliki akun aktif");
       return;
     }
-    
-    if (confirm(`Aktifkan akses login untuk ${teacher.nama}?\n\nSistem akan membuat akun otomatis dengan kredensial default.`)) {
-      activateAccessMutation.mutate(teacher.id);
-    }
+
+    showConfirm(
+      "Aktifkan Akses",
+      `Aktifkan akses login untuk ${teacher.nama}?\n\nSistem akan membuat akun otomatis dengan kredensial default.`,
+      () => activateAccessMutation.mutate(teacher.id),
+    );
   };
 
   const handleResetPassword = (teacher) => {
     if (!teacher.user_id) {
-      alert('Guru ini belum memiliki akun. Gunakan fitur Aktifkan Akses terlebih dahulu.');
+      showAlert(
+        "Peringatan",
+        "Guru ini belum memiliki akun. Gunakan fitur Aktifkan Akses terlebih dahulu.",
+      );
       return;
     }
-    
-    if (confirm(`Reset password untuk ${teacher.nama}?\n\nPassword akan direset ke default dan semua sesi login aktif akan diakhiri.`)) {
-      resetPasswordMutation.mutate(teacher.id);
+
+    showConfirm(
+      "Reset Password",
+      `Reset password untuk ${teacher.nama}?\n\nPassword akan direset ke default dan semua sesi login aktif akan diakhiri.`,
+      () => resetPasswordMutation.mutate(teacher.id),
+      true,
+    );
+  };
+
+  const handleViewAccess = async (teacher) => {
+    try {
+      const api = await import("../services/api").then((m) => m.default);
+      const response = await api.get(
+        `/attendance/teachers/${teacher.id}/account-info`,
+      );
+      setGeneratedCredentials(response.data.data.credentials);
+      setCredentialsTeacher(teacher);
+      setShowCredentialsModal(true);
+    } catch (error) {
+      showAlert(
+        "Error",
+        error.response?.data?.message || "Gagal membuka informasi akun guru",
+      );
     }
   };
 
   const handleCopyCredentials = (text) => {
     navigator.clipboard.writeText(text).then(() => {
-      alert('Kredensial berhasil disalin!');
+      showAlert("Berhasil", "Kredensial berhasil disalin!");
     });
   };
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedTeachers(teachers.map(t => t.id));
+      setSelectedTeachers(teachers.map((t) => t.id));
     } else {
       setSelectedTeachers([]);
     }
@@ -174,7 +271,7 @@ export default function Teachers() {
 
   const handleSelectTeacher = (id) => {
     if (selectedTeachers.includes(id)) {
-      setSelectedTeachers(selectedTeachers.filter(tid => tid !== id));
+      setSelectedTeachers(selectedTeachers.filter((tid) => tid !== id));
     } else {
       setSelectedTeachers([...selectedTeachers, id]);
     }
@@ -182,60 +279,72 @@ export default function Teachers() {
 
   const handleGenerateQR = async () => {
     if (selectedTeachers.length === 0) {
-      alert('Pilih guru terlebih dahulu');
+      showAlert("Peringatan", "Pilih guru terlebih dahulu");
       return;
     }
 
     try {
-      const selectedData = teachers.filter(t => selectedTeachers.includes(t.id));
+      const selectedData = teachers.filter((t) =>
+        selectedTeachers.includes(t.id),
+      );
       const zip = new JSZip();
-      
+
       for (const teacher of selectedData) {
         const qrData = teacher.uuid;
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         await QRCode.toCanvas(canvas, qrData, { width: 300, margin: 2 });
-        
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-        zip.file(`guru-${teacher.nama.replace(/\s+/g, '-')}-${teacher.nip || teacher.id}.png`, blob);
+
+        const blob = await new Promise((resolve) =>
+          canvas.toBlob(resolve, "image/png"),
+        );
+        zip.file(
+          `guru-${teacher.nama.replace(/\s+/g, "-")}-${teacher.nip || teacher.id}.png`,
+          blob,
+        );
       }
-      
-      const zipContent = await zip.generateAsync({ type: 'blob' });
+
+      const zipContent = await zip.generateAsync({ type: "blob" });
       saveAs(zipContent, `QR-Guru-${new Date().getTime()}.zip`);
-      
+
       const count = selectedTeachers.length;
       setSelectedTeachers([]);
       setDownloadSuccessModal({ isOpen: true, count });
     } catch (error) {
-      alert('Gagal generate QR: ' + error.message);
+      showAlert("Error", "Gagal generate QR: " + error.message);
     }
   };
 
   const handleDownloadSingleQR = async (teacher) => {
     try {
       const qrData = teacher.uuid;
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       await QRCode.toCanvas(canvas, qrData, { width: 300, margin: 2 });
-      
-      const link = document.createElement('a');
-      link.download = `guru-${teacher.nama.replace(/\s+/g, '-')}.png`;
+
+      const link = document.createElement("a");
+      link.download = `guru-${teacher.nama.replace(/\s+/g, "-")}.png`;
       link.href = canvas.toDataURL();
       link.click();
     } catch (error) {
-      alert('Gagal download QR: ' + error.message);
+      showAlert("Error", "Gagal download QR: " + error.message);
     }
   };
 
   const teachers = data?.data || [];
   const totalPages = Math.ceil(teachers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedTeachers = teachers.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedTeachers = teachers.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 landscape:space-y-3">
       {/* Header Compact */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 landscape:py-2 shadow-neo flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 landscape:mb-1">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl md:text-2xl landscape:text-lg font-black text-gray-800 tracking-tight">Data Guru</h1>
+          <h1 className="text-xl md:text-2xl landscape:text-lg font-black text-gray-800 tracking-tight">
+            Data Guru
+          </h1>
           <span className="px-2.5 py-0.5 text-xs font-bold bg-gray-100 text-gray-700 border-2 border-gray-900 rounded-full">
             Total: {teachers.length}
           </span>
@@ -247,8 +356,12 @@ export default function Teachers() {
               onClick={handleGenerateQR}
               className="flex items-center justify-center gap-1.5 px-3 py-2 bg-primary-green text-gray-800 font-bold border-2 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md transition-all text-xs md:text-sm"
             >
-              <span className="material-symbols-outlined text-lg">download</span>
-              <span className="hidden sm:inline">QR ({selectedTeachers.length})</span>
+              <span className="material-symbols-outlined text-lg">
+                download
+              </span>
+              <span className="hidden sm:inline">
+                QR ({selectedTeachers.length})
+              </span>
               <span className="sm:hidden">({selectedTeachers.length})</span>
             </button>
           )}
@@ -267,109 +380,15 @@ export default function Teachers() {
         </div>
       </div>
 
-      <Modal
+      <TeacherForm
         isOpen={showForm}
-        onClose={() => resetForm()}
-        title={editingTeacher ? 'Edit Guru' : 'Tambah Guru'}
-        size="lg"
-        footer={
-          <div className="space-y-2">
-            <button 
-              type="button"
-              onClick={handleSubmit}
-              className="w-full py-3.5 px-6 bg-primary-green text-gray-900 font-bold text-base md:text-lg rounded-full border-2 border-gray-900 shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              <span className="material-symbols-outlined text-xl">
-                {editingTeacher ? 'save' : 'check'}
-              </span>
-              <span>
-                {createMutation.isPending || updateMutation.isPending ? 'Menyimpan...' : (editingTeacher ? 'Update Guru' : 'Simpan Guru')}
-              </span>
-            </button>
-            <button 
-              type="button" 
-              onClick={resetForm} 
-              className="w-full py-2 text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors text-center"
-            >
-              Batal
-            </button>
-          </div>
-        }
-      >
-        <form onSubmit={handleSubmit} id="teacher-form" className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Lembaga *</label>
-              <select
-                value={formData.lembaga}
-                onChange={(e) => setFormData({ ...formData, lembaga: e.target.value })}
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all cursor-pointer"
-                required
-              >
-                <option value="MA">MA</option>
-                <option value="MTs">MTs</option>
-                <option value="Yayasan">Yayasan</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Nama Guru *</label>
-              <input
-                type="text"
-                value={formData.nama}
-                onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400"
-                placeholder="Nama lengkap guru & gelar"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">NIP / NIDN</label>
-              <input
-                type="text"
-                value={formData.nip}
-                onChange={(e) => setFormData({ ...formData, nip: e.target.value })}
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400"
-                placeholder="Nomor Induk Pegawai"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Mata Pelajaran</label>
-              <input
-                type="text"
-                value={formData.mata_pelajaran}
-                onChange={(e) => setFormData({ ...formData, mata_pelajaran: e.target.value })}
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400"
-                placeholder="Misal: Matematika, Bahasa Indonesia"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">No HP / WhatsApp</label>
-              <input
-                type="text"
-                value={formData.nomor_hp}
-                onChange={(e) => setFormData({ ...formData, nomor_hp: e.target.value })}
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400"
-                placeholder="08123456789"
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Status</label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all cursor-pointer"
-              >
-                <option value="aktif">Aktif</option>
-                <option value="nonaktif">Non-aktif</option>
-              </select>
-            </div>
-          </form>
-        </Modal>
+        onClose={resetForm}
+        editingTeacher={editingTeacher}
+        formData={formData}
+        setFormData={setFormData}
+        onSubmit={handleSubmit}
+        isPending={createMutation.isPending || updateMutation.isPending}
+      />
 
       {/* Select All Action Bar */}
       {teachers.length > 0 && (
@@ -377,7 +396,10 @@ export default function Teachers() {
           <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer select-none">
             <input
               type="checkbox"
-              checked={selectedTeachers.length === teachers.length && teachers.length > 0}
+              checked={
+                selectedTeachers.length === teachers.length &&
+                teachers.length > 0
+              }
               onChange={handleSelectAll}
               className="w-4 h-4 rounded border-2 border-gray-900 text-primary-green focus:ring-0 cursor-pointer"
             />
@@ -403,170 +425,23 @@ export default function Teachers() {
             Belum ada data guru
           </div>
         ) : (
-          paginatedTeachers.map((teacher) => {
-            const isSelected = selectedTeachers.includes(teacher.id);
-            return (
-              <div
-                key={teacher.id}
-                className={`bg-white border-2 md:border-3 border-gray-900 rounded-xl md:rounded-2xl p-3.5 md:p-4 shadow-neo transition-all ${
-                  isSelected ? 'bg-emerald-50/70 border-primary-green' : ''
-                }`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  {/* Left: Checkbox & Main Info */}
-                  <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => handleSelectTeacher(teacher.id)}
-                      className="mt-1 w-4 h-4 md:w-5 md:h-5 rounded border-2 border-gray-900 text-primary-green focus:ring-0 cursor-pointer flex-shrink-0"
-                    />
-
-                    <div className="space-y-1.5 min-w-0 flex-1">
-                      {/* Nama Guru */}
-                      <h3 className="font-bold text-base md:text-lg text-gray-900 truncate leading-snug">
-                        {teacher.nama}
-                      </h3>
-
-                      {/* Chips / Badges */}
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {/* Mata Pelajaran Badge */}
-                        <span className="px-2 py-0.5 text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-300 rounded-md">
-                          {teacher.mata_pelajaran || 'Umum'}
-                        </span>
-
-                        {/* Lembaga Badge */}
-                        <span className="px-2 py-0.5 text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-300 rounded-md uppercase">
-                          {teacher.lembaga}
-                        </span>
-
-                        {/* Status Badge */}
-                        <span
-                          className={`px-2 py-0.5 text-[11px] font-bold rounded-md border ${
-                            teacher.status === 'aktif'
-                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                              : 'bg-gray-100 text-gray-700 border-gray-300'
-                          }`}
-                        >
-                          {teacher.status?.toUpperCase()}
-                        </span>
-
-                        {teacher.nip && (
-                          <span className="text-[11px] font-medium text-gray-500 hidden sm:inline">
-                            NIP: {teacher.nip}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right: Actions */}
-                  <div className="relative flex items-center gap-1.5 flex-shrink-0">
-                    {/* Desktop Actions */}
-                    <div className="hidden md:flex items-center gap-1.5">
-                      {!teacher.user_id ? (
-                        <button
-                          onClick={() => handleActivateAccess(teacher)}
-                          disabled={activateAccessMutation.isPending}
-                          className="p-1.5 md:p-2 bg-emerald-100 text-emerald-700 border-2 border-gray-900 rounded-lg hover:bg-emerald-200 transition-colors shadow-sm disabled:opacity-50"
-                          title="Aktifkan Akses Login"
-                        >
-                          <span className="material-symbols-outlined text-lg">lock_open</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleResetPassword(teacher)}
-                          disabled={resetPasswordMutation.isPending}
-                          className="p-1.5 md:p-2 bg-orange-100 text-orange-700 border-2 border-gray-900 rounded-lg hover:bg-orange-200 transition-colors shadow-sm disabled:opacity-50"
-                          title="Reset Password"
-                        >
-                          <span className="material-symbols-outlined text-lg">lock_reset</span>
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDownloadSingleQR(teacher)}
-                        className="p-1.5 md:p-2 bg-blue-100 text-blue-700 border-2 border-gray-900 rounded-lg hover:bg-blue-200 transition-colors shadow-sm"
-                        title="Download QR"
-                      >
-                        <span className="material-symbols-outlined text-lg">qr_code_2</span>
-                      </button>
-                      <button
-                        onClick={() => handleEdit(teacher)}
-                        className="p-1.5 md:p-2 bg-amber-100 text-amber-900 border-2 border-gray-900 rounded-lg hover:bg-amber-200 transition-colors shadow-sm"
-                        title="Edit guru"
-                      >
-                        <span className="material-symbols-outlined text-lg">edit</span>
-                      </button>
-                      <button
-                        onClick={() => handleDelete(teacher.id)}
-                        disabled={deleteMutation.isPending}
-                        className="p-1.5 md:p-2 bg-red-100 text-red-700 border-2 border-gray-900 rounded-lg hover:bg-red-200 transition-colors shadow-sm disabled:opacity-50"
-                        title="Hapus guru"
-                      >
-                        <span className="material-symbols-outlined text-lg">delete</span>
-                      </button>
-                    </div>
-
-                    {/* Mobile Kebab Menu */}
-                    <div className="md:hidden relative">
-                      <button
-                        onClick={() => setActiveDropdown(activeDropdown === teacher.id ? null : teacher.id)}
-                        className="p-1.5 bg-gray-100 text-gray-700 border-2 border-gray-900 rounded-lg shadow-sm"
-                      >
-                        <span className="material-symbols-outlined text-lg">more_vert</span>
-                      </button>
-
-                      {activeDropdown === teacher.id && (
-                        <div className="absolute right-0 top-full mt-1 w-40 bg-white border-2 border-gray-900 rounded-xl shadow-neo z-10 overflow-hidden">
-                          {!teacher.user_id ? (
-                            <button
-                              onClick={() => { handleActivateAccess(teacher); setActiveDropdown(null); }}
-                              disabled={activateAccessMutation.isPending}
-                              className="w-full text-left px-4 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50 border-b border-gray-100 flex items-center gap-2 disabled:opacity-50"
-                            >
-                              <span className="material-symbols-outlined text-[18px]">lock_open</span>
-                              Aktifkan Akses
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => { handleResetPassword(teacher); setActiveDropdown(null); }}
-                              disabled={resetPasswordMutation.isPending}
-                              className="w-full text-left px-4 py-2 text-sm font-bold text-orange-700 hover:bg-orange-50 border-b border-gray-100 flex items-center gap-2 disabled:opacity-50"
-                            >
-                              <span className="material-symbols-outlined text-[18px]">lock_reset</span>
-                              Reset Password
-                            </button>
-                          )}
-                          <button
-                            onClick={() => { handleDownloadSingleQR(teacher); setActiveDropdown(null); }}
-                            className="w-full text-left px-4 py-2 text-sm font-bold text-blue-700 hover:bg-blue-50 border-b border-gray-100 flex items-center gap-2"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">qr_code_2</span>
-                            Download QR
-                          </button>
-                          <button
-                            onClick={() => { handleEdit(teacher); setActiveDropdown(null); }}
-                            className="w-full text-left px-4 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50 border-b border-gray-100 flex items-center gap-2"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">edit</span>
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => { handleDelete(teacher.id); setActiveDropdown(null); }}
-                            disabled={deleteMutation.isPending}
-                            className="w-full text-left px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50 flex items-center gap-2 disabled:opacity-50"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                            Hapus
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })
+          paginatedTeachers.map((teacher) => (
+            <TeacherCard
+              key={teacher.id}
+              teacher={teacher}
+              isSelected={selectedTeachers.includes(teacher.id)}
+              onSelect={handleSelectTeacher}
+              onActivateAccess={handleActivateAccess}
+              onViewAccess={handleViewAccess}
+              onDownloadQR={handleDownloadSingleQR}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              isActivatePending={activateAccessMutation.isPending}
+              isDeletePending={deleteMutation.isPending}
+              activeDropdown={activeDropdown}
+              setActiveDropdown={setActiveDropdown}
+            />
+          ))
         )}
       </div>
 
@@ -574,7 +449,9 @@ export default function Teachers() {
       {teachers.length > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 pb-12">
           <div className="flex items-center gap-2">
-            <span className="text-xs md:text-sm font-bold text-gray-700">Tampilkan:</span>
+            <span className="text-xs md:text-sm font-bold text-gray-700">
+              Tampilkan:
+            </span>
             <select
               value={itemsPerPage}
               onChange={(e) => {
@@ -588,26 +465,32 @@ export default function Teachers() {
               <option value={25}>25</option>
               <option value={50}>50</option>
             </select>
-            <span className="text-xs md:text-sm font-bold text-gray-700">data</span>
+            <span className="text-xs md:text-sm font-bold text-gray-700">
+              data
+            </span>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
               className="p-1.5 md:p-2 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              <span className="material-symbols-outlined text-sm md:text-base">chevron_left</span>
+              <span className="material-symbols-outlined text-sm md:text-base">
+                chevron_left
+              </span>
             </button>
             <span className="text-xs md:text-sm font-bold text-gray-700">
               Halaman {currentPage} dari {totalPages || 1}
             </span>
             <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages || totalPages === 0}
               className="p-1.5 md:p-2 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              <span className="material-symbols-outlined text-sm md:text-base">chevron_right</span>
+              <span className="material-symbols-outlined text-sm md:text-base">
+                chevron_right
+              </span>
             </button>
           </div>
         </div>
@@ -630,21 +513,31 @@ export default function Teachers() {
       {/* Download ZIP Success Modal */}
       {downloadSuccessModal.isOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 animate-fade-in"
             onClick={() => setDownloadSuccessModal({ isOpen: false, count: 0 })}
           />
           <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-6 max-w-sm w-full space-y-4 z-10 animate-slide-up text-center">
             <div className="w-14 h-14 bg-emerald-100 border-2 border-gray-900 rounded-full flex items-center justify-center text-emerald-600 mx-auto">
-              <span className="material-symbols-outlined text-3xl font-black">folder_zip</span>
+              <span className="material-symbols-outlined text-3xl font-black">
+                folder_zip
+              </span>
             </div>
-            <h2 className="text-xl font-black text-gray-900">Download Berhasil!</h2>
+            <h2 className="text-xl font-black text-gray-900">
+              Download Berhasil!
+            </h2>
             <p className="text-sm text-gray-600 font-medium leading-relaxed">
-              Berhasil mengunduh <span className="font-bold text-gray-900">{downloadSuccessModal.count} QR Code</span> guru ke dalam berkas ZIP.
+              Berhasil mengunduh{" "}
+              <span className="font-bold text-gray-900">
+                {downloadSuccessModal.count} QR Code
+              </span>{" "}
+              guru ke dalam berkas ZIP.
             </p>
             <button
               type="button"
-              onClick={() => setDownloadSuccessModal({ isOpen: false, count: 0 })}
+              onClick={() =>
+                setDownloadSuccessModal({ isOpen: false, count: 0 })
+              }
               className="w-full py-3 px-4 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all"
             >
               Selesai
@@ -654,82 +547,40 @@ export default function Teachers() {
       )}
 
       {/* Credentials Modal - Show generated login credentials */}
-      {showCredentialsModal && generatedCredentials && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div 
-            className="fixed inset-0 bg-black/50 animate-fade-in"
-            onClick={() => { setShowCredentialsModal(false); setGeneratedCredentials(null); }}
-          />
-          <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-6 max-w-md w-full space-y-4 z-10 animate-slide-up">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black text-gray-900">Akun Berhasil Diaktifkan</h2>
-              <button
-                onClick={() => { setShowCredentialsModal(false); setGeneratedCredentials(null); }}
-                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <span className="material-symbols-outlined text-gray-600">close</span>
-              </button>
-            </div>
-
-            <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-3 text-xs text-amber-900 font-medium">
-              <strong>⚠️ PENTING:</strong> Catat kredensial berikut. Informasi ini hanya ditampilkan sekali!
-            </div>
-
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-700">Nama Guru</label>
-                <div className="px-3 py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm text-gray-900">
-                  {generatedCredentials.name}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-700">Email Login</label>
-                <div className="flex gap-2">
-                  <div className="flex-1 px-3 py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-mono text-sm text-gray-900 break-all">
-                    {generatedCredentials.email}
-                  </div>
-                  <button
-                    onClick={() => handleCopyCredentials(generatedCredentials.email)}
-                    className="px-3 py-2 bg-blue-100 text-blue-700 border-2 border-gray-900 rounded-lg hover:bg-blue-200 transition-colors flex-shrink-0"
-                    title="Salin Email"
-                  >
-                    <span className="material-symbols-outlined text-lg">content_copy</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-gray-700">Password</label>
-                <div className="flex gap-2">
-                  <div className="flex-1 px-3 py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-mono text-sm text-gray-900">
-                    {generatedCredentials.password}
-                  </div>
-                  <button
-                    onClick={() => handleCopyCredentials(generatedCredentials.password)}
-                    className="px-3 py-2 bg-blue-100 text-blue-700 border-2 border-gray-900 rounded-lg hover:bg-blue-200 transition-colors flex-shrink-0"
-                    title="Salin Password"
-                  >
-                    <span className="material-symbols-outlined text-lg">content_copy</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-3 text-xs text-emerald-900">
-              <p className="font-medium">✓ Guru dapat login ke sistem menggunakan kredensial di atas.</p>
-              <p className="mt-1">Sarankan guru untuk mengganti password setelah login pertama kali.</p>
-            </div>
-
-            <button
-              onClick={() => { setShowCredentialsModal(false); setGeneratedCredentials(null); }}
-              className="w-full py-3 px-4 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all"
-            >
-              Tutup
-            </button>
-          </div>
-        </div>
+      {showCredentialsModal && (
+        <CredentialsModal
+          credentials={generatedCredentials}
+          onClose={() => {
+            setShowCredentialsModal(false);
+            setGeneratedCredentials(null);
+            setCredentialsTeacher(null);
+          }}
+          onCopy={handleCopyCredentials}
+          onResetPassword={() => handleResetPassword(credentialsTeacher)}
+          onDeactivateAccess={() =>
+            showConfirm(
+              "Nonaktifkan Akses",
+              `Nonaktifkan akses login untuk ${credentialsTeacher?.nama}? Akun login dan seluruh sesinya akan dihapus.`,
+              () => deactivateAccessMutation.mutate(credentialsTeacher.id),
+              true,
+            )
+          }
+          isResetPending={resetPasswordMutation.isPending}
+          isDeactivatePending={deactivateAccessMutation.isPending}
+        />
       )}
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          if (confirmModal.onConfirm) confirmModal.onConfirm();
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+        }}
+      />
     </div>
   );
 }
