@@ -131,8 +131,8 @@ export default function AttendanceModal({
               Edit Absensi
             </h2>
             <p className="text-xs md:text-sm text-gray-500 mt-0.5">
-              {student?.nama || "Siswa"} -{" "}
-              {student?.kelas ? `Kelas ${student.kelas}` : ""}
+              {student?.nama || student?.student?.nama || "Siswa"} -{" "}
+              {student?.kelas || student?.student?.kelas ? `Kelas ${student.kelas || student.student.kelas}` : ""}
             </p>
           </div>
           <button
@@ -154,10 +154,10 @@ export default function AttendanceModal({
                 </span>
                 <div>
                   <p className="font-bold text-sm text-gray-900">
-                    {student.nama}
+                    {student?.nama || student?.student?.nama || "Nama tidak tersedia"}
                   </p>
-                  {student.nis && (
-                    <p className="text-xs text-gray-500">NIS: {student.nis}</p>
+                  {(student?.nis || student?.student?.nis) && (
+                    <p className="text-xs text-gray-500">NIS: {student.nis || student.student.nis}</p>
                   )}
                 </div>
               </div>
