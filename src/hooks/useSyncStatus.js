@@ -1,6 +1,6 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import api from '../services/api';
+import { useEffect, useRef, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import api from "../services/api";
 
 /**
  * Multi-device sync hook.
@@ -19,25 +19,27 @@ export function useSyncStatus(onSettingsChange) {
    */
   const syncStatus = useCallback(async () => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem("auth_token");
       if (!token) return;
 
       // Fetch current settings untuk detect test_mode changes
-      const settingsResponse = await api.get('/attendance/settings');
+      const settingsResponse = await api.get("/attendance/settings");
       const newSettings = settingsResponse.data?.data || [];
 
       // Store current settings di localStorage untuk cross-tab detection
-      const oldSettings = JSON.parse(localStorage.getItem('attendance_settings') || '[]');
-      localStorage.setItem('attendance_settings', JSON.stringify(newSettings));
+      const oldSettings = JSON.parse(
+        localStorage.getItem("attendance_settings") || "[]",
+      );
+      localStorage.setItem("attendance_settings", JSON.stringify(newSettings));
 
       // Detect test_mode changes
       if (JSON.stringify(oldSettings) !== JSON.stringify(newSettings)) {
-        queryClient.invalidateQueries(['settings']);
+        queryClient.invalidateQueries(["settings"]);
         if (onSettingsChange) onSettingsChange(newSettings);
       }
     } catch (error) {
       // Token invalid — abort silently. Device tetap login, tidak auto-logout.
-      console.debug('Sync settings skipped:', error.message);
+      console.debug("Sync settings skipped:", error.message);
     }
   }, [queryClient, onSettingsChange]);
 

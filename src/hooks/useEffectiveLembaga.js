@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { useAppStore } from '../store/useAppStore';
-import api from '../services/api';
+import { useQuery } from "@tanstack/react-query";
+import { useAppStore } from "../store/useAppStore";
+import api from "../services/api";
 
 /**
  * Hook to get effective lembaga for API calls
@@ -13,16 +13,16 @@ export function useEffectiveLembaga() {
 
   // Fetch user profile to check role
   const { data: userData, isLoading } = useQuery({
-    queryKey: ['me'],
+    queryKey: ["me"],
     queryFn: async () => {
-      const res = await api.get('/auth/me');
+      const res = await api.get("/auth/me");
       return res.data;
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
     retry: 1,
   });
 
-  const isSuperAdmin = userData?.data?.role === 'super_admin';
+  const isSuperAdmin = userData?.data?.role === "super_admin";
 
   // Super Admin uses selector, others use their own lembaga
   const effectiveLembaga = isSuperAdmin ? superAdminLembaga : userLembaga;

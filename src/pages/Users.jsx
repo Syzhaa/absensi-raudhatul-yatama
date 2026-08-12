@@ -1,221 +1,34 @@
-import React, { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../services/api';
-import { useAppStore } from '../store/useAppStore';
-
-const ROLES = [
-  { value: 'admin_ma', label: 'Admin MA' },
-  { value: 'admin_mts', label: 'Admin MTS' },
-  { value: 'guru', label: 'Guru' },
-  { value: 'siswa', label: 'Siswa' },
-];
-
-const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
-  const [formData, setFormData] = useState(user || {
-    name: '',
-    email: '',
-    password: '',
-    role: 'guru',
-    lembaga: 'ma',
-    kelas: '',
-  });
-
-  React.useEffect(() => {
-    if (user) setFormData(user);
-  }, [user]);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white border-3 border-gray-900 rounded-2xl shadow-neo-xl overflow-hidden">
-        <div className="bg-gray-50 border-b-3 border-gray-900 p-4 flex items-center justify-between">
-          <h2 className="font-black text-lg text-gray-900">{user?.id ? 'Edit User' : 'Tambah User'}</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-200">
-            <span className="material-symbols-outlined text-xl">close</span>
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="p-4 space-y-3">
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-1">Nama</label>
-            <input
-              type="text"
-              required
-              value={formData.name || ''}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl font-medium text-sm focus:border-primary-green focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-1">Email</label>
-            <input
-              type="email"
-              required
-              value={formData.email || ''}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl font-medium text-sm focus:border-primary-green focus:outline-none"
-            />
-          </div>
-          {!user?.id && (
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-1">Password</label>
-              <input
-                type="password"
-                required={!user?.id}
-                value={formData.password || ''}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl font-medium text-sm focus:border-primary-green focus:outline-none"
-              />
-            </div>
-          )}
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-1">Role</label>
-            <select
-              required
-              value={formData.role || 'guru'}
-              onChange={(e) => setFormData({...formData, role: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl font-bold text-sm focus:border-primary-green focus:outline-none"
-            >
-              {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-1">Lembaga</label>
-            <select
-              required
-              value={formData.lembaga || 'ma'}
-              onChange={(e) => setFormData({...formData, lembaga: e.target.value})}
-              className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl font-bold text-sm focus:border-primary-green focus:outline-none"
-            >
-              <option value="ma">MA</option>
-              <option value="mts">MTS</option>
-            </select>
-          </div>
-          {formData.role === 'guru' && (
-            <div>
-              <label className="block text-sm font-bold text-gray-900 mb-1">Kelas (opsional)</label>
-              <input
-                type="text"
-                placeholder="Contoh: 10, 11, 12"
-                value={formData.kelas || ''}
-                onChange={(e) => setFormData({...formData, kelas: e.target.value})}
-                className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl font-medium text-sm focus:border-primary-green focus:outline-none"
-              />
-            </div>
-          )}
-          <div className="flex gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm hover:bg-gray-200"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 py-2.5 bg-primary-green text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md disabled:opacity-50"
-            >
-              {isSubmitting ? 'Menyimpan...' : 'Simpan'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-const PromoteModal = ({ isOpen, onClose, selectedUsers, onSubmit, isSubmitting }) => {
-  const [newKelas, setNewKelas] = useState('');
-
-  if (!isOpen) return null;
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!newKelas.trim()) return;
-    onSubmit(newKelas.trim());
-  };
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-md bg-white border-3 border-gray-900 rounded-2xl shadow-neo-xl overflow-hidden">
-        <div className="bg-amber-50 border-b-3 border-gray-900 p-4 flex items-center justify-between">
-          <div>
-            <h2 className="font-black text-lg text-gray-900">Naik Kelas</h2>
-            <p className="text-sm text-gray-600">{selectedUsers.length} siswa terpilih</p>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-amber-100">
-            <span className="material-symbols-outlined text-xl">close</span>
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="p-4 space-y-3">
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-1">Kelas Tujuan</label>
-            <input
-              type="text"
-              required
-              placeholder="Contoh: 11, 12, XIII"
-              value={newKelas}
-              onChange={(e) => setNewKelas(e.target.value)}
-              autoFocus
-              className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl font-medium text-sm focus:border-primary-green focus:outline-none"
-            />
-            <p className="text-xs text-gray-500 mt-1">Semua siswa terpilih akan dipindahkan ke kelas ini</p>
-          </div>
-          <div className="flex gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm hover:bg-gray-200"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 py-2.5 bg-amber-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md disabled:opacity-50"
-            >
-              {isSubmitting ? 'Memproses...' : 'Naik Kelas'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
+import React, { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "../services/api";
+import { useAppStore } from "../store/useAppStore";
+import UserModal from "../components/UserModal";
+import PromoteModal from "../components/PromoteModal";
 export default function Users() {
   const [showModal, setShowModal] = useState(false);
   const [showPromoteModal, setShowPromoteModal] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
   const userLembaga = useAppStore((state) => state.userLembaga);
   const queryClient = useQueryClient();
 
   const { data: usersData, isLoading } = useQuery({
-    queryKey: ['users', userLembaga],
+    queryKey: ["users", userLembaga],
     queryFn: async () => {
-      const res = await api.get('/admin/users', { 
-        params: { per_page: 100, lembaga: userLembaga } 
+      const res = await api.get("/admin/users", {
+        params: { per_page: 100, lembaga: userLembaga },
       });
       return res.data;
-    }
+    },
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => api.post('/admin/users', data),
+    mutationFn: (data) => api.post("/admin/users", data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries(["users"]);
       setShowModal(false);
       setEditUser(null);
     },
@@ -224,7 +37,7 @@ export default function Users() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => api.put(`/admin/users/${id}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries(["users"]);
       setShowModal(false);
       setEditUser(null);
     },
@@ -233,15 +46,15 @@ export default function Users() {
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/admin/users/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries(["users"]);
     },
   });
 
   const promoteMutation = useMutation({
-    mutationFn: ({ student_ids, new_kelas }) => 
-      api.post('/admin/students/promote', { student_ids, new_kelas }),
+    mutationFn: ({ student_ids, new_kelas }) =>
+      api.post("/admin/students/promote", { student_ids, new_kelas }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries(["users"]);
       setShowPromoteModal(false);
       setSelectedUsers([]);
     },
@@ -249,9 +62,13 @@ export default function Users() {
 
   const users = usersData?.data || [];
   const filteredUsers = useMemo(() => {
-    return users.filter(user => {
-      if (roleFilter !== 'all' && user.role !== roleFilter) return false;
-      if (searchQuery && !user.name?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return users.filter((user) => {
+      if (roleFilter !== "all" && user.role !== roleFilter) return false;
+      if (
+        searchQuery &&
+        !user.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+        return false;
       if (userLembaga && user.lembaga !== userLembaga) return false;
       return true;
     });
@@ -259,16 +76,16 @@ export default function Users() {
 
   const canEdit = (user) => {
     // Admin MA hanya bisa edit MA
-    if (userLembaga === 'ma' && user.lembaga !== 'ma') return false;
+    if (userLembaga === "ma" && user.lembaga !== "ma") return false;
     // Admin MTS hanya bisa edit MTS
-    if (userLembaga === 'mts' && user.lembaga !== 'mts') return false;
+    if (userLembaga === "mts" && user.lembaga !== "mts") return false;
     return true;
   };
 
   const handleSubmitUser = (formData) => {
     const data = { ...formData };
     if (!data.kelas) delete data.kelas;
-    if (data.role !== 'guru') delete data.kelas;
+    if (data.role !== "guru") delete data.kelas;
 
     if (editUser?.id) {
       updateMutation.mutate({ id: editUser.id, data });
@@ -278,30 +95,38 @@ export default function Users() {
   };
 
   const handleDelete = (id) => {
-    if (!window.confirm('Yakin hapus user ini?')) return;
+    if (!window.confirm("Yakin hapus user ini?")) return;
     deleteMutation.mutate(id);
   };
 
   const handlePromoteSubmit = (newKelas) => {
-    const studentIds = selectedUsers.map(u => u.id);
+    const studentIds = selectedUsers.map((u) => u.id);
     promoteMutation.mutate({ student_ids: studentIds, new_kelas: newKelas });
   };
 
-  const isSubmitting = createMutation.isLoading || updateMutation.isLoading || promoteMutation.isLoading;
+  const isSubmitting =
+    createMutation.isLoading ||
+    updateMutation.isLoading ||
+    promoteMutation.isLoading;
 
   return (
     <div className="max-w-6xl mx-auto space-y-4">
       {/* Header */}
       <div className="bg-white border-3 border-gray-900 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-neo">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight">Manajemen User</h1>
+          <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight">
+            Manajemen User
+          </h1>
           <span className="px-2.5 py-0.5 text-xs font-bold bg-gray-100 text-gray-700 border-2 border-gray-900 rounded-full">
             {filteredUsers.length} user
           </span>
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => { setEditUser(null); setShowModal(true); }}
+            onClick={() => {
+              setEditUser(null);
+              setShowModal(true);
+            }}
             className="px-4 py-2 bg-primary-green text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center gap-1.5"
           >
             <span className="material-symbols-outlined text-lg">add</span>
@@ -312,7 +137,9 @@ export default function Users() {
               onClick={() => setShowPromoteModal(true)}
               className="px-4 py-2 bg-amber-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center gap-1.5"
             >
-              <span className="material-symbols-outlined text-lg">trending_up</span>
+              <span className="material-symbols-outlined text-lg">
+                trending_up
+              </span>
               Naik Kelas
             </button>
           )}
@@ -323,7 +150,9 @@ export default function Users() {
       <div className="flex flex-col lg:flex-row gap-3">
         {/* Search */}
         <div className="flex-1 relative">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none">search</span>
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none">
+            search
+          </span>
           <input
             type="text"
             placeholder="Cari nama user..."
@@ -356,9 +185,13 @@ export default function Users() {
         ) : filteredUsers.length === 0 ? (
           <div className="col-span-full bg-white border-2 border-gray-200 rounded-2xl p-8 text-center shadow-sm flex flex-col items-center justify-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full border border-gray-200 flex items-center justify-center mb-3">
-              <span className="material-symbols-outlined text-3xl text-gray-400">person_off</span>
+              <span className="material-symbols-outlined text-3xl text-gray-400">
+                person_off
+              </span>
             </div>
-            <h3 className="font-bold text-base text-gray-800 mb-1">Tidak Ada User</h3>
+            <h3 className="font-bold text-base text-gray-800 mb-1">
+              Tidak Ada User
+            </h3>
             <p className="text-sm text-gray-500 max-w-xs leading-relaxed">
               Tidak ditemukan user dengan filter ini.
             </p>
@@ -366,29 +199,35 @@ export default function Users() {
         ) : (
           filteredUsers.map((user) => {
             const editable = canEdit(user);
-            const isSelected = selectedUsers.some(su => su.id === user.id);
-            const roleColor = user.role === 'admin_ma' ? 'bg-red-100 text-red-900 border-red-300' :
-                             user.role === 'admin_mts' ? 'bg-blue-100 text-blue-900 border-blue-300' :
-                             user.role === 'guru' ? 'bg-purple-100 text-purple-900 border-purple-300' :
-                             'bg-green-100 text-green-900 border-green-300';
-            
+            const isSelected = selectedUsers.some((su) => su.id === user.id);
+            const roleColor =
+              user.role === "admin_ma"
+                ? "bg-red-100 text-red-900 border-red-300"
+                : user.role === "admin_mts"
+                  ? "bg-blue-100 text-blue-900 border-blue-300"
+                  : user.role === "guru"
+                    ? "bg-purple-100 text-purple-900 border-purple-300"
+                    : "bg-green-100 text-green-900 border-green-300";
+
             return (
-              <div 
-                key={user.id} 
+              <div
+                key={user.id}
                 className={`bg-white border-3 border-gray-900 rounded-2xl p-4 shadow-neo hover:clean-shadow-md transition-all relative ${
-                  isSelected ? 'ring-2 ring-amber-400' : ''
+                  isSelected ? "ring-2 ring-amber-400" : ""
                 }`}
               >
                 {/* Checkbox for bulk selection */}
-                {user.role === 'siswa' && (
+                {user.role === "siswa" && (
                   <input
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => {
                       if (isSelected) {
-                        setSelectedUsers(prev => prev.filter(su => su.id !== user.id));
+                        setSelectedUsers((prev) =>
+                          prev.filter((su) => su.id !== user.id),
+                        );
                       } else {
-                        setSelectedUsers(prev => [...prev, user]);
+                        setSelectedUsers((prev) => [...prev, user]);
                       }
                     }}
                     className="absolute top-3 right-3 w-4 h-4 cursor-pointer"
@@ -398,34 +237,59 @@ export default function Users() {
                 {/* Role Badge */}
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-10 h-10 bg-gray-100 border-2 border-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-xl text-gray-900">person</span>
+                    <span className="material-symbols-outlined text-xl text-gray-900">
+                      person
+                    </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-black text-base text-gray-900 truncate leading-snug">{user.name}</h3>
-                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    <h3 className="font-black text-base text-gray-900 truncate leading-snug">
+                      {user.name}
+                    </h3>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user.email}
+                    </p>
                   </div>
-                  <span className={`px-2 py-1 text-xs font-bold rounded-md border ${roleColor}`}>
-                    {user.role === 'admin_ma' ? 'Admin MA' :
-                     user.role === 'admin_mts' ? 'Admin MTS' :
-                     user.role === 'guru' ? 'Guru' : 'Siswa'}
+                  <span
+                    className={`px-2 py-1 text-xs font-bold rounded-md border ${roleColor}`}
+                  >
+                    {user.role === "admin_ma"
+                      ? "Admin MA"
+                      : user.role === "admin_mts"
+                        ? "Admin MTS"
+                        : user.role === "guru"
+                          ? "Guru"
+                          : "Siswa"}
                   </span>
                 </div>
 
                 {/* Details */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-gray-600 text-sm">school</span>
-                    <span className="text-xs font-bold text-gray-700">Lembaga: {user.lembaga?.toUpperCase() || 'MA'}</span>
+                    <span className="material-symbols-outlined text-gray-600 text-sm">
+                      school
+                    </span>
+                    <span className="text-xs font-bold text-gray-700">
+                      Lembaga: {user.lembaga?.toUpperCase() || "MA"}
+                    </span>
                   </div>
                   {user.kelas && (
                     <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-gray-600 text-sm">class</span>
-                      <span className="text-xs font-bold text-gray-700">Kelas: {user.kelas}</span>
+                      <span className="material-symbols-outlined text-gray-600 text-sm">
+                        class
+                      </span>
+                      <span className="text-xs font-bold text-gray-700">
+                        Kelas: {user.kelas}
+                      </span>
                     </div>
                   )}
                   <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-gray-600 text-sm">calendar_month</span>
-                    <span className="text-xs text-gray-500">Dibuat: {new Date(user.created_at).toLocaleDateString('id-ID')}</span>
+                    <span className="material-symbols-outlined text-gray-600 text-sm">
+                      calendar_month
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      Dibuat:{" "}
+                      {new Date(user.created_at).toLocaleDateString("id-ID")}
+                    </span>
                   </div>
                 </div>
 
@@ -434,10 +298,15 @@ export default function Users() {
                   {editable ? (
                     <>
                       <button
-                        onClick={() => { setEditUser(user); setShowModal(true); }}
+                        onClick={() => {
+                          setEditUser(user);
+                          setShowModal(true);
+                        }}
                         className="flex-1 py-1.5 bg-gray-100 border border-gray-300 rounded-lg font-bold text-xs hover:bg-gray-200 transition-colors flex items-center justify-center gap-1"
                       >
-                        <span className="material-symbols-outlined text-sm">edit</span>
+                        <span className="material-symbols-outlined text-sm">
+                          edit
+                        </span>
                         Edit
                       </button>
                       <button
@@ -445,13 +314,17 @@ export default function Users() {
                         disabled={deleteMutation.isLoading}
                         className="flex-1 py-1.5 bg-red-50 border border-red-300 rounded-lg font-bold text-xs text-red-800 hover:bg-red-100 transition-colors flex items-center justify-center gap-1"
                       >
-                        <span className="material-symbols-outlined text-sm">delete</span>
+                        <span className="material-symbols-outlined text-sm">
+                          delete
+                        </span>
                         Hapus
                       </button>
                     </>
                   ) : (
                     <div className="flex-1 text-xs text-gray-500 text-center py-1.5 border border-gray-200 rounded-lg bg-gray-50">
-                      {userLembaga ? `Hanya bisa edit user ${userLembaga.toUpperCase()}` : 'Read Only'}
+                      {userLembaga
+                        ? `Hanya bisa edit user ${userLembaga.toUpperCase()}`
+                        : "Read Only"}
                     </div>
                   )}
                 </div>
@@ -466,8 +339,12 @@ export default function Users() {
         <div className="fixed bottom-20 left-4 right-4 bg-amber-100 border-3 border-gray-900 rounded-2xl p-3 shadow-neo z-40">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-amber-700">groups</span>
-              <span className="font-bold text-sm text-amber-900">{selectedUsers.length} siswa terpilih untuk naik kelas</span>
+              <span className="material-symbols-outlined text-amber-700">
+                groups
+              </span>
+              <span className="font-bold text-sm text-amber-900">
+                {selectedUsers.length} siswa terpilih untuk naik kelas
+              </span>
             </div>
             <button
               onClick={() => setSelectedUsers([])}
@@ -482,7 +359,10 @@ export default function Users() {
       {/* Modals */}
       <UserModal
         isOpen={showModal}
-        onClose={() => { setShowModal(false); setEditUser(null); }}
+        onClose={() => {
+          setShowModal(false);
+          setEditUser(null);
+        }}
         user={editUser}
         onSubmit={handleSubmitUser}
         isSubmitting={isSubmitting}
