@@ -1,97 +1,126 @@
 import { memo } from "react";
 
-export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
+export const AttendanceItem = memo(function AttendanceItem({ item, onEdit, onQuickHadir }) {
   const isStudent = item.role === "student";
-  const person = isStudent ? item.student : item.teacher;
+  const person = isStudent ? item.student || item : item.teacher || item;
+  const isBelumAbsen = !item.status || item.status === "belum_absen";
+
   const subtitle = isStudent
-    ? `Kelas ${person?.kelas || "-"} (${item.lembaga?.toUpperCase() || "MA"})`
-    : `${person?.nip ? "NIP: " + person.nip : "Guru"} (${item.lembaga?.toUpperCase() || "MA"})`;
+    ? `Kelas ${person?.kelas || "-"} • NIS: ${person?.nis || "-"}`
+    : `${person?.nip ? "NIP: " + person.nip : "Guru / Staf"}`;
+
+  const lembagaName = (item.lembaga || person?.lembaga || "MA").toUpperCase();
 
   return (
-    <div className="bg-white border-2 md:border-3 border-gray-900 rounded-xl md:rounded-2xl p-3.5 md:p-4 shadow-neo transition-all space-y-3">
+    <div
+      className={`bg-white border-2 md:border-3 ${
+        isBelumAbsen
+          ? "border-amber-300 hover:border-amber-500 bg-amber-50/20"
+          : "border-gray-900 hover:border-emerald-600"
+      } rounded-xl md:rounded-2xl p-3.5 md:p-4 shadow-neo hover:shadow-neo-lg hover:-translate-y-0.5 transition-all duration-200 space-y-3 group`}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-bold text-base md:text-lg text-gray-900 truncate leading-snug">
+            <h3 className="font-extrabold text-base md:text-lg text-gray-900 truncate leading-snug group-hover:text-emerald-700 transition-colors">
               {person?.nama || "Tanpa Nama"}
             </h3>
             <span
-              className={`px-2 py-0.5 text-[11px] font-bold rounded-md border ${"${"}
-              isStudent ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-purple-100 text-purple-800 border-purple-300'
-            ${"}"}`}
+              className={`px-2 py-0.5 text-[11px] font-bold rounded-md border ${
+                isStudent
+                  ? "bg-blue-100 text-blue-800 border-blue-300"
+                  : "bg-purple-100 text-purple-800 border-purple-300"
+              }`}
             >
               {isStudent ? "Siswa" : "Guru"}
+            </span>
+            <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-gray-100 text-gray-700 border border-gray-300">
+              {lembagaName}
             </span>
           </div>
           <p className="text-xs text-gray-500 font-medium">{subtitle}</p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <span
-            className={`px-2.5 py-1 text-xs font-black rounded-md border-2 border-gray-900 flex-shrink-0 ${"${"}
-            item.status === 'hadir' 
-              ? 'bg-primary-green text-gray-900' 
-              : item.status === 'terlambat'
-              ? 'bg-amber-300 text-gray-900'
-              : item.status === 'izin'
-              ? 'bg-purple-200 text-purple-900'
-              : item.status === 'sakit'
-              ? 'bg-blue-200 text-blue-900'
-              : item.status === 'alpha'
-              ? 'bg-red-200 text-red-900'
-              : 'bg-gray-200 text-gray-900'
-          ${"}"}`}
+            className={`px-2.5 py-1 text-xs font-black rounded-lg border-2 border-gray-900 ${
+              isBelumAbsen
+                ? "bg-amber-200 text-amber-950 animate-pulse"
+                : item.status === "hadir"
+                ? "bg-primary-green text-gray-900"
+                : item.status === "terlambat"
+                ? "bg-amber-300 text-gray-900"
+                : item.status === "izin"
+                ? "bg-purple-200 text-purple-900"
+                : item.status === "sakit"
+                ? "bg-blue-200 text-blue-900"
+                : item.status === "alpha"
+                ? "bg-red-200 text-red-900"
+                : "bg-gray-200 text-gray-900"
+            }`}
           >
-            {item.status?.toUpperCase() || "HADIR"}
+            {isBelumAbsen ? "BELUM ABSEN" : item.status?.toUpperCase()}
           </span>
 
-          {/* Edit button for manual statuses */}
-          {isStudent &&
-            ["izin", "sakit", "alpha", "libur"].includes(item.status) &&
-            onEdit && (
-              <button
-                onClick={() => onEdit(item)}
-                className="p-1.5 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 active:bg-gray-300 transition-colors"
-              >
-                <span className="material-symbols-outlined text-sm text-gray-700">
-                  edit
-                </span>
-              </button>
-            )}
+          {/* Quick Manual Attendance Actions */}
+          {onEdit && (
+            <button
+              onClick={() => onEdit(item)}
+              title="Edit / Absen Manual"
+              className="p-1.5 bg-gray-100 border-2 border-gray-900 rounded-lg hover:bg-emerald-100 hover:border-emerald-700 active:translate-y-0.5 transition-all shadow-neo"
+            >
+              <span className="material-symbols-outlined text-sm md:text-base text-gray-800">
+                edit_note
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 pt-2 border-t border-gray-100 flex-wrap">
-        {item.check_in ? (
-          <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-lg text-xs font-bold">
-            <span className="material-symbols-outlined text-sm text-emerald-700">
-              login
+      <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          {item.check_in ? (
+            <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-lg text-xs font-bold">
+              <span className="material-symbols-outlined text-sm text-emerald-700">
+                login
+              </span>
+              Masuk:{" "}
+              <strong className="font-black text-gray-900">
+                {item.check_in}
+              </strong>
             </span>
-            Masuk:{" "}
-            <strong className="font-black text-gray-900">
-              {item.check_in}
-            </strong>
-          </span>
-        ) : (
-          <span className="px-2.5 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs font-medium">
-            Belum Masuk
-          </span>
-        )}
+          ) : (
+            <span className="px-2.5 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs font-medium border border-gray-200">
+              Belum Masuk
+            </span>
+          )}
 
-        {item.check_out ? (
-          <span className="flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-xs font-bold">
-            <span className="material-symbols-outlined text-sm text-purple-700">
-              logout
+          {item.check_out ? (
+            <span className="flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-xs font-bold">
+              <span className="material-symbols-outlined text-sm text-purple-700">
+                logout
+              </span>
+              Pulang:{" "}
+              <strong className="font-black text-gray-900">
+                {item.check_out}
+              </strong>
             </span>
-            Pulang:{" "}
-            <strong className="font-black text-gray-900">
-              {item.check_out}
-            </strong>
-          </span>
-        ) : (
-          <span className="px-2.5 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs font-medium">
-            Belum Pulang
-          </span>
+          ) : (
+            <span className="px-2.5 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs font-medium border border-gray-200">
+              Belum Pulang
+            </span>
+          )}
+        </div>
+
+        {/* Quick Hadir Button for Belum Absen */}
+        {isBelumAbsen && onQuickHadir && (
+          <button
+            onClick={() => onQuickHadir(item)}
+            className="px-3 py-1 bg-primary-green text-gray-900 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center gap-1 ml-auto"
+          >
+            <span className="material-symbols-outlined text-sm">check_circle</span>
+            Hadir Manual
+          </button>
         )}
       </div>
     </div>
@@ -103,7 +132,7 @@ export const AbsentStudentItem = memo(function AbsentStudentItem({
   onAddManual,
 }) {
   return (
-    <div className="bg-amber-50/30 border-2 border-amber-300 rounded-xl p-3 flex items-center justify-between gap-3 hover:bg-amber-50 transition-colors">
+    <div className="bg-amber-50/30 border-2 border-amber-300 rounded-xl p-3 flex items-center justify-between gap-3 hover:bg-amber-100/60 transition-colors">
       <div className="flex-1 min-w-0">
         <h4 className="font-bold text-sm text-gray-900 truncate">
           {student.nama}
@@ -122,4 +151,3 @@ export const AbsentStudentItem = memo(function AbsentStudentItem({
     </div>
   );
 });
-

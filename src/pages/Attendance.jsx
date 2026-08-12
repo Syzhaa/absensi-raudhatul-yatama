@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
-import { logsService } from "../services";
+import { studentService, teacherService, logsService } from "../services";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { useAppStore } from "../store/useAppStore";
 import AttendanceModal from "../components/AttendanceModal";
-import { AttendanceItem, AbsentStudentItem } from "../components/AttendanceItems";
+import { AttendanceItem } from "../components/AttendanceItems";
 import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
 
 export default function Attendance() {
@@ -18,140 +18,268 @@ export default function Attendance() {
   const [kelasFilter, setKelasFilter] = useState(selectedKelas || "all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
   const [showModal, setShowModal] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState(null);
-  const [showAbsentSection, setShowAbsentSection] = useState(true);
+  const [selectedPerson, setSelectedPerson] = useState(null);
 
   const queryClient = useQueryClient();
   const { effectiveLembaga } = useEffectiveLembaga();
 
-  // Sync local filter dengan global state
+  // Sync local filter with global state
   useEffect(() => {
     setKelasFilter(selectedKelas || "all");
   }, [selectedKelas]);
 
-  const { data: studentData, isLoading: isStudentLoading } = useQuery({
+  // 1. Fetch Master Active Students
+  const { data: masterStudents, isLoading: isMasterStudentsLoading } = useQuery({
+    queryKey: ["students_master", effectiveLembaga, kelasFilter],
+    queryFn: async () => {
+      try {
+        const params = {};
+        if (effectiveLembaga) params.lembaga = effectiveLembaga;
+        if (kelasFilter && kelasFilter !== "all") params.kelas = kelasFilter;
+        const res = await studentService.getAll(params);
+        const data = res?.data || res || [];
+        return Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.error("Master students fetch failed:", err);
+        return [];
+      }
+    },
+    enabled: !!effectiveLembaga,
+  });
+
+  // 2. Fetch Master Active Teachers
+  const { data: masterTeachers, isLoading: isMasterTeachersLoading } = useQuery({
+    queryKey: ["teachers_master", effectiveLembaga],
+    queryFn: async () => {
+      try {
+        const params = {};
+        if (effectiveLembaga) params.lembaga = effectiveLembaga;
+        const res = await teacherService.getAll(params);
+        const data = res?.data || res || [];
+        return Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.error("Master teachers fetch failed:", err);
+        return [];
+      }
+    },
+    enabled: !!effectiveLembaga,
+  });
+
+  // 3. Fetch Attendance Logs for Students on Selected Date
+  const { data: studentLogs, isLoading: isStudentLogsLoading } = useQuery({
     queryKey: ["attendance_students", selectedDate, effectiveLembaga, kelasFilter],
     queryFn: async () => {
       try {
         const params = { date: selectedDate, lembaga: effectiveLembaga };
         if (kelasFilter && kelasFilter !== "all") params.kelas = kelasFilter;
         const res = await api.get("/attendance/logs/students", { params });
-        return res.data;
+        return res.data?.data || [];
       } catch (err) {
-        console.error("Student attendance fetch failed:", err);
+        console.error("Student logs fetch failed:", err);
         return [];
       }
     },
     enabled: !!effectiveLembaga,
   });
 
-  const { data: teacherData, isLoading: isTeacherLoading } = useQuery({
+  // 4. Fetch Attendance Logs for Teachers on Selected Date
+  const { data: teacherLogs, isLoading: isTeacherLogsLoading } = useQuery({
     queryKey: ["attendance_teachers", selectedDate, effectiveLembaga],
     queryFn: async () => {
       try {
         const res = await api.get("/attendance/logs/teachers", {
           params: { date: selectedDate, lembaga: effectiveLembaga },
         });
-        return res.data;
+        return res.data?.data || [];
       } catch (err) {
-        console.error("Teacher attendance fetch failed:", err);
+        console.error("Teacher logs fetch failed:", err);
         return [];
       }
     },
     enabled: !!effectiveLembaga,
   });
 
-  const { data: absentData, isLoading: isAbsentLoading } = useQuery({
-    queryKey: [
-      "attendance_absent_students",
-      selectedDate,
-      kelasFilter,
-      effectiveLembaga,
-    ],
-    queryFn: async () => {
-      try {
-        const params = { date: selectedDate };
-        if (effectiveLembaga) params.lembaga = effectiveLembaga;
-        if (kelasFilter && kelasFilter !== "all") params.kelas = kelasFilter;
+  const isLoading =
+    isMasterStudentsLoading ||
+    isMasterTeachersLoading ||
+    isStudentLogsLoading ||
+    isTeacherLogsLoading;
 
-        const res = await logsService.getAbsentStudents(params);
-        return res;
-      } catch (err) {
-        console.error("Absent students fetch failed:", err);
-        return { data: [] };
-      }
-    },
-    enabled: showAbsentSection,
-  });
-
-  const isLoading = isStudentLoading || isTeacherLoading;
-
-  // Get unique kelas from students
+  // Compute Kelas Options from Master Students
   const kelasOptions = useMemo(() => {
-    const students = studentData?.data || [];
+    const students = masterStudents || [];
     const uniqueKelas = [
-      ...new Set(students.map((s) => s.student?.kelas).filter(Boolean)),
+      ...new Set(students.map((s) => s.kelas).filter(Boolean)),
     ];
     return uniqueKelas.sort();
-  }, [studentData]);
+  }, [masterStudents]);
 
-  // Combine + filter + sort
-  const allItems = useMemo(() => {
-    return [
-      ...(studentData?.data || []).map((a) => ({ ...a, role: "student" })),
-      ...(teacherData?.data || []).map((a) => ({ ...a, role: "teacher" })),
-    ];
-  }, [studentData, teacherData]);
+  // Combine Master Roster + Attendance Logs into complete status map
+  const fullRoster = useMemo(() => {
+    const sLogs = studentLogs || [];
+    const tLogs = teacherLogs || [];
 
-  const records = useMemo(() => {
-    return allItems
-      .filter((a) => {
+    // Map logs by ID for instant lookup
+    const studentLogMap = new Map();
+    sLogs.forEach((log) => {
+      if (log.student_id) {
+        studentLogMap.set(log.student_id, log);
+      }
+    });
+
+    const teacherLogMap = new Map();
+    tLogs.forEach((log) => {
+      if (log.teacher_id) {
+        teacherLogMap.set(log.teacher_id, log);
+      }
+    });
+
+    // Build complete Student items
+    const studentRoster = (masterStudents || []).map((student) => {
+      const log = studentLogMap.get(student.id);
+      return {
+        id: `student-${student.id}`,
+        student_id: student.id,
+        role: "student",
+        student: student,
+        lembaga: student.lembaga || effectiveLembaga,
+        status: log ? log.status : "belum_absen",
+        check_in: log ? log.check_in : null,
+        check_out: log ? log.check_out : null,
+        attendance_id: log ? log.id : null,
+        created_at: log ? log.created_at : null,
+        has_attended: !!log,
+      };
+    });
+
+    // Build complete Teacher items
+    const teacherRoster = (masterTeachers || []).map((teacher) => {
+      const log = teacherLogMap.get(teacher.id);
+      return {
+        id: `teacher-${teacher.id}`,
+        teacher_id: teacher.id,
+        role: "teacher",
+        teacher: teacher,
+        lembaga: teacher.lembaga || effectiveLembaga,
+        status: log ? log.status : "belum_absen",
+        check_in: log ? log.check_in : null,
+        check_out: log ? log.check_out : null,
+        attendance_id: log ? log.id : null,
+        created_at: log ? log.created_at : null,
+        has_attended: !!log,
+      };
+    });
+
+    return [...studentRoster, ...teacherRoster];
+  }, [masterStudents, masterTeachers, studentLogs, teacherLogs, effectiveLembaga]);
+
+  // Counts for Stats & Filters
+  const stats = useMemo(() => {
+    let total = fullRoster.length;
+    let belumAbsen = 0;
+    let hadir = 0;
+    let pulang = 0;
+    let izinSakitAlpha = 0;
+
+    fullRoster.forEach((item) => {
+      // Filter by role & kelas for stats
+      if (roleFilter !== "all" && item.role !== roleFilter) return;
+      if (
+        item.role === "student" &&
+        kelasFilter !== "all" &&
+        item.student?.kelas !== kelasFilter
+      ) {
+        return;
+      }
+
+      if (!item.has_attended || item.status === "belum_absen") {
+        belumAbsen++;
+      } else {
+        if (item.check_in || ["hadir", "terlambat"].includes(item.status)) {
+          hadir++;
+        }
+        if (item.check_out) {
+          pulang++;
+        }
+        if (["izin", "sakit", "alpha", "libur"].includes(item.status)) {
+          izinSakitAlpha++;
+        }
+      }
+    });
+
+    return { total, belumAbsen, hadir, pulang, izinSakitAlpha };
+  }, [fullRoster, roleFilter, kelasFilter]);
+
+  // Filter & Sort: BELUM ABSEN ALWAYS ON TOP!
+  const filteredRecords = useMemo(() => {
+    return fullRoster
+      .filter((item) => {
         // Role filter
-        if (roleFilter !== "all" && a.role !== roleFilter) return false;
+        if (roleFilter !== "all" && item.role !== roleFilter) return false;
+
+        // Kelas filter (students)
+        if (item.role === "student" && kelasFilter !== "all") {
+          if (item.student?.kelas !== kelasFilter) return false;
+        }
 
         // Status filter
-        if (statusFilter === "masuk" && !a.check_in) return false;
-        if (statusFilter === "pulang" && !a.check_out) return false;
-
-        // Kelas filter
-        if (a.role === "student" && kelasFilter !== "all") {
-          if (a.student?.kelas !== kelasFilter) return false;
+        if (statusFilter === "belum_absen") {
+          if (item.has_attended && item.status !== "belum_absen") return false;
+        } else if (statusFilter === "masuk") {
+          if (!item.check_in && !["hadir", "terlambat"].includes(item.status)) return false;
+        } else if (statusFilter === "pulang") {
+          if (!item.check_out) return false;
+        } else if (statusFilter === "manual") {
+          if (!["izin", "sakit", "alpha", "libur"].includes(item.status)) return false;
         }
 
         // Search filter
-        if (searchQuery) {
-          const query = searchQuery.toLowerCase();
-          const nama = (a.student?.nama || a.teacher?.nama || "").toLowerCase();
-          if (!nama.includes(query)) return false;
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          const nama = (item.student?.nama || item.teacher?.nama || "").toLowerCase();
+          const nis = (item.student?.nis || item.teacher?.nip || "").toLowerCase();
+          if (!nama.includes(q) && !nis.includes(q)) return false;
         }
 
         return true;
       })
       .sort((a, b) => {
-        const ta = new Date(a.created_at || 0).getTime();
-        const tb = new Date(b.created_at || 0).getTime();
+        const aBelum = !a.has_attended || a.status === "belum_absen";
+        const bBelum = !b.has_attended || b.status === "belum_absen";
+
+        // RULE: BELUM ABSEN ALWAYS AT THE VERY TOP!
+        if (aBelum && !bBelum) return -1;
+        if (!aBelum && bBelum) return 1;
+
+        // If both are Belum Absen: sort by kelas then by nama
+        if (aBelum && bBelum) {
+          const kelasA = a.student?.kelas || "99";
+          const kelasB = b.student?.kelas || "99";
+          if (kelasA !== kelasB) return kelasA.localeCompare(kelasB, undefined, { numeric: true });
+          
+          const namaA = a.student?.nama || a.teacher?.nama || "";
+          const namaB = b.student?.nama || b.teacher?.nama || "";
+          return namaA.localeCompare(namaB);
+        }
+
+        // If both are already attended: sort by latest log created_at / check_in
+        const ta = new Date(a.created_at || a.check_in || 0).getTime();
+        const tb = new Date(b.created_at || b.check_in || 0).getTime();
         if (ta !== tb) return tb - ta;
-        return (b.id || 0) - (a.id || 0);
+
+        return (b.attendance_id || 0) - (a.attendance_id || 0);
       });
-  }, [allItems, roleFilter, statusFilter, kelasFilter, searchQuery]);
+  }, [fullRoster, roleFilter, kelasFilter, statusFilter, searchQuery]);
 
-  const totalPages = Math.ceil(records.length / itemsPerPage);
+  // Pagination
+  const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedRecords = records.slice(startIndex, startIndex + itemsPerPage);
-
-  const renderedRecords = useMemo(() => {
-    return paginatedRecords.map((a) => (
-      <AttendanceItem
-        key={`${a.role}-${a.id}`}
-        item={a}
-        onEdit={handleEditAttendance}
-      />
-    ));
-  }, [paginatedRecords]);
-
-  const absentStudents = absentData?.data || [];
+  const paginatedRecords = filteredRecords.slice(
+    startIndex,
+    startIndex + itemsPerPage,
+  );
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -166,26 +294,55 @@ export default function Attendance() {
   ]);
 
   // Handlers
-  const handleEditAttendance = (item) => {
-    setSelectedStudent(item);
+  const handleEditAttendance = (person) => {
+    setSelectedPerson(person);
     setShowModal(true);
   };
 
-  const handleAddManual = (student) => {
-    setSelectedStudent(student);
-    setShowModal(true);
+  const handleQuickHadir = async (item) => {
+    try {
+      const payload = {
+        status: "hadir",
+        date: selectedDate,
+        is_test: false,
+      };
+      if (item.role === "teacher") {
+        payload.teacher_id = item.teacher_id;
+      } else {
+        payload.student_id = item.student_id;
+      }
+
+      await logsService.createManual(payload);
+      
+      queryClient.invalidateQueries({
+        queryKey: ["attendance_students", selectedDate],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["attendance_teachers", selectedDate],
+      });
+    } catch (err) {
+      alert(err.response?.data?.message || "Gagal absen manual");
+    }
   };
 
   const handleModalClose = () => {
     setShowModal(false);
-    setSelectedStudent(null);
+    setSelectedPerson(null);
   };
 
   const handleStatusUpdate = () => {
     queryClient.invalidateQueries({
       queryKey: ["attendance_students", selectedDate],
     });
-    queryClient.invalidateQueries({ queryKey: ["attendance_absent_students"] });
+    queryClient.invalidateQueries({
+      queryKey: ["attendance_teachers", selectedDate],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["students_master"],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["teachers_master"],
+    });
   };
 
   useAttendanceSSE(selectedDate, queryClient);
@@ -194,42 +351,49 @@ export default function Attendance() {
     <div className="max-w-5xl mx-auto space-y-4 landscape:space-y-2">
       {/* Header */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 landscape:py-2 shadow-neo flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl md:text-2xl landscape:text-lg font-black text-gray-800 tracking-tight">
-            Log Absensi
+        <div className="flex items-center gap-3 flex-wrap">
+          <h1 className="text-xl md:text-2xl landscape:text-lg font-black text-gray-900 tracking-tight">
+            Absensi & Log Kehadiran
           </h1>
-          <span className="px-2.5 py-0.5 text-xs font-bold bg-gray-100 text-gray-700 border-2 border-gray-900 rounded-full">
-            Total: {records.length}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 text-xs font-black bg-emerald-100 text-emerald-900 border-2 border-gray-900 rounded-full shadow-sm">
+              Roster Total: {filteredRecords.length}
+            </span>
+            {stats.belumAbsen > 0 && (
+              <span className="px-2.5 py-0.5 text-xs font-black bg-amber-200 text-amber-950 border-2 border-gray-900 rounded-full animate-pulse shadow-sm">
+                Belum Absen: {stats.belumAbsen}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="relative inline-flex items-center w-full sm:w-auto">
-          <span className="material-symbols-outlined absolute left-3.5 text-gray-600 pointer-events-none text-xl z-10">
+          <span className="material-symbols-outlined absolute left-3.5 text-gray-700 pointer-events-none text-xl z-10">
             calendar_month
           </span>
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full sm:w-auto pl-10 pr-4 py-2.5 bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-sm text-gray-800 shadow-neo focus:border-primary-green focus:bg-white focus:outline-none min-h-[44px] transition-all cursor-pointer"
+            className="w-full sm:w-auto pl-10 pr-4 py-2.5 bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-sm text-gray-900 shadow-neo hover:border-emerald-600 focus:border-emerald-600 focus:bg-white focus:outline-none min-h-[44px] transition-all cursor-pointer"
           />
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="space-y-3">
+      {/* Filters Section */}
+      <div className="space-y-3 bg-white/70 backdrop-blur-sm border-2 border-gray-900 rounded-2xl p-3.5 shadow-neo">
         {/* Search + Kelas Filter */}
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1 relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none">
+            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-xl pointer-events-none">
               search
             </span>
             <input
               type="text"
-              placeholder="Cari nama siswa/guru..."
+              placeholder="Cari nama atau NIS/NIP..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm text-gray-800 focus:border-primary-green focus:bg-white focus:outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-2 border-gray-300 rounded-xl font-semibold text-sm text-gray-900 hover:border-gray-900 focus:border-emerald-600 focus:bg-white focus:outline-none transition-all"
             />
           </div>
 
@@ -237,7 +401,7 @@ export default function Attendance() {
             <select
               value={kelasFilter}
               onChange={(e) => setKelasFilter(e.target.value)}
-              className="px-3 py-2 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm text-gray-800 focus:border-primary-green focus:bg-white focus:outline-none transition-all cursor-pointer"
+              className="px-3.5 py-2.5 bg-gray-100 border-2 border-gray-300 rounded-xl font-bold text-sm text-gray-900 hover:border-gray-900 focus:border-emerald-600 focus:bg-white focus:outline-none transition-all cursor-pointer min-w-[140px]"
             >
               <option value="all">Semua Kelas</option>
               {kelasOptions.map((kls) => (
@@ -249,57 +413,72 @@ export default function Attendance() {
           )}
         </div>
 
-        {/* Role Filter */}
-        <div className="grid grid-cols-2 p-1 bg-gray-100 border-2 border-gray-900 rounded-full shadow-neo">
+        {/* Role Toggle Tabs */}
+        <div className="grid grid-cols-3 p-1 bg-gray-100 border-2 border-gray-900 rounded-xl shadow-neo gap-1">
           <button
             type="button"
-            onClick={() =>
-              setRoleFilter(roleFilter === "student" ? "all" : "student")
-            }
-            className={`py-2 px-4 rounded-full text-xs md:text-sm font-black transition-all text-center select-none flex items-center justify-center gap-1.5 ${"${"}
-              roleFilter === 'student'
-                ? 'bg-primary-green text-gray-900 shadow-sm border border-gray-900'
-                : 'text-gray-600 hover:text-gray-900 font-bold'
-            ${"}"}`}
+            onClick={() => setRoleFilter("all")}
+            className={`py-2 px-3 rounded-lg text-xs md:text-sm font-black transition-all text-center select-none flex items-center justify-center gap-1.5 ${
+              roleFilter === "all"
+                ? "bg-emerald-400 text-gray-950 shadow-neo border-2 border-gray-900"
+                : "text-gray-700 hover:text-gray-950 hover:bg-gray-200 font-bold"
+            }`}
+          >
+            <span className="material-symbols-outlined text-lg">view_list</span>
+            <span>Semua</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setRoleFilter("student")}
+            className={`py-2 px-3 rounded-lg text-xs md:text-sm font-black transition-all text-center select-none flex items-center justify-center gap-1.5 ${
+              roleFilter === "student"
+                ? "bg-emerald-400 text-gray-950 shadow-neo border-2 border-gray-900"
+                : "text-gray-700 hover:text-gray-950 hover:bg-gray-200 font-bold"
+            }`}
           >
             <span className="material-symbols-outlined text-lg">groups</span>
             <span>Siswa</span>
           </button>
           <button
             type="button"
-            onClick={() =>
-              setRoleFilter(roleFilter === "teacher" ? "all" : "teacher")
-            }
-            className={`py-2 px-4 rounded-full text-xs md:text-sm font-black transition-all text-center select-none flex items-center justify-center gap-1.5 ${"${"}
-              roleFilter === 'teacher'
-                ? 'bg-primary-green text-gray-900 shadow-sm border border-gray-900'
-                : 'text-gray-600 hover:text-gray-900 font-bold'
-            ${"}"}`}
+            onClick={() => setRoleFilter("teacher")}
+            className={`py-2 px-3 rounded-lg text-xs md:text-sm font-black transition-all text-center select-none flex items-center justify-center gap-1.5 ${
+              roleFilter === "teacher"
+                ? "bg-emerald-400 text-gray-950 shadow-neo border-2 border-gray-900"
+                : "text-gray-700 hover:text-gray-950 hover:bg-gray-200 font-bold"
+            }`}
           >
             <span className="material-symbols-outlined text-lg">badge</span>
             <span>Guru</span>
           </button>
         </div>
 
-        {/* Status Filter */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1 flex-shrink-0">
-            Status:
+        {/* Status Filter Chips */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-1">
+          <span className="text-xs font-black text-gray-500 uppercase tracking-wider pl-1 flex-shrink-0">
+            Filter Status:
           </span>
           {[
-            { id: "all", label: "Semua" },
+            { id: "all", label: "Semua Status" },
+            {
+              id: "belum_absen",
+              label: `Belum Absen (${stats.belumAbsen})`,
+              badgeColor: "bg-amber-300 text-amber-950 border-amber-500",
+            },
             { id: "masuk", label: "Masuk" },
             { id: "pulang", label: "Pulang" },
+            { id: "manual", label: "Izin / Sakit / Alpha" },
           ].map((chip) => {
+            const isActive = statusFilter === chip.id;
             return (
               <button
                 key={chip.id}
                 onClick={() => setStatusFilter(chip.id)}
-                className={`px-4 py-1.5 rounded-full text-xs md:text-sm whitespace-nowrap transition-all select-none ${"${"}
+                className={`px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap transition-all select-none flex items-center gap-1.5 border-2 ${
                   isActive
-                    ? 'bg-primary-green text-gray-900 font-black border-2 border-gray-900 shadow-neo'
-                    : 'bg-gray-100 text-gray-700 font-bold border border-gray-200 hover:bg-gray-200'
-                ${"}"}`}
+                    ? "bg-gray-900 text-white border-gray-900 shadow-neo"
+                    : "bg-gray-100 text-gray-700 border-gray-300 hover:border-gray-900 hover:bg-gray-200"
+                }`}
               >
                 {chip.label}
               </button>
@@ -308,74 +487,41 @@ export default function Attendance() {
         </div>
       </div>
 
-      {/* Absent Students Section (Collapsible) */}
-      {roleFilter !== "teacher" && absentStudents.length > 0 && (
-        <div className="bg-amber-50 border-2 border-amber-400 rounded-2xl overflow-hidden shadow-neo">
-          <button
-            onClick={() => setShowAbsentSection(!showAbsentSection)}
-            className="w-full px-4 py-3 flex items-center justify-between bg-amber-100/50 hover:bg-amber-100 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-amber-700">
-                warning
-              </span>
-              <h2 className="font-black text-sm md:text-base text-amber-900">
-                Belum Absen ({absentStudents.length})
-              </h2>
-            </div>
-            <span className="material-symbols-outlined text-amber-700">
-              {showAbsentSection ? "expand_less" : "expand_more"}
-            </span>
-          </button>
-
-          {showAbsentSection && (
-            <div className="p-4 space-y-2 max-h-96 overflow-y-auto">
-              {isAbsentLoading ? (
-                <p className="text-sm text-gray-600 text-center py-4">
-                  Memuat data...
-                </p>
-              ) : (
-                absentStudents.map((student) => (
-                  <AbsentStudentItem
-                    key={student.id}
-                    student={student}
-                    onAddManual={handleAddManual}
-                  />
-                ))
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Attendance Records */}
-      <div className="space-y-3 pb-40 md:pb-12">
+      {/* Attendance Records List */}
+      <div className="space-y-3 pb-24 md:pb-12">
         {isLoading ? (
-          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
-            Memuat data absensi...
+          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-black text-gray-700 shadow-neo animate-pulse">
+            Memuat roster & data absensi...
           </div>
-        ) : records.length === 0 ? (
-          <div className="bg-white border-2 border-gray-200 rounded-2xl p-8 md:p-12 text-center shadow-sm flex flex-col items-center justify-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full border border-gray-200 flex items-center justify-center mb-3">
-              <span className="material-symbols-outlined text-3xl text-gray-400">
+        ) : filteredRecords.length === 0 ? (
+          <div className="bg-white border-2 border-gray-900 rounded-2xl p-8 md:p-12 text-center shadow-neo flex flex-col items-center justify-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full border-2 border-gray-900 flex items-center justify-center mb-3 shadow-neo">
+              <span className="material-symbols-outlined text-3xl text-gray-600">
                 search_off
               </span>
             </div>
-            <h3 className="font-bold text-base md:text-lg text-gray-800 mb-1">
-              Belum Ada Data Absensi
+            <h3 className="font-black text-base md:text-lg text-gray-900 mb-1">
+              Tidak Ada Data Siswa / Guru
             </h3>
-            <p className="text-xs md:text-sm text-gray-500 max-w-xs leading-relaxed">
-              Tidak ditemukan riwayat kehadiran untuk filter ini pada tanggal{" "}
+            <p className="text-xs md:text-sm text-gray-600 max-w-xs leading-relaxed">
+              Tidak ditemukan data yang sesuai dengan filter ini pada tanggal{" "}
               {selectedDate}.
             </p>
           </div>
         ) : (
-          renderedRecords
+          paginatedRecords.map((item) => (
+            <AttendanceItem
+              key={item.id}
+              item={item}
+              onEdit={handleEditAttendance}
+              onQuickHadir={handleQuickHadir}
+            />
+          ))
         )}
       </div>
 
-      {/* Pagination */}
-      {records.length > 0 && (
+      {/* Pagination Controls */}
+      {filteredRecords.length > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 pb-12">
           <div className="flex items-center gap-2">
             <span className="text-xs md:text-sm font-bold text-gray-700">
@@ -384,15 +530,16 @@ export default function Attendance() {
             <select
               value={itemsPerPage}
               onChange={(e) => setItemsPerPage(Number(e.target.value))}
-              className="border-2 border-gray-400 rounded-lg px-2 py-1 font-bold text-xs md:text-sm text-gray-900 bg-transparent focus:outline-none focus:border-primary-green cursor-pointer"
+              className="border-2 border-gray-900 rounded-xl px-2.5 py-1 font-black text-xs md:text-sm text-gray-900 bg-white focus:outline-none focus:border-emerald-600 cursor-pointer shadow-sm"
             >
               <option value={10}>10</option>
               <option value={15}>15</option>
               <option value={25}>25</option>
               <option value={50}>50</option>
+              <option value={100}>100</option>
             </select>
             <span className="text-xs md:text-sm font-bold text-gray-700">
-              data
+              per halaman
             </span>
           </div>
 
@@ -400,21 +547,21 @@ export default function Attendance() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-1.5 md:p-2 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="p-2 text-gray-900 border-2 border-gray-900 rounded-xl bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-neo active:translate-y-0.5"
             >
-              <span className="material-symbols-outlined text-sm md:text-base">
+              <span className="material-symbols-outlined text-sm md:text-base font-bold">
                 chevron_left
               </span>
             </button>
-            <span className="text-xs md:text-sm font-bold text-gray-700">
+            <span className="text-xs md:text-sm font-black text-gray-900 bg-white px-3 py-1.5 border-2 border-gray-900 rounded-xl shadow-neo">
               Halaman {currentPage} dari {totalPages || 1}
             </span>
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="p-1.5 md:p-2 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="p-2 text-gray-900 border-2 border-gray-900 rounded-xl bg-white hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-neo active:translate-y-0.5"
             >
-              <span className="material-symbols-outlined text-sm md:text-base">
+              <span className="material-symbols-outlined text-sm md:text-base font-bold">
                 chevron_right
               </span>
             </button>
@@ -422,11 +569,11 @@ export default function Attendance() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* Manual Attendance / Edit Status Modal */}
       <AttendanceModal
         isOpen={showModal}
         onClose={handleModalClose}
-        student={selectedStudent}
+        student={selectedPerson}
         date={selectedDate}
         lembaga={effectiveLembaga}
         onStatusUpdate={handleStatusUpdate}

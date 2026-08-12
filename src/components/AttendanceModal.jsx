@@ -4,6 +4,16 @@ import { logsService } from "../services";
 
 const STATUS_OPTIONS = [
   {
+    value: "hadir",
+    label: "Hadir (Masuk)",
+    color: "bg-emerald-100 text-emerald-900 border-emerald-400",
+  },
+  {
+    value: "terlambat",
+    label: "Terlambat",
+    color: "bg-amber-100 text-amber-900 border-amber-400",
+  },
+  {
     value: "izin",
     label: "Izin",
     color: "bg-purple-100 text-purple-900 border-purple-300",
@@ -21,7 +31,7 @@ const STATUS_OPTIONS = [
   {
     value: "libur",
     label: "Libur",
-    color: "bg-amber-100 text-amber-900 border-amber-300",
+    color: "bg-orange-100 text-orange-900 border-orange-300",
   },
 ];
 
@@ -33,18 +43,16 @@ export default function AttendanceModal({
   lembaga,
   onStatusUpdate,
 }) {
-  const [status, setStatus] = useState("izin");
+  const [status, setStatus] = useState("hadir");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (isOpen) {
-      const editableStatus = ["izin", "sakit", "alpha", "libur"].includes(
-        student?.status,
-      )
+      const currentStatus = student?.status && student.status !== "belum_absen"
         ? student.status
-        : "izin";
-      setStatus(editableStatus);
+        : "hadir";
+      setStatus(currentStatus);
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -56,42 +64,53 @@ export default function AttendanceModal({
 
   if (!isOpen) return null;
 
+  const isTeacher = student?.role === "teacher" || !!student?.teacher_id;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
       if (student?.attendance_id) {
-        await logsService.updateStatus(student.attendance_id, { status });
-        queryClient.invalidateQueries({
-          queryKey: ["attendance_students", date],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["attendance_teachers", date],
+        await logsService.updateStatus(student.attendance_id, {
+          status,
+          role: isTeacher ? "teacher" : "student",
         });
       } else {
         // Create new manual attendance
-        await logsService.createManual({
-          student_id: student.student_id,
+        const payload = {
           status,
           date,
           is_test: false,
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["attendance_students", date],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["attendance_teachers", date],
-        });
-        queryClient.invalidateQueries({
-          queryKey: ["attendance_absent_students", date],
-        });
+        };
+        if (isTeacher) {
+          payload.teacher_id = student.teacher_id || student.id;
+        } else {
+          payload.student_id = student.student_id || student.id;
+        }
+        await logsService.createManual(payload);
       }
+
+      queryClient.invalidateQueries({
+        queryKey: ["attendance_students", date],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["attendance_teachers", date],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["attendance_absent_students", date],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["students_master"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["teachers_master"],
+      });
 
       if (onStatusUpdate) onStatusUpdate();
       onClose();
     } catch (err) {
-      alert(err.response?.data?.message || "Gagal update status");
+      alert(err.response?.data?.message || "Gagal simpan absensi manual");
     } finally {
       setIsSubmitting(false);
     }
