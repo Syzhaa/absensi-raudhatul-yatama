@@ -14,8 +14,6 @@ export default function Attendance() {
   );
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const selectedKelas = useAppStore((state) => state.selectedKelas);
-  const [kelasFilter, setKelasFilter] = useState(selectedKelas || "all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
@@ -25,19 +23,13 @@ export default function Attendance() {
   const queryClient = useQueryClient();
   const { effectiveLembaga } = useEffectiveLembaga();
 
-  // Sync local filter with global state
-  useEffect(() => {
-    setKelasFilter(selectedKelas || "all");
-  }, [selectedKelas]);
-
   // 1. Fetch Master Active Students
   const { data: masterStudents, isLoading: isMasterStudentsLoading } = useQuery({
-    queryKey: ["students_master", effectiveLembaga, kelasFilter],
+    queryKey: ["students_master", effectiveLembaga],
     queryFn: async () => {
       try {
         const params = {};
         if (effectiveLembaga) params.lembaga = effectiveLembaga;
-        if (kelasFilter && kelasFilter !== "all") params.kelas = kelasFilter;
         const res = await studentService.getAll(params);
         const data = res?.data || res || [];
         return Array.isArray(data) ? data : [];
@@ -69,11 +61,10 @@ export default function Attendance() {
 
   // 3. Fetch Attendance Logs for Students on Selected Date
   const { data: studentLogs, isLoading: isStudentLogsLoading } = useQuery({
-    queryKey: ["attendance_students", selectedDate, effectiveLembaga, kelasFilter],
+    queryKey: ["attendance_students", selectedDate, effectiveLembaga],
     queryFn: async () => {
       try {
         const params = { date: selectedDate, lembaga: effectiveLembaga };
-        if (kelasFilter && kelasFilter !== "all") params.kelas = kelasFilter;
         const res = await api.get("/attendance/logs/students", { params });
         return res.data?.data || [];
       } catch (err) {
@@ -210,19 +201,13 @@ export default function Attendance() {
     });
 
     return { total, belumAbsen, hadir, pulang, izinSakitAlpha };
-  }, [fullRoster, roleFilter, kelasFilter]);
+  }, [fullRoster, roleFilter]);
 
-  // Filter & Sort: BELUM ABSEN ALWAYS ON TOP!
   const filteredRecords = useMemo(() => {
     return fullRoster
       .filter((item) => {
         // Role filter
         if (roleFilter !== "all" && item.role !== roleFilter) return false;
-
-        // Kelas filter (students)
-        if (item.role === "student" && kelasFilter !== "all") {
-          if (item.student?.kelas !== kelasFilter) return false;
-        }
 
         // Status filter
         if (statusFilter === "belum_absen") {
@@ -271,7 +256,7 @@ export default function Attendance() {
 
         return (b.attendance_id || 0) - (a.attendance_id || 0);
       });
-  }, [fullRoster, roleFilter, kelasFilter, statusFilter, searchQuery]);
+  }, [fullRoster, roleFilter, statusFilter, searchQuery]);
 
   // Pagination
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
@@ -281,14 +266,12 @@ export default function Attendance() {
     startIndex + itemsPerPage,
   );
 
-  // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [
     selectedDate,
     roleFilter,
     statusFilter,
-    kelasFilter,
     searchQuery,
     itemsPerPage,
   ]);
@@ -382,35 +365,18 @@ export default function Attendance() {
 
       {/* Filters Section */}
       <div className="space-y-3 bg-white/70 backdrop-blur-sm border-2 border-gray-900 rounded-2xl p-3.5 shadow-neo">
-        {/* Search + Kelas Filter */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="flex-1 relative">
-            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-xl pointer-events-none">
-              search
-            </span>
-            <input
-              type="text"
-              placeholder="Cari nama atau NIS/NIP..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-2 border-gray-300 rounded-xl font-semibold text-sm text-gray-900 hover:border-gray-900 focus:border-emerald-600 focus:bg-white focus:outline-none transition-all"
-            />
-          </div>
-
-          {kelasOptions.length > 0 && (
-            <select
-              value={kelasFilter}
-              onChange={(e) => setKelasFilter(e.target.value)}
-              className="px-3.5 py-2.5 bg-gray-100 border-2 border-gray-300 rounded-xl font-bold text-sm text-gray-900 hover:border-gray-900 focus:border-emerald-600 focus:bg-white focus:outline-none transition-all cursor-pointer min-w-[140px]"
-            >
-              <option value="all">Semua Kelas</option>
-              {kelasOptions.map((kls) => (
-                <option key={kls} value={kls}>
-                  Kelas {kls}
-                </option>
-              ))}
-            </select>
-          )}
+        {/* Search Filter */}
+        <div className="flex-1 relative">
+          <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-xl pointer-events-none">
+            search
+          </span>
+          <input
+            type="text"
+            placeholder="Cari nama atau NIS/NIP..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-2 border-gray-300 rounded-xl font-semibold text-sm text-gray-900 hover:border-gray-900 focus:border-emerald-600 focus:bg-white focus:outline-none transition-all"
+          />
         </div>
 
         {/* Role Toggle Tabs */}
