@@ -6,6 +6,7 @@ const adminMenu = [
   { path: "/attendance", label: "Absensi", icon: "calendar_month" },
   { path: "/holidays", label: "Kalender Libur", icon: "event" },
   { path: "/users", label: "Users", icon: "manage_accounts" },
+  { path: "/profile", label: "Profil", icon: "account_circle" },
   { path: "/settings", label: "Pengaturan", icon: "settings" },
 ];
 
