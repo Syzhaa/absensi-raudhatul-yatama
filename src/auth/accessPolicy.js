@@ -4,6 +4,7 @@ const adminMenu = [
   { path: "/students", label: "Siswa", icon: "group" },
   { path: "/teachers", label: "Guru", icon: "badge" },
   { path: "/attendance", label: "Absensi", icon: "calendar_month" },
+  { path: "/holidays", label: "Kalender Libur", icon: "event" },
   { path: "/users", label: "Users", icon: "manage_accounts" },
   { path: "/settings", label: "Pengaturan", icon: "settings" },
 ];

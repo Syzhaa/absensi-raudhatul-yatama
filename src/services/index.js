@@ -203,3 +203,30 @@ export const settingsService = {
     return response.data;
   },
 };
+
+export const holidayService = {
+  getAll: async (params = {}) => {
+    const response = await api.get("/attendance/holidays", { params });
+    return response.data;
+  },
+
+  getById: async (id) => {
+    const response = await api.get(`/attendance/holidays/${id}`);
+    return response.data;
+  },
+
+  create: async (data) => {
+    const response = await api.post("/attendance/holidays", data);
+    return response.data;
+  },
+
+  update: async (id, data) => {
+    const response = await api.put(`/attendance/holidays/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/attendance/holidays/${id}`);
+    return response.data;
+  },
+};

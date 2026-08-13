@@ -16,6 +16,7 @@ const Students = lazy(() => import("./pages/Students"));
 const Teachers = lazy(() => import("./pages/Teachers"));
 const Attendance = lazy(() => import("./pages/Attendance"));
 const GuruAttendance = lazy(() => import("./pages/GuruAttendance"));
+const Holidays = lazy(() => import("./pages/Holidays"));
 const Users = lazy(() => import("./pages/Users"));
 const Profile = lazy(() => import("./pages/Profile"));
 
@@ -127,6 +128,10 @@ function App() {
           <Route
             path="/attendance"
             element={userRole === "guru" ? <GuruAttendance /> : <Attendance />}
+          />
+          <Route
+            path="/holidays"
+            element={canAccessPath(userRole, "/holidays") ? <Holidays /> : <Navigate to="/" replace />}
           />
           <Route
             path="/users"
