@@ -44,6 +44,7 @@ export default function AttendanceModal({
   onStatusUpdate,
 }) {
   const [status, setStatus] = useState("hadir");
+  const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -53,6 +54,7 @@ export default function AttendanceModal({
         ? student.status
         : "hadir";
       setStatus(currentStatus);
+      setNotes(student?.notes || "");
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -60,7 +62,7 @@ export default function AttendanceModal({
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isOpen, student?.status]);
+  }, [isOpen, student?.status, student?.notes]);
 
   if (!isOpen) return null;
 
@@ -74,12 +76,14 @@ export default function AttendanceModal({
       if (student?.attendance_id) {
         await logsService.updateStatus(student.attendance_id, {
           status,
+          notes,
           role: isTeacher ? "teacher" : "student",
         });
       } else {
         // Create new manual attendance
         const payload = {
           status,
+          notes,
           date,
           is_test: false,
         };
@@ -200,21 +204,23 @@ export default function AttendanceModal({
             </div>
           </div>
 
-          {/* Notes */}
-          {status === "izin" && (
-            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
-              <span className="material-symbols-outlined text-[12px] align-middle">
-                info
-              </span>{" "}
-              Catatan: Pastikan izin sudah diserahkan ke wali kelas.
-            </div>
-          )}
-          {status === "sakit" && (
-            <div className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg p-2">
-              <span className="material-symbols-outlined text-[12px] align-middle">
-                medical_services
-              </span>{" "}
-              Catatan: Surat keterangan sakit maksimal 3 hari.
+          {/* Notes Field - for izin/sakit/alpha */}
+          {["izin", "sakit", "alpha"].includes(status) && (
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-gray-900">
+                Keterangan {status === "izin" ? "(Opsional)" : ""}
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                maxLength={250}
+                rows={3}
+                placeholder={`Masukkan keterangan ${status}...`}
+                className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-300 rounded-xl text-sm text-gray-900 placeholder-gray-400 hover:border-gray-900 focus:border-emerald-600 focus:bg-white focus:outline-none transition-all resize-none"
+              />
+              <p className="text-xs text-gray-500 text-right">
+                {notes.length}/250 karakter
+              </p>
             </div>
           )}
 
