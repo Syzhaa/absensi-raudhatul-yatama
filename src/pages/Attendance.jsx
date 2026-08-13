@@ -343,124 +343,96 @@ export default function Attendance() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-4 landscape:space-y-2">
-      {/* Header */}
-      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 landscape:py-2 shadow-neo flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-xl md:text-2xl landscape:text-lg font-black text-gray-900 tracking-tight">
-            Absensi & Log Kehadiran
-          </h1>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 text-xs font-black bg-emerald-100 text-emerald-900 border-2 border-gray-900 rounded-full shadow-sm">
-              Roster Total: {filteredRecords.length}
-            </span>
-            {stats.belumAbsen > 0 && (
-              <span className="px-2.5 py-0.5 text-xs font-black bg-amber-200 text-amber-950 border-2 border-gray-900 rounded-full animate-pulse shadow-sm">
-                Belum Absen: {stats.belumAbsen}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="relative inline-flex items-center w-full sm:w-auto">
-          <span className="material-symbols-outlined absolute left-3.5 text-gray-700 pointer-events-none text-xl z-10">
+      {/* Top Controls: Date & Search */}
+      <div className="flex gap-2 w-full">
+        <div className="relative w-[140px] sm:w-[160px] shrink-0">
+          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-700 pointer-events-none text-lg z-10">
             calendar_month
           </span>
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full sm:w-auto pl-10 pr-4 py-2.5 bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-sm text-gray-900 shadow-neo hover:border-emerald-600 focus:border-emerald-600 focus:bg-white focus:outline-none min-h-[44px] transition-all cursor-pointer"
+            className="w-full pl-9 pr-2 py-2 bg-white border-2 md:border-3 border-gray-900 rounded-xl font-bold text-xs md:text-sm text-gray-900 shadow-neo hover:border-emerald-600 focus:outline-none transition-all cursor-pointer"
           />
         </div>
-      </div>
-
-      {/* Filters Section */}
-      <div className="space-y-3 bg-white/70 backdrop-blur-sm border-2 border-gray-900 rounded-2xl p-3.5 shadow-neo">
-        {/* Search Filter */}
-        <div className="flex-1 relative">
-          <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-xl pointer-events-none">
+        <div className="relative flex-1">
+          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-lg pointer-events-none">
             search
           </span>
           <input
             type="text"
-            placeholder="Cari nama atau NIS/NIP..."
+            placeholder="Cari nama..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border-2 border-gray-300 rounded-xl font-semibold text-sm text-gray-900 hover:border-gray-900 focus:border-emerald-600 focus:bg-white focus:outline-none transition-all"
+            className="w-full pl-9 pr-3 py-2 bg-white border-2 md:border-3 border-gray-900 rounded-xl font-bold text-xs md:text-sm text-gray-900 shadow-neo focus:outline-none transition-all"
           />
         </div>
+      </div>
 
+      {/* Role Tabs & Filters Row */}
+      <div className="flex flex-col sm:flex-row justify-between gap-3 items-stretch sm:items-center">
         {/* Role Toggle Tabs */}
-        <div className="grid grid-cols-3 p-1 bg-gray-100 border-2 border-gray-900 rounded-xl shadow-neo gap-1">
+        <div className="grid grid-cols-3 p-1 bg-white border-2 md:border-3 border-gray-900 rounded-xl shadow-neo gap-1 w-full sm:w-64 shrink-0">
           <button
             type="button"
             onClick={() => setRoleFilter("all")}
-            className={`py-2 px-3 rounded-lg text-xs md:text-sm font-black transition-all text-center select-none flex items-center justify-center gap-1.5 ${
+            className={`py-1.5 px-2 rounded-lg text-xs font-black transition-all text-center select-none flex items-center justify-center gap-1 ${
               roleFilter === "all"
                 ? "bg-emerald-400 text-gray-950 shadow-neo border-2 border-gray-900"
-                : "text-gray-700 hover:text-gray-950 hover:bg-gray-200 font-bold"
+                : "text-gray-700 hover:text-gray-950 hover:bg-gray-200"
             }`}
           >
-            <span className="material-symbols-outlined text-lg">view_list</span>
-            <span>Semua</span>
+            Semua
           </button>
           <button
             type="button"
             onClick={() => setRoleFilter("student")}
-            className={`py-2 px-3 rounded-lg text-xs md:text-sm font-black transition-all text-center select-none flex items-center justify-center gap-1.5 ${
+            className={`py-1.5 px-2 rounded-lg text-xs font-black transition-all text-center select-none flex items-center justify-center gap-1 ${
               roleFilter === "student"
                 ? "bg-emerald-400 text-gray-950 shadow-neo border-2 border-gray-900"
-                : "text-gray-700 hover:text-gray-950 hover:bg-gray-200 font-bold"
+                : "text-gray-700 hover:text-gray-950 hover:bg-gray-200"
             }`}
           >
-            <span className="material-symbols-outlined text-lg">groups</span>
-            <span>Siswa</span>
+            Siswa
           </button>
           <button
             type="button"
             onClick={() => setRoleFilter("teacher")}
-            className={`py-2 px-3 rounded-lg text-xs md:text-sm font-black transition-all text-center select-none flex items-center justify-center gap-1.5 ${
+            className={`py-1.5 px-2 rounded-lg text-xs font-black transition-all text-center select-none flex items-center justify-center gap-1 ${
               roleFilter === "teacher"
                 ? "bg-emerald-400 text-gray-950 shadow-neo border-2 border-gray-900"
-                : "text-gray-700 hover:text-gray-950 hover:bg-gray-200 font-bold"
+                : "text-gray-700 hover:text-gray-950 hover:bg-gray-200"
             }`}
           >
-            <span className="material-symbols-outlined text-lg">badge</span>
-            <span>Guru</span>
+            Guru
           </button>
         </div>
 
-        {/* Status Filter Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar pt-1">
-          <span className="text-xs font-black text-gray-500 uppercase tracking-wider pl-1 flex-shrink-0">
-            Filter Status:
-          </span>
-          {[
-            { id: "all", label: "Semua Status" },
-            {
-              id: "belum_absen",
-              label: `Belum Absen (${stats.belumAbsen})`,
-              badgeColor: "bg-amber-300 text-amber-950 border-amber-500",
-            },
-            { id: "masuk", label: "Masuk" },
-            { id: "pulang", label: "Pulang" },
-            { id: "manual", label: "Izin / Sakit / Alpha" },
-          ].map((chip) => {
-            const isActive = statusFilter === chip.id;
-            return (
-              <button
-                key={chip.id}
-                onClick={() => setStatusFilter(chip.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold whitespace-nowrap transition-all select-none flex items-center gap-1.5 border-2 ${
-                  isActive
-                    ? "bg-gray-900 text-white border-gray-900 shadow-neo"
-                    : "bg-gray-100 text-gray-700 border-gray-300 hover:border-gray-900 hover:bg-gray-200"
-                }`}
-              >
-                {chip.label}
-              </button>
-            );
-          })}
+        {/* Status Filter & Stats */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <select 
+             value={statusFilter}
+             onChange={(e) => setStatusFilter(e.target.value)}
+             className="w-[140px] sm:w-[160px] shrink-0 bg-white border-2 md:border-3 border-gray-900 rounded-xl py-1.5 px-2 font-bold text-[10px] sm:text-xs shadow-neo focus:outline-none cursor-pointer"
+           >
+              <option value="all">Semua Status</option>
+              <option value="belum_absen">Belum Absen</option>
+              <option value="masuk">Sudah Masuk</option>
+              <option value="pulang">Sudah Pulang</option>
+              <option value="manual">Izin / Sakit / Alpha</option>
+           </select>
+           
+           <div className="flex flex-row flex-1 sm:flex-initial justify-end gap-1.5 overflow-hidden">
+             <span className="px-2 py-1 text-[9px] sm:text-[10px] font-black bg-emerald-100 text-emerald-900 border-2 border-gray-900 rounded-full text-center shadow-sm whitespace-nowrap">
+                Total: {filteredRecords.length}
+             </span>
+             {stats.belumAbsen > 0 && (
+               <span className="px-2 py-1 text-[9px] sm:text-[10px] font-black bg-amber-200 text-amber-950 border-2 border-gray-900 rounded-full text-center animate-pulse shadow-sm whitespace-nowrap">
+                  Belum: {stats.belumAbsen}
+               </span>
+             )}
+           </div>
         </div>
       </div>
 

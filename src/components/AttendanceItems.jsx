@@ -13,11 +13,7 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit, onQui
 
   return (
     <div
-      className={`bg-white border-2 md:border-3 ${
-        isBelumAbsen
-          ? "border-amber-300 hover:border-amber-500 bg-amber-50/20"
-          : "border-gray-900 hover:border-emerald-600"
-      } rounded-xl md:rounded-2xl p-3.5 md:p-4 shadow-neo hover:shadow-neo-lg hover:-translate-y-0.5 transition-all duration-200 space-y-3 group`}
+      className="bg-white border-2 md:border-3 border-gray-900 hover:border-emerald-600 rounded-xl md:rounded-2xl p-3.5 md:p-4 shadow-neo hover:shadow-neo-lg hover:-translate-y-0.5 transition-all duration-200 space-y-3 group"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1">

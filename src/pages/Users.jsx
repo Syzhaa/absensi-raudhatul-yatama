@@ -4,6 +4,8 @@ import api from "../services/api";
 import { useAppStore } from "../store/useAppStore";
 import UserModal from "../components/UserModal";
 import PromoteModal from "../components/PromoteModal";
+import ConfirmModal from "../components/ConfirmModal";
+
 export default function Users() {
   const [showModal, setShowModal] = useState(false);
   const [showPromoteModal, setShowPromoteModal] = useState(false);
@@ -11,6 +13,32 @@ export default function Users() {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [roleFilter, setRoleFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "confirm",
+    onConfirm: null,
+  });
+
+  const showAlert = (title, message) =>
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      type: "alert",
+      onConfirm: null,
+    });
+
+  const showConfirm = (title, message, onConfirm, isDanger = false) =>
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      type: isDanger ? "danger" : "confirm",
+      onConfirm,
+    });
 
   const userLembaga = useAppStore((state) => state.userLembaga);
   const queryClient = useQueryClient();
@@ -31,7 +59,9 @@ export default function Users() {
       queryClient.invalidateQueries(["users"]);
       setShowModal(false);
       setEditUser(null);
+      showAlert("Berhasil", "User berhasil dibuat");
     },
+    onError: (err) => showAlert("Error", err.response?.data?.message || "Gagal membuat user"),
   });
 
   const updateMutation = useMutation({
@@ -40,14 +70,18 @@ export default function Users() {
       queryClient.invalidateQueries(["users"]);
       setShowModal(false);
       setEditUser(null);
+      showAlert("Berhasil", "User berhasil diupdate");
     },
+    onError: (err) => showAlert("Error", err.response?.data?.message || "Gagal update user"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/admin/users/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries(["users"]);
+      showAlert("Berhasil", "User berhasil dihapus");
     },
+    onError: (err) => showAlert("Error", err.response?.data?.message || "Gagal menghapus user"),
   });
 
   const promoteMutation = useMutation({
@@ -57,7 +91,9 @@ export default function Users() {
       queryClient.invalidateQueries(["users"]);
       setShowPromoteModal(false);
       setSelectedUsers([]);
+      showAlert("Berhasil", "Siswa berhasil dipromosikan");
     },
+    onError: (err) => showAlert("Error", err.response?.data?.message || "Gagal promosi kelas"),
   });
 
   const users = usersData?.data || [];
@@ -95,8 +131,12 @@ export default function Users() {
   };
 
   const handleDelete = (id) => {
-    if (!window.confirm("Yakin hapus user ini?")) return;
-    deleteMutation.mutate(id);
+    showConfirm(
+      "Hapus User",
+      "Yakin ingin menghapus user ini?",
+      () => deleteMutation.mutate(id),
+      true
+    );
   };
 
   const handlePromoteSubmit = (newKelas) => {
@@ -105,9 +145,9 @@ export default function Users() {
   };
 
   const isSubmitting =
-    createMutation.isLoading ||
-    updateMutation.isLoading ||
-    promoteMutation.isLoading;
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    promoteMutation.isPending;
 
   return (
     <div className="max-w-6xl mx-auto space-y-4">
@@ -311,7 +351,7 @@ export default function Users() {
                       </button>
                       <button
                         onClick={() => handleDelete(user.id)}
-                        disabled={deleteMutation.isLoading}
+                        disabled={deleteMutation.isPending}
                         className="flex-1 py-1.5 bg-red-50 border border-red-300 rounded-lg font-bold text-xs text-red-800 hover:bg-red-100 transition-colors flex items-center justify-center gap-1"
                       >
                         <span className="material-symbols-outlined text-sm">

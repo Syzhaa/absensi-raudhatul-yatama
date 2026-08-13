@@ -24,6 +24,7 @@ export default function Students() {
   });
   const [showPromoteModal, setShowPromoteModal] = useState(false);
   const [targetKelas, setTargetKelas] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
     lembaga: "MA",
     nama: "",
@@ -257,7 +258,11 @@ export default function Students() {
     }
   };
 
-  const students = data?.data || [];
+  const allStudents = data?.data || [];
+  const students = allStudents.filter((s) =>
+    s.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (s.nisn && s.nisn.includes(searchQuery))
+  );
   const totalPages = Math.ceil(students.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedStudents = students.slice(
@@ -267,18 +272,24 @@ export default function Students() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 landscape:space-y-3">
-      {/* Header Compact */}
-      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 landscape:py-2 shadow-neo flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 landscape:mb-1">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl md:text-2xl landscape:text-lg font-black text-gray-800 tracking-tight">
-            Data Siswa
-          </h1>
-          <span className="px-2.5 py-0.5 text-xs font-bold bg-gray-100 text-gray-700 border-2 border-gray-900 rounded-full">
-            Total: {students.length}
+      {/* Action Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        {/* Search Bar */}
+        <div className="w-full sm:w-64 relative">
+          <input
+            type="text"
+            placeholder="Cari nama atau NISN..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 bg-white border-2 md:border-3 border-gray-900 rounded-xl text-xs md:text-sm font-bold shadow-neo focus:ring-0 focus:outline-none"
+          />
+          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-lg">
+            search
           </span>
         </div>
-
-        <div className="flex items-center gap-2 self-end sm:self-auto">
+        
+        {/* Actions */}
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           {selectedStudents.length > 0 && (
             <>
               <button
@@ -301,7 +312,7 @@ export default function Students() {
                   school
                 </span>
                 <span className="hidden sm:inline">
-                  Naik Kelas ({selectedStudents.length})
+                  Naik ({selectedStudents.length})
                 </span>
                 <span className="sm:hidden">
                   Naik ({selectedStudents.length})
@@ -316,7 +327,7 @@ export default function Students() {
               resetForm();
               setShowForm(true);
             }}
-            className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all text-sm"
+            className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green text-gray-900 font-black border-2 md:border-3 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all text-sm"
           >
             <span className="material-symbols-outlined text-lg">add</span>
             Tambah Data
@@ -335,29 +346,25 @@ export default function Students() {
         kelasData={kelasData}
       />
 
-      {/* Select All Action Bar */}
-      {students.length > 0 && (
-        <div className="flex items-center justify-between px-1 py-0.5">
-          <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={
-                selectedStudents.length === students.length &&
-                students.length > 0
-              }
-              onChange={handleSelectAll}
-              className="w-4 h-4 rounded border-2 border-gray-900 text-primary-green focus:ring-0 cursor-pointer"
-            />
-            <span>Pilih Semua Siswa</span>
-          </label>
-
-          {selectedStudents.length > 0 && (
-            <span className="text-xs font-bold text-gray-500">
-              {selectedStudents.length} terpilih
-            </span>
-          )}
+      {/* Select All & Total */}
+      <div className="flex items-center justify-between px-1 py-0.5">
+        <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={
+              selectedStudents.length === students.length &&
+              students.length > 0
+            }
+            onChange={handleSelectAll}
+            className="w-4 h-4 rounded border-2 border-gray-900 text-primary-green focus:ring-0 cursor-pointer"
+          />
+          <span>Pilih Semua Siswa</span>
+        </label>
+        
+        <div className="text-[10px] sm:text-xs font-bold text-gray-700 bg-gray-100 px-2.5 py-0.5 border-2 border-gray-900 rounded-full shadow-sm">
+          Total: {students.length} Siswa
         </div>
-      )}
+      </div>
 
       {/* Cards List Container */}
       <div className="space-y-3">
