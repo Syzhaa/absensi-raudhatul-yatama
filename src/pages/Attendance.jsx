@@ -13,6 +13,7 @@ export default function Attendance() {
     new Date().toISOString().split("T")[0],
   );
   const [roleFilter, setRoleFilter] = useState("all");
+  const [kelasFilter, setKelasFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -201,13 +202,22 @@ export default function Attendance() {
     });
 
     return { total, belumAbsen, hadir, pulang, izinSakitAlpha };
-  }, [fullRoster, roleFilter]);
+  }, [fullRoster, roleFilter, kelasFilter]);
 
   const filteredRecords = useMemo(() => {
     return fullRoster
       .filter((item) => {
         // Role filter
         if (roleFilter !== "all" && item.role !== roleFilter) return false;
+
+        // Kelas filter (only for students)
+        if (
+          item.role === "student" &&
+          kelasFilter !== "all" &&
+          item.student?.kelas !== kelasFilter
+        ) {
+          return false;
+        }
 
         // Status filter
         if (statusFilter === "belum_absen") {
@@ -256,7 +266,7 @@ export default function Attendance() {
 
         return (b.attendance_id || 0) - (a.attendance_id || 0);
       });
-  }, [fullRoster, roleFilter, statusFilter, searchQuery]);
+  }, [fullRoster, roleFilter, kelasFilter, statusFilter, searchQuery]);
 
   // Pagination
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
@@ -271,6 +281,7 @@ export default function Attendance() {
   }, [
     selectedDate,
     roleFilter,
+    kelasFilter,
     statusFilter,
     searchQuery,
     itemsPerPage,
