@@ -1,19 +1,19 @@
 const adminMenu = [
-  { path: "/", label: "Dashboard", icon: "home" },
-  { path: "/scan", label: "Scan QR", icon: "qr_code_scanner" },
+  { path: "/", label: "Home", icon: "home" },
+  { path: "/scan", label: "Scan", icon: "qr_code_scanner" },
   { path: "/students", label: "Siswa", icon: "group" },
   { path: "/teachers", label: "Guru", icon: "badge" },
-  { path: "/attendance", label: "Absensi", icon: "calendar_month" },
-  { path: "/holidays", label: "Kalender Libur", icon: "event" },
-  { path: "/users", label: "Users", icon: "manage_accounts" },
+  { path: "/attendance", label: "Absen", icon: "calendar_month" },
+  { path: "/holidays", label: "Libur", icon: "event" },
+  { path: "/users", label: "User", icon: "manage_accounts" },
   { path: "/profile", label: "Profil", icon: "account_circle" },
-  { path: "/settings", label: "Pengaturan", icon: "settings" },
+  { path: "/settings", label: "Setting", icon: "settings" },
 ];
 
 const guruMenu = [
-  { path: "/", label: "Dashboard", icon: "home" },
-  { path: "/scan", label: "Scan QR", icon: "qr_code_scanner" },
-  { path: "/attendance", label: "Daftar Hadir", icon: "fact_check" },
+  { path: "/", label: "Home", icon: "home" },
+  { path: "/scan", label: "Scan", icon: "qr_code_scanner" },
+  { path: "/attendance", label: "Absen", icon: "fact_check" },
   { path: "/profile", label: "Profil", icon: "account_circle" },
 ];
 

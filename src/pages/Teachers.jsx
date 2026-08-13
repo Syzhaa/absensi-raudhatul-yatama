@@ -10,7 +10,7 @@ import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 export default function Teachers() {
-  const { effectiveLembaga } = useEffectiveLembaga();
+  const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: "",
@@ -62,7 +62,7 @@ export default function Teachers() {
   const { data, isLoading } = useQuery({
     queryKey: ["teachers", effectiveLembaga],
     queryFn: () => teacherService.getAll({ lembaga: effectiveLembaga }),
-    enabled: !!effectiveLembaga,
+    enabled: !isLembagaLoading,
   });
 
   const createMutation = useMutation({

@@ -10,7 +10,7 @@ import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 export default function Students() {
-  const { effectiveLembaga } = useEffectiveLembaga();
+  const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const selectedKelas = useAppStore((state) => state.selectedKelas);
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -45,7 +45,7 @@ export default function Students() {
       lembaga: effectiveLembaga,
       ...(selectedKelas && { kelas: selectedKelas })
     }),
-    enabled: !!effectiveLembaga,
+    enabled: !isLembagaLoading,
   });
 
   // Fetch kelas list for dropdown
@@ -58,7 +58,7 @@ export default function Students() {
       });
       return response.data;
     },
-    enabled: !!effectiveLembaga,
+    enabled: !isLembagaLoading,
   });
 
   const createMutation = useMutation({

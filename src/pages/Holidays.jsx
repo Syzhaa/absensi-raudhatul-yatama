@@ -6,7 +6,7 @@ import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 export default function Holidays() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingHoliday, setEditingHoliday] = useState(null);
-  const { effectiveLembaga } = useEffectiveLembaga();
+  const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
@@ -23,7 +23,7 @@ export default function Holidays() {
       const res = await holidayService.getAll({ lembaga: effectiveLembaga });
       return res.data || [];
     },
-    enabled: !!effectiveLembaga,
+    enabled: !isLembagaLoading,
   });
 
   const createMutation = useMutation({

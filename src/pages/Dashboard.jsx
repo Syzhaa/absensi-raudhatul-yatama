@@ -4,13 +4,13 @@ import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { useAppStore } from "../store/useAppStore";
 
 export default function Dashboard() {
-  const { effectiveLembaga } = useEffectiveLembaga();
+  const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const selectedKelas = useAppStore((state) => state.selectedKelas);
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard", effectiveLembaga, selectedKelas],
     queryFn: () => attendanceService.getDashboard(effectiveLembaga, selectedKelas),
-    enabled: !!effectiveLembaga,
+    enabled: !isLembagaLoading,
   });
 
   const stats = data?.data || {};
@@ -83,7 +83,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
       {statCards.map((stat, idx) => (
         <div
           key={idx}

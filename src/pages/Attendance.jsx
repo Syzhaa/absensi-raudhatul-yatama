@@ -22,7 +22,7 @@ export default function Attendance() {
   const [selectedPerson, setSelectedPerson] = useState(null);
 
   const queryClient = useQueryClient();
-  const { effectiveLembaga } = useEffectiveLembaga();
+  const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
 
   // 1. Fetch Master Active Students
   const { data: masterStudents, isLoading: isMasterStudentsLoading } = useQuery({
@@ -39,7 +39,7 @@ export default function Attendance() {
         return [];
       }
     },
-    enabled: !!effectiveLembaga,
+    enabled: !isLembagaLoading,
   });
 
   // 2. Fetch Master Active Teachers
@@ -57,7 +57,7 @@ export default function Attendance() {
         return [];
       }
     },
-    enabled: !!effectiveLembaga,
+    enabled: !isLembagaLoading,
   });
 
   // 3. Fetch Attendance Logs for Students on Selected Date
@@ -73,7 +73,7 @@ export default function Attendance() {
         return [];
       }
     },
-    enabled: !!effectiveLembaga,
+    enabled: !isLembagaLoading,
   });
 
   // 4. Fetch Attendance Logs for Teachers on Selected Date
@@ -90,7 +90,7 @@ export default function Attendance() {
         return [];
       }
     },
-    enabled: !!effectiveLembaga,
+    enabled: !isLembagaLoading,
   });
 
   const isLoading =

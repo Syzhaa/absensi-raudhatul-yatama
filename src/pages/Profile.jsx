@@ -139,9 +139,6 @@ export default function Profile() {
         </button>
       </div>
 
-      <button onClick={logout} className="w-full py-3 bg-red-500 text-white font-black border-2 border-gray-900 rounded-xl shadow-neo">
-        Keluar
-      </button>
     </div>
   );
 }

@@ -55,7 +55,7 @@ export default function GuruAttendance() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const selectedKelas = useAppStore((state) => state.selectedKelas);
-  const { effectiveLembaga } = useEffectiveLembaga();
+  const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -63,7 +63,7 @@ export default function GuruAttendance() {
     queryFn: async () => (await api.get("/attendance/logs/roster", {
       params: { date, lembaga: effectiveLembaga, ...(selectedKelas ? { kelas: selectedKelas } : {}) },
     })).data,
-    enabled: !!effectiveLembaga,
+    enabled: !isLembagaLoading,
   });
 
   const students = useMemo(() => {
