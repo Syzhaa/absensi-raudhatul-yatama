@@ -41,14 +41,18 @@ export default function Users() {
     });
 
   const userLembaga = useAppStore((state) => state.userLembaga);
+  const userRole = useAppStore((state) => state.userRole);
   const queryClient = useQueryClient();
 
   const { data: usersData, isLoading } = useQuery({
-    queryKey: ["users", userLembaga],
+    queryKey: ["users", userLembaga, userRole],
     queryFn: async () => {
-      const res = await api.get("/admin/users", {
-        params: { per_page: 100, lembaga: userLembaga },
-      });
+      // Super admin dengan lembaga yayasan jangan kirim parameter lembaga
+      const params = { per_page: 100 };
+      if (userLembaga && userLembaga !== 'yayasan') {
+        params.lembaga = userLembaga;
+      }
+      const res = await api.get("/admin/users", { params });
       return res.data;
     },
   });
@@ -105,12 +109,15 @@ export default function Users() {
         !user.name?.toLowerCase().includes(searchQuery.toLowerCase())
       )
         return false;
-      if (userLembaga && user.lembaga !== userLembaga) return false;
+      // Super admin yayasan lihat semua lembaga, jangan filter
+      if (userLembaga && userLembaga !== 'yayasan' && user.lembaga !== userLembaga) return false;
       return true;
     });
   }, [users, roleFilter, searchQuery, userLembaga]);
 
   const canEdit = (user) => {
+    // Super admin yayasan bisa edit semua user
+    if (userLembaga === 'yayasan') return true;
     // Admin MA hanya bisa edit MA
     if (userLembaga === "ma" && user.lembaga !== "ma") return false;
     // Admin MTS hanya bisa edit MTS
