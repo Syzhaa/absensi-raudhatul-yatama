@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Modal from "./Modal";
 
 export default function StudentForm({
@@ -10,6 +11,26 @@ export default function StudentForm({
   isPending,
   kelasData,
 }) {
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(editingStudent?.foto || null);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2048 * 1024) {
+        alert("Ukuran foto maksimal 2MB");
+        return;
+      }
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
+
   const baseClass =
     "w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all";
   const inputClass = `${baseClass} placeholder:text-gray-400`;
@@ -31,7 +52,7 @@ export default function StudentForm({
         <div className="space-y-2">
           <button
             type="button"
-            onClick={onSubmit}
+            onClick={() => onSubmit(photoFile)}
             className="w-full py-3.5 px-6 bg-primary-green text-gray-900 font-bold text-base md:text-lg rounded-full border-2 border-gray-900 shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isPending}
           >
@@ -57,10 +78,57 @@ export default function StudentForm({
       }
     >
       <form
-        onSubmit={onSubmit}
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(photoFile);
+        }}
         id="student-form"
         className="grid grid-cols-1 md:grid-cols-2 gap-4"
       >
+        {/* Photo Upload */}
+        <div className="md:col-span-2">
+          <label className={labelClass}>Foto Siswa</label>
+          <div className="flex items-start gap-4">
+            {photoPreview && (
+              <div className="relative">
+                <img
+                  src={photoPreview}
+                  alt="Preview"
+                  className="w-24 h-24 object-cover rounded-lg border-2 border-gray-300"
+                />
+                <button
+                  type="button"
+                  onClick={handleRemovePhoto}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                >
+                  <span className="material-symbols-outlined text-sm">close</span>
+                </button>
+              </div>
+            )}
+            <div className="flex-1">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/jpg"
+                onChange={handlePhotoChange}
+                className="hidden"
+                id="photo-upload"
+              />
+              <label
+                htmlFor="photo-upload"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
+              >
+                <span className="material-symbols-outlined">upload</span>
+                <span className="text-sm font-medium">
+                  {photoPreview ? "Ganti Foto" : "Pilih Foto"}
+                </span>
+              </label>
+              <p className="text-xs text-gray-500 mt-1">
+                JPG, PNG. Max 2MB
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div>
           <label className={labelClass}>Lembaga *</label>
           <select {...field("lembaga")} className={selectClass} required>

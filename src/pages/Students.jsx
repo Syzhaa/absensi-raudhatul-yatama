@@ -5,6 +5,7 @@ import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { useAppStore } from "../store/useAppStore";
 import StudentForm from "../components/StudentForm";
 import StudentCard from "../components/StudentCard";
+import StudentCardPrint from "../components/StudentCardPrint";
 import PromoteClassModal from "../components/PromoteClassModal";
 import QRCode from "qrcode";
 import JSZip from "jszip";
@@ -23,6 +24,8 @@ export default function Students() {
     count: 0,
   });
   const [showPromoteModal, setShowPromoteModal] = useState(false);
+  const [showCardModal, setShowCardModal] = useState(false);
+  const [selectedCardStudent, setSelectedCardStudent] = useState(null);
   const [targetKelas, setTargetKelas] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
@@ -149,12 +152,33 @@ export default function Students() {
     setShowForm(true);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (photoFile) => {
     if (editingStudent) {
-      updateMutation.mutate({ id: editingStudent.id, data: formData });
+      // Update siswa
+      await updateMutation.mutateAsync({ id: editingStudent.id, data: formData });
+      
+      // Upload foto jika ada
+      if (photoFile) {
+        try {
+          await studentService.uploadPhoto(editingStudent.id, photoFile);
+          queryClient.invalidateQueries(["students"]);
+        } catch (error) {
+          alert("Gagal upload foto: " + (error.message || "Unknown error"));
+        }
+      }
     } else {
-      createMutation.mutate(formData);
+      // Create siswa dulu
+      const newStudent = await createMutation.mutateAsync(formData);
+      
+      // Upload foto jika ada
+      if (photoFile && newStudent?.data?.id) {
+        try {
+          await studentService.uploadPhoto(newStudent.data.id, photoFile);
+          queryClient.invalidateQueries(["students"]);
+        } catch (error) {
+          alert("Siswa berhasil ditambahkan, tapi foto gagal diupload");
+        }
+      }
     }
   };
 
@@ -384,6 +408,10 @@ export default function Students() {
               isSelected={selectedStudents.includes(student.id)}
               onSelect={handleSelectStudent}
               onDownloadQR={handleDownloadSingleQR}
+              onShowCard={(s) => {
+                setSelectedCardStudent(s);
+                setShowCardModal(true);
+              }}
               onEdit={handleEdit}
               onDelete={handleDelete}
               isDeletePending={deleteMutation.isPending}
@@ -511,6 +539,15 @@ export default function Students() {
         />
       )}
 
+      {showCardModal && selectedCardStudent && (
+        <StudentCardPrint
+          student={selectedCardStudent}
+          onClose={() => {
+            setShowCardModal(false);
+            setSelectedCardStudent(null);
+          }}
+        />
+      )}
     </div>
   );
 }

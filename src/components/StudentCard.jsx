@@ -5,6 +5,7 @@ export default function StudentCard({
   onDownloadQR,
   onEdit,
   onDelete,
+  onShowCard,
   isDeletePending,
   activeDropdown,
   setActiveDropdown,
@@ -118,19 +119,33 @@ export default function StudentCard({
                     onDownloadQR(student);
                     closeDropdown();
                   }}
-                  className={`${menuItemClass} text-blue-700 hover:bg-blue-50 border-b border-gray-100`}
+                  className={`${menuItemClass} hover:bg-gray-100 text-blue-700`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">
+                  <span className="material-symbols-outlined text-lg">
                     qr_code_2
                   </span>
                   Download QR
                 </button>
                 <button
                   onClick={() => {
+                    if (onShowCard) {
+                      onShowCard(student);
+                    }
+                    closeDropdown();
+                  }}
+                  className={`${menuItemClass} hover:bg-gray-100 text-gray-700`}
+                >
+                  <span className="material-symbols-outlined text-lg">
+                    badge
+                  </span>
+                  Cetak Kartu
+                </button>
+                <button
+                  onClick={() => {
                     onEdit(student);
                     closeDropdown();
                   }}
-                  className={`${menuItemClass} text-amber-700 hover:bg-amber-50 border-b border-gray-100`}
+                  className={`${menuItemClass} hover:bg-gray-100 text-amber-700`}
                 >
                   <span className="material-symbols-outlined text-[18px]">
                     edit
