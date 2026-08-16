@@ -25,7 +25,7 @@ export default function Students() {
   });
   const [showPromoteModal, setShowPromoteModal] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
-  const [selectedCardStudent, setSelectedCardStudent] = useState(null);
+  const [selectedCardStudents, setSelectedCardStudents] = useState([]);
   const [targetKelas, setTargetKelas] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
@@ -72,6 +72,11 @@ export default function Students() {
       resetForm();
       alert("Siswa berhasil ditambahkan");
     },
+    onError: (error) => {
+      const msg = error.response?.data?.message || error.message || "Unknown error";
+      const errors = error.response?.data?.errors;
+      alert(`Gagal menambah siswa: ${msg}\n${errors ? JSON.stringify(errors, null, 2) : ""}`);
+    },
   });
 
   const updateMutation = useMutation({
@@ -80,6 +85,11 @@ export default function Students() {
       queryClient.invalidateQueries(["students"]);
       resetForm();
       alert("Siswa berhasil diupdate");
+    },
+    onError: (error) => {
+      const msg = error.response?.data?.message || error.message || "Unknown error";
+      const errors = error.response?.data?.errors;
+      alert(`Gagal update siswa: ${msg}\n${errors ? JSON.stringify(errors, null, 2) : ""}`);
     },
   });
 
@@ -157,30 +167,50 @@ export default function Students() {
   const handleSubmit = async (photoFile) => {
     setIsUploading(true);
     try {
+      let formattedLembaga = formData.lembaga;
+      if (formData.lembaga) {
+        const lower = formData.lembaga.toLowerCase();
+        if (lower === "ma") formattedLembaga = "MA";
+        else if (lower === "mts") formattedLembaga = "MTs";
+      }
+
+      const payload = {
+        ...formData,
+        lembaga: formattedLembaga,
+      };
+
       if (editingStudent) {
         // Update siswa
-        await updateMutation.mutateAsync({ id: editingStudent.id, data: formData });
+        await updateMutation.mutateAsync({ id: editingStudent.id, data: payload });
         
         // Upload foto jika ada
         if (photoFile) {
           try {
-            await studentService.uploadPhoto(editingStudent.id, photoFile);
+            console.log('Uploading photo for student:', editingStudent.id);
+            const uploadResult = await studentService.uploadPhoto(editingStudent.id, photoFile);
+            console.log('Photo uploaded:', uploadResult);
             queryClient.invalidateQueries(["students"]);
+            alert("Siswa dan foto berhasil diupdate");
           } catch (error) {
-            alert("Gagal upload foto: " + (error.message || "Unknown error"));
+            console.error('Photo upload failed:', error);
+            alert("Siswa berhasil diupdate, tapi foto gagal diupload: " + (error.response?.data?.message || error.message));
           }
         }
       } else {
         // Create siswa dulu
-        const newStudent = await createMutation.mutateAsync(formData);
+        const newStudent = await createMutation.mutateAsync(payload);
         
         // Upload foto jika ada
         if (photoFile && newStudent?.data?.id) {
           try {
-            await studentService.uploadPhoto(newStudent.data.id, photoFile);
+            console.log('Uploading photo for new student:', newStudent.data.id);
+            const uploadResult = await studentService.uploadPhoto(newStudent.data.id, photoFile);
+            console.log('Photo uploaded:', uploadResult);
             queryClient.invalidateQueries(["students"]);
+            alert("Siswa dan foto berhasil ditambahkan");
           } catch (error) {
-            alert("Siswa berhasil ditambahkan, tapi foto gagal diupload");
+            console.error('Photo upload failed:', error);
+            alert("Siswa berhasil ditambahkan, tapi foto gagal diupload: " + (error.response?.data?.message || error.message));
           }
         }
       }
@@ -237,41 +267,16 @@ export default function Students() {
     }
   };
 
-  const handleGenerateQR = async () => {
+  const handleBatchPrintQR = () => {
     if (selectedStudents.length === 0) {
       alert("Pilih siswa terlebih dahulu");
       return;
     }
-
-    try {
-      const selectedData = students.filter((s) =>
-        selectedStudents.includes(s.id),
-      );
-      const zip = new JSZip();
-
-      for (const student of selectedData) {
-        const qrData = student.uuid;
-        const canvas = document.createElement("canvas");
-        await QRCode.toCanvas(canvas, qrData, { width: 300, margin: 2 });
-
-        const blob = await new Promise((resolve) =>
-          canvas.toBlob(resolve, "image/png"),
-        );
-        zip.file(
-          `siswa-${student.nama.replace(/\s+/g, "-")}-${student.nisn || student.id}.png`,
-          blob,
-        );
-      }
-
-      const zipContent = await zip.generateAsync({ type: "blob" });
-      saveAs(zipContent, `QR-Siswa-${new Date().getTime()}.zip`);
-
-      const count = selectedStudents.length;
-      setSelectedStudents([]);
-      setDownloadSuccessModal({ isOpen: true, count });
-    } catch (error) {
-      alert("Gagal generate QR: " + error.message);
-    }
+    const selectedData = students.filter((s) =>
+      selectedStudents.includes(s.id),
+    );
+    setSelectedCardStudents(selectedData);
+    setShowCardModal(true);
   };
 
   const handleDownloadSingleQR = async (student) => {
@@ -324,14 +329,15 @@ export default function Students() {
           {selectedStudents.length > 0 && (
             <>
               <button
-                onClick={handleGenerateQR}
-                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-100 text-blue-800 font-bold border-2 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md transition-all text-xs md:text-sm"
+                onClick={handleBatchPrintQR}
+                className="py-1 px-3 sm:px-4 bg-white text-gray-900 font-bold border-2 border-gray-900 rounded-lg hover:bg-gray-100 flex items-center justify-center shadow-sm"
+                title="Cetak Kartu Massal"
               >
-                <span className="material-symbols-outlined text-lg">
-                  download
+                <span className="material-symbols-outlined text-lg sm:text-base mr-0 sm:mr-2">
+                  print
                 </span>
                 <span className="hidden sm:inline">
-                  QR ({selectedStudents.length})
+                  Cetak ({selectedStudents.length})
                 </span>
                 <span className="sm:hidden">({selectedStudents.length})</span>
               </button>
@@ -416,7 +422,7 @@ export default function Students() {
               onSelect={handleSelectStudent}
               onDownloadQR={handleDownloadSingleQR}
               onShowCard={(s) => {
-                setSelectedCardStudent(s);
+                setSelectedCardStudents([s]);
                 setShowCardModal(true);
               }}
               onEdit={handleEdit}
@@ -546,12 +552,17 @@ export default function Students() {
         />
       )}
 
-      {showCardModal && selectedCardStudent && (
+      {/* QR/Card Modal */}
+      {showCardModal && selectedCardStudents?.length > 0 && (
         <StudentCardPrint
-          student={selectedCardStudent}
+          students={selectedCardStudents}
           onClose={() => {
             setShowCardModal(false);
-            setSelectedCardStudent(null);
+            setSelectedCardStudents([]);
+            // Clear selections after print if it was a batch print
+            if (selectedCardStudents.length > 1) {
+              setSelectedStudents([]);
+            }
           }}
         />
       )}

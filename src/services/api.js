@@ -9,6 +9,18 @@ const api = axios.create({
   },
 });
 
+export const getPhotoUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("blob:")) return url;
+  
+  // Fallback if VITE_API_BASE_URL is missing
+  const apiBase = import.meta.env.VITE_API_BASE_URL || "https://apima.sylink.my.id/api/v1";
+  // Remove /api/v1 or /api to get the root domain
+  const baseUrl = apiBase.replace(/\/api(\/v1)?$/, "");
+  
+  return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+};
+
 // Request interceptor untuk inject token & flag test mode
 api.interceptors.request.use(
   (config) => {

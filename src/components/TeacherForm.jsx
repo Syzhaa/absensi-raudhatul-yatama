@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "./Modal";
+import { getPhotoUrl } from "../services/api";
 
 export default function TeacherForm({
   isOpen,
@@ -12,6 +13,13 @@ export default function TeacherForm({
 }) {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(editingTeacher?.foto || null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPhotoFile(null);
+      setPhotoPreview(editingTeacher?.foto || null);
+    }
+  }, [isOpen, editingTeacher]);
 
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0];
@@ -91,7 +99,7 @@ export default function TeacherForm({
             {photoPreview && (
               <div className="relative">
                 <img
-                  src={photoPreview}
+                  src={getPhotoUrl(photoPreview)}
                   alt="Preview"
                   className="w-24 h-24 object-cover rounded-lg border-2 border-gray-300"
                 />

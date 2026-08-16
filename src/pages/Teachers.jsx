@@ -38,6 +38,8 @@ export default function Teachers() {
   const [showForm, setShowForm] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [selectedTeachers, setSelectedTeachers] = useState([]);
+  const [selectedCardTeachers, setSelectedCardTeachers] = useState([]);
+  const [showCardModal, setShowCardModal] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -196,8 +198,21 @@ export default function Teachers() {
   const handleSubmit = async (photoFile) => {
     setIsUploading(true);
     try {
+      let formattedLembaga = formData.lembaga;
+      if (formData.lembaga) {
+        const lower = formData.lembaga.toLowerCase();
+        if (lower === "ma") formattedLembaga = "MA";
+        else if (lower === "mts") formattedLembaga = "MTs";
+        else if (lower === "yayasan") formattedLembaga = "Yayasan";
+      }
+
+      const payload = {
+        ...formData,
+        lembaga: formattedLembaga,
+      };
+
       if (editingTeacher) {
-        await updateMutation.mutateAsync({ id: editingTeacher.id, data: formData });
+        await updateMutation.mutateAsync({ id: editingTeacher.id, data: payload });
         
         if (photoFile) {
           try {
@@ -208,7 +223,7 @@ export default function Teachers() {
           }
         }
       } else {
-        const newTeacher = await createMutation.mutateAsync(formData);
+        const newTeacher = await createMutation.mutateAsync(payload);
         
         if (photoFile && newTeacher?.data?.id) {
           try {
@@ -302,41 +317,16 @@ export default function Teachers() {
     }
   };
 
-  const handleGenerateQR = async () => {
+  const handleBatchPrintQR = () => {
     if (selectedTeachers.length === 0) {
-      showAlert("Peringatan", "Pilih guru terlebih dahulu");
+      alert("Pilih guru terlebih dahulu");
       return;
     }
-
-    try {
-      const selectedData = teachers.filter((t) =>
-        selectedTeachers.includes(t.id),
-      );
-      const zip = new JSZip();
-
-      for (const teacher of selectedData) {
-        const qrData = teacher.uuid;
-        const canvas = document.createElement("canvas");
-        await QRCode.toCanvas(canvas, qrData, { width: 300, margin: 2 });
-
-        const blob = await new Promise((resolve) =>
-          canvas.toBlob(resolve, "image/png"),
-        );
-        zip.file(
-          `guru-${teacher.nama.replace(/\s+/g, "-")}-${teacher.nip || teacher.id}.png`,
-          blob,
-        );
-      }
-
-      const zipContent = await zip.generateAsync({ type: "blob" });
-      saveAs(zipContent, `QR-Guru-${new Date().getTime()}.zip`);
-
-      const count = selectedTeachers.length;
-      setSelectedTeachers([]);
-      setDownloadSuccessModal({ isOpen: true, count });
-    } catch (error) {
-      showAlert("Error", "Gagal generate QR: " + error.message);
-    }
+    const selectedData = teachers.filter((t) =>
+      selectedTeachers.includes(t.id),
+    );
+    setSelectedCardTeachers(selectedData);
+    setShowCardModal(true);
   };
 
   const handleDownloadSingleQR = async (teacher) => {
@@ -388,16 +378,17 @@ export default function Teachers() {
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
           {selectedTeachers.length > 0 && (
             <button
-              onClick={handleGenerateQR}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-100 text-blue-800 font-bold border-2 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md transition-all text-xs md:text-sm"
-            >
-              <span className="material-symbols-outlined text-lg">
-                download
-              </span>
-              <span className="hidden sm:inline">
-                QR ({selectedTeachers.length})
-              </span>
-              <span className="sm:hidden">({selectedTeachers.length})</span>
+                onClick={handleBatchPrintQR}
+                className="py-1 px-3 sm:px-4 bg-white text-gray-900 font-bold border-2 border-gray-900 rounded-lg hover:bg-gray-100 flex items-center justify-center shadow-sm"
+                title="Cetak Kartu Massal"
+              >
+                <span className="material-symbols-outlined text-lg sm:text-base mr-0 sm:mr-2">
+                  print
+                </span>
+                <span className="hidden sm:inline">
+                  Cetak ({selectedTeachers.length})
+                </span>
+                <span className="sm:hidden">({selectedTeachers.length})</span>
             </button>
           )}
 
@@ -465,6 +456,10 @@ export default function Teachers() {
               onActivateAccess={handleActivateAccess}
               onViewAccess={handleViewAccess}
               onDownloadQR={handleDownloadSingleQR}
+              onShowCard={(t) => {
+                setSelectedCardTeachers([t]);
+                setShowCardModal(true);
+              }}
               onEdit={handleEdit}
               onDelete={handleDelete}
               isActivatePending={activateAccessMutation.isPending}
@@ -540,6 +535,22 @@ export default function Teachers() {
           add
         </span>
       </button>
+
+      {/* QR/Card Modal */}
+      {showCardModal && selectedCardTeachers?.length > 0 && (
+        <StudentCardPrint
+          students={selectedCardTeachers}
+          type="teacher"
+          onClose={() => {
+            setShowCardModal(false);
+            setSelectedCardTeachers([]);
+            // Clear selections after print if it was a batch print
+            if (selectedCardTeachers.length > 1) {
+              setSelectedTeachers([]);
+            }
+          }}
+        />
+      )}
 
       {/* Download ZIP Success Modal */}
       {downloadSuccessModal.isOpen && (

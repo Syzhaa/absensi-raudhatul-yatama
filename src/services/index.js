@@ -144,9 +144,11 @@ export const studentService = {
   uploadPhoto: async (id, file) => {
     const formData = new FormData();
     formData.append("foto", file);
+    console.log('Uploading photo for student', id, 'file:', file.name, 'size:', file.size);
     const response = await api.post(`/attendance/students/${id}/photo`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+    console.log('Upload response:', response.data);
     return response.data;
   },
 
@@ -196,7 +198,7 @@ export const teacherService = {
     const formData = new FormData();
     formData.append("foto", file);
     const response = await api.post(`/attendance/teachers/${id}/photo`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      headers: { "Content-Type": undefined },
     });
     return response.data;
   },

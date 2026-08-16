@@ -1,10 +1,17 @@
+import { getPhotoUrl } from "../services/api";
+
+const getFallbackAvatar = () => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="200" height="200"><rect width="100%" height="100%" fill="#e5e7eb"/><path fill="#9ca3af" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+};
+
 export default function TeacherCard({
   teacher,
   isSelected,
   onSelect,
   onActivateAccess,
   onViewAccess,
-  onDownloadQR,
+  onShowCard,
   onEdit,
   onDelete,
   isActivatePending,
@@ -26,12 +33,34 @@ export default function TeacherCard({
       <div className="flex items-start justify-between gap-3">
         {/* Left: Checkbox & Main Info */}
         <div className="flex items-start gap-3 min-w-0 flex-1">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={() => onSelect(teacher.id)}
-            className="mt-1 w-4 h-4 md:w-5 md:h-5 rounded border-2 border-gray-900 text-primary-green focus:ring-0 cursor-pointer flex-shrink-0"
-          />
+          <div className="flex items-center pt-1">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onSelect(teacher.id)}
+              className="w-4 h-4 md:w-5 md:h-5 rounded border-2 border-gray-900 text-primary-green focus:ring-0 cursor-pointer flex-shrink-0"
+            />
+          </div>
+
+          <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-gray-900 overflow-hidden bg-gray-100 flex items-center justify-center">
+            {teacher.foto ? (
+              <img 
+                src={getPhotoUrl(teacher.foto)} 
+                alt={teacher.nama} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = getFallbackAvatar();
+                }}
+              />
+            ) : (
+              <img 
+                src={getFallbackAvatar()}
+                alt={teacher.nama}
+                className="w-full h-full object-cover"
+              />
+            )}
+          </div>
 
           <div className="space-y-1.5 min-w-0 flex-1">
             {/* Nama Guru */}
@@ -98,12 +127,12 @@ export default function TeacherCard({
               </button>
             )}
             <button
-              onClick={() => onDownloadQR(teacher)}
+              onClick={() => onShowCard(teacher)}
               className="p-1.5 md:p-2 bg-blue-100 text-blue-700 border-2 border-gray-900 rounded-lg hover:bg-blue-200 transition-colors shadow-sm"
-              title="Download QR"
+              title="Lihat Kartu"
             >
               <span className="material-symbols-outlined text-lg">
-                qr_code_2
+                badge
               </span>
             </button>
             <button
@@ -168,15 +197,17 @@ export default function TeacherCard({
                 )}
                 <button
                   onClick={() => {
-                    onDownloadQR(teacher);
+                    if (onShowCard) {
+                      onShowCard(teacher);
+                    }
                     closeDropdown();
                   }}
                   className={`${menuItemClass} text-blue-700 hover:bg-blue-50 border-b border-gray-100`}
                 >
                   <span className="material-symbols-outlined text-[18px]">
-                    qr_code_2
+                    badge
                   </span>
-                  Download QR
+                  Lihat Kartu
                 </button>
                 <button
                   onClick={() => {
