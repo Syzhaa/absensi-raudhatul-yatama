@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import QRCode from "qrcode";
-import html2canvas from "html2canvas";
+import { toPng } from "html-to-image";
 
 export default function StudentCardPrint({ students = [], onClose, type = "student" }) {
   const cardRef = useRef(null);
@@ -46,11 +46,22 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       const wrappers = cardRef.current.querySelectorAll('.id-card-wrapper');
       if (wrappers.length === 0) return;
 
+      // html-to-image uses browser's own rendering engine (SVG foreignObject)
+      // sehingga hasil PNG 100% identik dengan tampilan preview
+      const captureWrapper = async (wrapper) => {
+        return toPng(wrapper, {
+          pixelRatio: 3,
+          backgroundColor: '#ffffff',
+          skipFonts: false,
+          cacheBust: true,
+        });
+      };
+
       if (wrappers.length === 1) {
-        const canvas = await html2canvas(wrappers[0], { scale: 3, useCORS: true, logging: false, backgroundColor: null });
+        const dataUrl = await captureWrapper(wrappers[0]);
         const link = document.createElement("a");
         link.download = `kartu-${students[0].nama.replace(/\s+/g, "-")}.png`;
-        link.href = canvas.toDataURL("image/png");
+        link.href = dataUrl;
         link.click();
       } else {
         const JSZip = (await import('jszip')).default;
@@ -59,8 +70,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
 
         for (let i = 0; i < wrappers.length; i++) {
           const student = students[i];
-          const canvas = await html2canvas(wrappers[i], { scale: 3, useCORS: true, logging: false, backgroundColor: null });
-          const imgData = canvas.toDataURL("image/png").split("base64,")[1];
+          const dataUrl = await captureWrapper(wrappers[i]);
+          const imgData = dataUrl.split("base64,")[1];
           zip.file(`kartu-${student.nama.replace(/\s+/g, "-")}.png`, imgData, { base64: true });
         }
 
@@ -239,7 +250,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               display: flex;
               align-items: center;
               justify-content: center;
-              margin-left: 10px;
+              margin-left: 16px;
               margin-right: 5px;
             }
             .card-header .logo img {
@@ -250,14 +261,13 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             }
             .card-header .title-group {
               flex: 1;
-              text-align: center;
               display: flex;
               flex-direction: column;
               align-items: center;
               justify-content: center;
               min-width: 0;
               padding-left: 2px;
-              padding-right: 10px;
+              padding-right: 16px;
             }
             .card-header h1 {
               font-size: 10px;
@@ -265,16 +275,12 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               margin: 0;
               text-transform: uppercase;
               line-height: 1.15;
-              text-align: center;
-              width: 100%;
             }
             .card-header h2 {
               font-size: 8px;
               font-weight: 800;
               margin: 1px 0 0 0;
               line-height: 1.15;
-              text-align: center;
-              width: 100%;
             }
             .card-header h3 {
               font-size: 6.5px;
@@ -282,8 +288,6 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               margin: 1px 0 0 0;
               line-height: 1.1;
               opacity: 0.95;
-              text-align: center;
-              width: 100%;
             }
 
             .card-body {
@@ -384,8 +388,9 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               width: 100%;
               font-weight: bold;
               padding: 4.5px 0;
-              text-align: center;
-              display: block;
+              display: flex;
+              align-items: center;
+              justify-content: center;
               z-index: 10;
               margin: 0;
             }
@@ -416,8 +421,9 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               font-size: 8.5px;
               font-weight: 900;
               padding: 5px 0;
-              text-align: center;
-              display: block;
+              display: flex;
+              align-items: center;
+              justify-content: center;
               z-index: 2;
               width: 100%;
               margin: 0;
