@@ -192,6 +192,20 @@ export const teacherService = {
     return response.data;
   },
 
+  uploadPhoto: async (id, file) => {
+    const formData = new FormData();
+    formData.append("foto", file);
+    const response = await api.post(`/attendance/teachers/${id}/photo`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+
+  deletePhoto: async (id) => {
+    const response = await api.delete(`/attendance/teachers/${id}/photo`);
+    return response.data;
+  },
+
   setAttendanceStatus: async (id, data) => {
     const response = await api.post(
       `/attendance/teachers/${id}/attendance-status`,

@@ -152,33 +152,40 @@ export default function Students() {
     setShowForm(true);
   };
 
+  const [isUploading, setIsUploading] = useState(false);
+
   const handleSubmit = async (photoFile) => {
-    if (editingStudent) {
-      // Update siswa
-      await updateMutation.mutateAsync({ id: editingStudent.id, data: formData });
-      
-      // Upload foto jika ada
-      if (photoFile) {
-        try {
-          await studentService.uploadPhoto(editingStudent.id, photoFile);
-          queryClient.invalidateQueries(["students"]);
-        } catch (error) {
-          alert("Gagal upload foto: " + (error.message || "Unknown error"));
+    setIsUploading(true);
+    try {
+      if (editingStudent) {
+        // Update siswa
+        await updateMutation.mutateAsync({ id: editingStudent.id, data: formData });
+        
+        // Upload foto jika ada
+        if (photoFile) {
+          try {
+            await studentService.uploadPhoto(editingStudent.id, photoFile);
+            queryClient.invalidateQueries(["students"]);
+          } catch (error) {
+            alert("Gagal upload foto: " + (error.message || "Unknown error"));
+          }
+        }
+      } else {
+        // Create siswa dulu
+        const newStudent = await createMutation.mutateAsync(formData);
+        
+        // Upload foto jika ada
+        if (photoFile && newStudent?.data?.id) {
+          try {
+            await studentService.uploadPhoto(newStudent.data.id, photoFile);
+            queryClient.invalidateQueries(["students"]);
+          } catch (error) {
+            alert("Siswa berhasil ditambahkan, tapi foto gagal diupload");
+          }
         }
       }
-    } else {
-      // Create siswa dulu
-      const newStudent = await createMutation.mutateAsync(formData);
-      
-      // Upload foto jika ada
-      if (photoFile && newStudent?.data?.id) {
-        try {
-          await studentService.uploadPhoto(newStudent.data.id, photoFile);
-          queryClient.invalidateQueries(["students"]);
-        } catch (error) {
-          alert("Siswa berhasil ditambahkan, tapi foto gagal diupload");
-        }
-      }
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -366,7 +373,7 @@ export default function Students() {
         formData={formData}
         setFormData={setFormData}
         onSubmit={handleSubmit}
-        isPending={createMutation.isPending || updateMutation.isPending}
+        isPending={createMutation.isPending || updateMutation.isPending || isUploading}
         kelasData={kelasData}
       />
 

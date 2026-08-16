@@ -191,12 +191,36 @@ export default function Teachers() {
     setShowForm(true);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (editingTeacher) {
-      updateMutation.mutate({ id: editingTeacher.id, data: formData });
-    } else {
-      createMutation.mutate(formData);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleSubmit = async (photoFile) => {
+    setIsUploading(true);
+    try {
+      if (editingTeacher) {
+        await updateMutation.mutateAsync({ id: editingTeacher.id, data: formData });
+        
+        if (photoFile) {
+          try {
+            await teacherService.uploadPhoto(editingTeacher.id, photoFile);
+            queryClient.invalidateQueries(["teachers"]);
+          } catch (error) {
+            showAlert("Error", "Gagal upload foto: " + (error.message || "Unknown error"));
+          }
+        }
+      } else {
+        const newTeacher = await createMutation.mutateAsync(formData);
+        
+        if (photoFile && newTeacher?.data?.id) {
+          try {
+            await teacherService.uploadPhoto(newTeacher.data.id, photoFile);
+            queryClient.invalidateQueries(["teachers"]);
+          } catch (error) {
+            showAlert("Warning", "Guru berhasil ditambahkan, tapi foto gagal diupload");
+          }
+        }
+      }
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -398,7 +422,7 @@ export default function Teachers() {
         formData={formData}
         setFormData={setFormData}
         onSubmit={handleSubmit}
-        isPending={createMutation.isPending || updateMutation.isPending}
+        isPending={createMutation.isPending || updateMutation.isPending || isUploading}
       />
 
       {/* Select All & Total */}
