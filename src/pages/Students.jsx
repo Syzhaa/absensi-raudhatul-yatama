@@ -7,6 +7,7 @@ import StudentForm from "../components/StudentForm";
 import StudentCard from "../components/StudentCard";
 import StudentCardPrint from "../components/StudentCardPrint";
 import PromoteClassModal from "../components/PromoteClassModal";
+import Modal from "../components/Modal";
 import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -25,6 +26,7 @@ export default function Students() {
   });
   const [showPromoteModal, setShowPromoteModal] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
+  const [successModal, setSuccessModal] = useState({ isOpen: false, message: "" });
   const [selectedCardStudents, setSelectedCardStudents] = useState([]);
   const [targetKelas, setTargetKelas] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,7 +72,7 @@ export default function Students() {
     onSuccess: () => {
       queryClient.invalidateQueries(["students"]);
       resetForm();
-      alert("Siswa berhasil ditambahkan");
+      setSuccessModal({ isOpen: true, message: "Siswa berhasil ditambahkan" });
     },
     onError: (error) => {
       const msg = error.response?.data?.message || error.message || "Unknown error";
@@ -84,7 +86,7 @@ export default function Students() {
     onSuccess: () => {
       queryClient.invalidateQueries(["students"]);
       resetForm();
-      alert("Siswa berhasil diupdate");
+      setSuccessModal({ isOpen: true, message: "Siswa berhasil diupdate" });
     },
     onError: (error) => {
       const msg = error.response?.data?.message || error.message || "Unknown error";
@@ -97,7 +99,7 @@ export default function Students() {
     mutationFn: studentService.delete,
     onSuccess: () => {
       queryClient.invalidateQueries(["students"]);
-      alert("Siswa berhasil dihapus");
+      setSuccessModal({ isOpen: true, message: "Siswa berhasil dihapus" });
     },
     onError: (error) => {
       alert("Gagal menghapus siswa: " + (error.message || "Unknown error"));
@@ -118,10 +120,10 @@ export default function Students() {
       setSelectedStudents([]);
       setShowPromoteModal(false);
       setTargetKelas("");
-      alert(
-        data.message ||
-          `Berhasil menaikkan ${data.data.count} siswa ke kelas ${data.data.target_kelas}`,
-      );
+      setSuccessModal({
+        isOpen: true,
+        message: data.message || `Berhasil menaikkan ${data.data.count} siswa ke kelas ${data.data.target_kelas}`,
+      });
     },
     onError: (error) => {
       alert(error.response?.data?.message || "Gagal menaikkan kelas siswa");
@@ -190,10 +192,10 @@ export default function Students() {
             const uploadResult = await studentService.uploadPhoto(editingStudent.id, photoFile);
             console.log('Photo uploaded:', uploadResult);
             queryClient.invalidateQueries(["students"]);
-            alert("Siswa dan foto berhasil diupdate");
+            setSuccessModal({ isOpen: true, message: "Siswa dan foto berhasil diupdate" });
           } catch (error) {
             console.error('Photo upload failed:', error);
-            alert("Siswa berhasil diupdate, tapi foto gagal diupload: " + (error.response?.data?.message || error.message));
+            setSuccessModal({ isOpen: true, message: "Siswa berhasil diupdate, tapi foto gagal diupload: " + (error.response?.data?.message || error.message) });
           }
         }
       } else {
@@ -207,10 +209,10 @@ export default function Students() {
             const uploadResult = await studentService.uploadPhoto(newStudent.data.id, photoFile);
             console.log('Photo uploaded:', uploadResult);
             queryClient.invalidateQueries(["students"]);
-            alert("Siswa dan foto berhasil ditambahkan");
+            setSuccessModal({ isOpen: true, message: "Siswa dan foto berhasil ditambahkan" });
           } catch (error) {
             console.error('Photo upload failed:', error);
-            alert("Siswa berhasil ditambahkan, tapi foto gagal diupload: " + (error.response?.data?.message || error.message));
+            setSuccessModal({ isOpen: true, message: "Siswa berhasil ditambahkan, tapi foto gagal diupload: " + (error.response?.data?.message || error.message) });
           }
         }
       }
@@ -564,8 +566,33 @@ export default function Students() {
               setSelectedStudents([]);
             }
           }}
+          type="student"
         />
       )}
+
+      <Modal
+        isOpen={successModal.isOpen}
+        onClose={() => setSuccessModal({ isOpen: false, message: "" })}
+        title="Berhasil"
+        size="sm"
+        footer={
+          <div className="flex justify-end">
+            <button
+              onClick={() => setSuccessModal({ isOpen: false, message: "" })}
+              className="px-6 py-2 bg-primary-green text-white font-bold rounded-xl shadow-neo hover:translate-y-0.5 transition-all"
+            >
+              Tutup
+            </button>
+          </div>
+        }
+      >
+        <div className="py-6 px-4 flex flex-col items-center justify-center text-center space-y-4">
+          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center border-4 border-emerald-500">
+            <span className="material-symbols-outlined text-4xl text-emerald-500">check_circle</span>
+          </div>
+          <p className="text-lg font-bold text-gray-900">{successModal.message}</p>
+        </div>
+      </Modal>
     </div>
   );
 }

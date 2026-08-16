@@ -185,11 +185,11 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 bg-gray-200">
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-gray-200 flex flex-col items-center">
         <style id="id-card-styles">{`
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
-              font-family: Arial, sans-serif;
+              font-family: Arial, Helvetica, sans-serif;
               background: #f3f4f6;
               padding: 20px;
             }
@@ -201,7 +201,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             }
             .id-card-wrapper {
               display: flex;
-              gap: 10px;
+              gap: 12px;
               margin-bottom: 20px;
               page-break-inside: avoid;
             }
@@ -209,14 +209,13 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               width: 54mm;
               height: 86mm;
               background: white;
-              border-radius: 6px;
+              border-radius: 8px;
               overflow: hidden;
-              box-shadow: 0 0 5px rgba(0,0,0,0.2);
-              border: 1px solid #ddd;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+              border: 1px solid #e5e7eb;
               position: relative;
               display: flex;
               flex-direction: column;
-              /* Force background colors to print */
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
             }
@@ -228,79 +227,94 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               padding: 6px;
               display: flex;
               align-items: center;
+              justify-content: space-between;
               border-bottom-left-radius: 8px;
               border-bottom-right-radius: 8px;
+              min-height: 15.5mm;
+              box-sizing: border-box;
             }
             .card-header .logo {
-              width: 12mm;
-              height: 12mm;
+              width: 10mm;
+              height: 10mm;
+              flex-shrink: 0;
               display: flex;
               align-items: center;
               justify-content: center;
-              flex-shrink: 0;
-              margin-left: 2px;
-              margin-right: 4px;
             }
             .card-header .logo img {
               width: 100%;
               height: 100%;
               object-fit: contain;
+              display: block;
+            }
+            .card-header .logo-spacer {
+              width: 10mm;
+              height: 10mm;
+              flex-shrink: 0;
             }
             .card-header .title-group {
               flex: 1;
               text-align: center;
               display: flex;
               flex-direction: column;
+              align-items: center;
               justify-content: center;
-              margin-right: 4px;
+              min-width: 0;
+              padding: 0 1px;
             }
             .card-header h1 {
-              font-size: 11px;
+              font-size: 10px;
               font-weight: 900;
               margin: 0;
               text-transform: uppercase;
-              letter-spacing: 0.5px;
-              line-height: 1.1;
+              line-height: 1.15;
+              text-align: center;
+              width: 100%;
             }
             .card-header h2 {
-              font-size: 8.5px;
-              font-weight: bold;
-              margin: 1px 0;
-              letter-spacing: 0.5px;
-              line-height: 1.1;
+              font-size: 8px;
+              font-weight: 800;
+              margin: 1px 0 0 0;
+              line-height: 1.15;
+              text-align: center;
+              width: 100%;
             }
             .card-header h3 {
-              font-size: 7px;
-              font-weight: 500;
-              margin: 0;
-              letter-spacing: 0.2px;
+              font-size: 6.5px;
+              font-weight: 600;
+              margin: 1px 0 0 0;
               line-height: 1.1;
+              opacity: 0.95;
+              text-align: center;
+              width: 100%;
             }
 
             .card-body {
-              padding: 6px 8px 8px;
+              padding: 5px 8px 6px;
               flex: 1;
               display: flex;
               flex-direction: column;
               align-items: center;
               position: relative;
+              justify-content: space-between;
             }
             .card-body::before {
               content: '';
               position: absolute;
               top: 50%; left: 50%;
               transform: translate(-50%, -50%);
-              width: 40mm; height: 40mm;
+              width: 38mm; height: 38mm;
               background-image: url('/logo.jpg');
               background-size: contain;
               background-repeat: no-repeat;
               background-position: center;
               opacity: 0.06;
               z-index: 1;
+              pointer-events: none;
             }
             .photo-frame {
-              width: 23mm;
-              height: 30mm;
+              width: 22mm;
+              height: 28mm;
               border: 2px solid #059669;
               border-radius: 4px;
               background: #f9fafb;
@@ -309,44 +323,47 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               display: flex;
               justify-content: center;
               align-items: center;
-              margin-bottom: 6px;
+              margin: 0 auto 2px;
             }
             .photo-frame img {
               width: 100%;
               height: 100%;
               object-fit: cover;
+              display: block;
             }
             
             .student-name {
-              font-size: 13px;
+              font-size: 12.5px;
               font-weight: 900;
               color: #111827;
-              margin-top: 4px;
+              margin: 3px auto 0;
               text-align: center;
               line-height: 1.2;
               width: 100%;
               z-index: 10;
+              display: block;
             }
             .student-role {
-              font-size: 11px;
+              font-size: 10.5px;
               color: #059669;
               font-weight: 900;
-              margin-bottom: 8px;
+              margin: 0 auto 3px;
               text-transform: uppercase;
               z-index: 10;
-              letter-spacing: 0.5px;
+              text-align: center;
+              width: 100%;
             }
 
             .info-grid {
               width: 100%;
               display: grid;
-              grid-template-columns: 32px 4px 1fr;
-              gap: 4px 0;
-              font-size: 9px;
-              line-height: 1.3;
-              margin-top: 12px;
+              grid-template-columns: 30px 4px 1fr;
+              gap: 3px 0;
+              font-size: 8.5px;
+              line-height: 1.25;
+              margin-top: 4px;
               margin-bottom: auto;
-              margin-left: 12px;
+              padding-left: 4px;
               z-index: 10;
             }
             .info-label {
@@ -355,20 +372,24 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             }
             .info-colon {
               text-align: center;
+              color: #374151;
+              font-weight: bold;
             }
             .info-value {
               color: #111827;
-              font-weight: 500;
+              font-weight: 600;
             }
             .card-footer-front {
               background: #059669;
               color: white;
-              text-align: center;
               font-size: 8px;
-              padding: 4px;
               width: 100%;
               font-weight: bold;
+              padding: 4px 0;
+              text-align: center;
+              display: block;
               z-index: 10;
+              margin: 0;
             }
 
             /* BACK SIDE */
@@ -382,22 +403,26 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               position: absolute;
               top: 50%; left: 50%;
               transform: translate(-50%, -50%);
-              width: 45mm; height: 45mm;
+              width: 42mm; height: 42mm;
               background-image: url('/logo.jpg');
               background-size: contain;
               background-repeat: no-repeat;
               background-position: center;
               opacity: 0.05;
               z-index: 1;
+              pointer-events: none;
             }
             .back-header {
-              text-align: center;
-              padding: 8px;
               background: #059669;
               color: white;
-              font-size: 9px;
-              font-weight: bold;
+              font-size: 8.5px;
+              font-weight: 900;
+              padding: 5px 0;
+              text-align: center;
+              display: block;
               z-index: 2;
+              width: 100%;
+              margin: 0;
             }
             .qr-container {
               flex: 1;
@@ -406,36 +431,43 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               align-items: center;
               justify-content: center;
               z-index: 2;
+              padding: 4px 0;
             }
             .qr-box {
-              width: 30mm;
-              height: 30mm;
+              width: 28mm;
+              height: 28mm;
               background: white;
-              padding: 2mm;
+              padding: 1.5mm;
               border-radius: 4px;
-              border: 1px solid #10b981;
+              border: 1.5px solid #10b981;
+              display: flex;
+              align-items: center;
+              justify-content: center;
             }
             .qr-box img {
               width: 100%;
               height: 100%;
+              display: block;
             }
             .qr-text {
-              margin-top: 5px;
-              font-size: 8px;
+              margin-top: 4px;
+              font-size: 7.5px;
               font-weight: bold;
               color: #374151;
+              text-align: center;
             }
             .rules {
-              font-size: 6.5px;
-              padding: 10px;
+              font-size: 6px;
+              padding: 6px 8px;
               z-index: 2;
-              background: rgba(255,255,255,0.85);
+              background: rgba(255,255,255,0.9);
+              line-height: 1.35;
+              color: #374151;
             }
             .rules ol {
-              padding-left: 14px;
-              margin-top: 3px;
+              padding-left: 12px;
+              margin-top: 2px;
               color: #374151;
-              line-height: 1.4;
             }
 
             @media print {
@@ -465,13 +497,16 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               }
             }
         `}</style>
-        <div ref={cardRef} className="flex flex-wrap justify-center gap-6 max-w-5xl mx-auto">
+        <div ref={cardRef} className="flex flex-wrap justify-center gap-6">
           {students.map((person) => {
             const isTeacher = type === "teacher" || person.nip !== undefined;
             const ttl = [person.tempat_lahir, formatDate(person.tanggal_lahir)]
               .filter(Boolean)
               .join(", ");
-            const validUntil = isTeacher ? "Selama Menjadi Guru" : calculateValidUntil(person.kelas);
+            const rawValidUntil = isTeacher ? "Selama Menjadi Guru" : calculateValidUntil(person.kelas);
+            const validUntil = typeof rawValidUntil === "number" 
+              ? `${new Date().getFullYear()} - ${rawValidUntil}`
+              : rawValidUntil;
 
             return (
               <div key={person.id} className="id-card-wrapper">
@@ -486,6 +521,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                       <h2>RAUDHATUL YATAMA</h2>
                       <h3>KABUPATEN BANJAR</h3>
                     </div>
+                    <div className="logo-spacer" />
                   </div>
                   
                   <div className="card-body">
@@ -507,8 +543,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                         />
                       ) : (
                         <img 
-                          src={getFallbackAvatar()}
-                          alt={person.nama}
+                          src={getFallbackAvatar()} 
+                          alt={person.nama} 
                         />
                       )}
                     </div>
@@ -540,7 +576,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                     </div>
                   </div>
                   <div className="card-footer-front">
-                    Berlaku: {new Date().getFullYear()} - {validUntil}
+                    Berlaku: {validUntil}
                   </div>
                 </div>
 
