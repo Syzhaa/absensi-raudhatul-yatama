@@ -166,37 +166,49 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
 
   return (
     <div className="fixed inset-0 bg-gray-100 flex flex-col z-[100] overflow-hidden">
-      <div className="bg-white p-4 shadow-md flex justify-between items-center z-10 relative shrink-0">
-        <div>
-          <h2 className="text-xl font-bold">Preview Cetak Kartu</h2>
-          <p className="text-sm text-gray-500">{students.length} Kartu siap dicetak</p>
+      {/* Responsive Header */}
+      <div className="bg-white border-b-2 border-gray-900 shadow-md p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 z-10 relative shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg sm:text-xl font-black text-gray-900 leading-tight">Preview Cetak Kartu</h2>
+            <p className="text-xs sm:text-sm text-gray-500 font-semibold">{students.length} Kartu siap dicetak</p>
+          </div>
+          {/* Close button for mobile */}
+          <button
+            onClick={onClose}
+            className="sm:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300 flex items-center justify-center"
+            title="Tutup"
+          >
+            <span className="material-symbols-outlined text-xl">close</span>
+          </button>
         </div>
-        <div className="flex gap-3">
+
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={handleDownloadPNG}
             disabled={isDownloading}
-            className="py-2 px-6 bg-blue-600 text-white font-bold rounded-lg shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="flex-1 sm:flex-initial py-2 px-3 sm:px-5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-lg shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 sm:gap-2 disabled:opacity-50"
           >
-            <span className="material-symbols-outlined">{isDownloading ? 'hourglass_empty' : 'image'}</span>
+            <span className="material-symbols-outlined text-base sm:text-lg">{isDownloading ? 'hourglass_empty' : 'image'}</span>
             <span>{isDownloading ? 'Memproses...' : 'Unduh PNG'}</span>
           </button>
           <button
             onClick={handlePrint}
-            className="py-2 px-6 bg-primary-green text-gray-900 font-bold rounded-lg shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center justify-center gap-2"
+            className="flex-1 sm:flex-initial py-2 px-3 sm:px-5 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs sm:text-sm font-bold rounded-lg shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 sm:gap-2 border-2 border-gray-900"
           >
-            <span className="material-symbols-outlined">print</span>
+            <span className="material-symbols-outlined text-base sm:text-lg">print</span>
             <span>Cetak Kartu</span>
           </button>
           <button
             onClick={onClose}
-            className="px-4 py-2 font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="hidden sm:inline-flex px-4 py-2 font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm"
           >
             Tutup
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-gray-200 flex flex-col items-center">
+      <div className="flex-1 overflow-y-auto overflow-x-auto p-3 sm:p-6 md:p-8 bg-gray-200 flex flex-col items-center">
         <style id="id-card-styles">{`
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
@@ -209,12 +221,14 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               flex-wrap: wrap;
               gap: 20px;
               justify-content: center;
+              max-width: 100%;
             }
             .id-card-wrapper {
               display: flex;
               gap: 12px;
               margin-bottom: 20px;
               page-break-inside: avoid;
+              flex-shrink: 0;
             }
             .id-card {
               width: 204px;

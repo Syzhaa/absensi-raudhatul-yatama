@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { teacherService } from "../services";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
@@ -6,11 +7,13 @@ import TeacherForm from "../components/TeacherForm";
 import TeacherCard from "../components/TeacherCard";
 import CredentialsModal from "../components/CredentialsModal";
 import ConfirmModal from "../components/ConfirmModal";
+import StudentCardPrint from "../components/StudentCardPrint";
 import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 export default function Teachers() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: "",
@@ -317,6 +320,74 @@ export default function Teachers() {
     }
   };
 
+  const allTeachers = data?.data || [];
+
+  // Try to load cached teacher data immediately on mount if card param is in URL
+  useEffect(() => {
+    const cardParam = searchParams.get("card");
+    if (cardParam) {
+      try {
+        const cached = sessionStorage.getItem("yatama_print_teachers");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSelectedCardTeachers(parsed);
+            setShowCardModal(true);
+          }
+        }
+      } catch (e) {}
+    }
+  }, []);
+
+  // Sync with allTeachers data when loaded or when cardParam changes
+  useEffect(() => {
+    const cardParam = searchParams.get("card");
+    if (cardParam && allTeachers.length > 0) {
+      const ids = cardParam.split(",");
+      const matched = allTeachers.filter((t) => ids.includes(String(t.id)));
+      if (matched.length > 0) {
+        setSelectedCardTeachers(matched);
+        setShowCardModal(true);
+        try {
+          sessionStorage.setItem("yatama_print_teachers", JSON.stringify(matched));
+        } catch (e) {}
+      }
+    } else if (!cardParam && showCardModal) {
+      setShowCardModal(false);
+      setSelectedCardTeachers([]);
+    }
+  }, [searchParams, allTeachers]);
+
+  const openCardModal = (teachersList) => {
+    if (!teachersList || teachersList.length === 0) return;
+    setSelectedCardTeachers(teachersList);
+    setShowCardModal(true);
+    try {
+      sessionStorage.setItem("yatama_print_teachers", JSON.stringify(teachersList));
+    } catch (e) {}
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("card", teachersList.map((t) => t.id).join(","));
+      return next;
+    });
+  };
+
+  const closeCardModal = () => {
+    setShowCardModal(false);
+    setSelectedCardTeachers([]);
+    try {
+      sessionStorage.removeItem("yatama_print_teachers");
+    } catch (e) {}
+    if (selectedCardTeachers.length > 1) {
+      setSelectedTeachers([]);
+    }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("card");
+      return next;
+    });
+  };
+
   const handleBatchPrintQR = () => {
     if (selectedTeachers.length === 0) {
       alert("Pilih guru terlebih dahulu");
@@ -325,8 +396,7 @@ export default function Teachers() {
     const selectedData = teachers.filter((t) =>
       selectedTeachers.includes(t.id),
     );
-    setSelectedCardTeachers(selectedData);
-    setShowCardModal(true);
+    openCardModal(selectedData);
   };
 
   const handleDownloadSingleQR = async (teacher) => {
@@ -344,7 +414,6 @@ export default function Teachers() {
     }
   };
 
-  const allTeachers = data?.data || [];
   const teachers = allTeachers.filter((t) =>
     t.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (t.nip && t.nip.includes(searchQuery))
@@ -456,10 +525,7 @@ export default function Teachers() {
               onActivateAccess={handleActivateAccess}
               onViewAccess={handleViewAccess}
               onDownloadQR={handleDownloadSingleQR}
-              onShowCard={(t) => {
-                setSelectedCardTeachers([t]);
-                setShowCardModal(true);
-              }}
+              onShowCard={(t) => openCardModal([t])}
               onEdit={handleEdit}
               onDelete={handleDelete}
               isActivatePending={activateAccessMutation.isPending}
@@ -541,14 +607,7 @@ export default function Teachers() {
         <StudentCardPrint
           students={selectedCardTeachers}
           type="teacher"
-          onClose={() => {
-            setShowCardModal(false);
-            setSelectedCardTeachers([]);
-            // Clear selections after print if it was a batch print
-            if (selectedCardTeachers.length > 1) {
-              setSelectedTeachers([]);
-            }
-          }}
+          onClose={closeCardModal}
         />
       )}
 

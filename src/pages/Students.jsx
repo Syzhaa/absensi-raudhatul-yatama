@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { studentService } from "../services";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
@@ -14,6 +15,7 @@ import { saveAs } from "file-saver";
 export default function Students() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const selectedKelas = useAppStore((state) => state.selectedKelas);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -269,6 +271,74 @@ export default function Students() {
     }
   };
 
+  // Try to load cached student data immediately on mount if card param is in URL
+  useEffect(() => {
+    const cardParam = searchParams.get("card");
+    if (cardParam) {
+      try {
+        const cached = sessionStorage.getItem("yatama_print_students");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setSelectedCardStudents(parsed);
+            setShowCardModal(true);
+          }
+        }
+      } catch (e) {}
+    }
+  }, []);
+
+  const allStudents = data?.data || [];
+
+  // Sync with allStudents data when loaded or when cardParam changes
+  useEffect(() => {
+    const cardParam = searchParams.get("card");
+    if (cardParam && allStudents.length > 0) {
+      const ids = cardParam.split(",");
+      const matched = allStudents.filter((s) => ids.includes(String(s.id)));
+      if (matched.length > 0) {
+        setSelectedCardStudents(matched);
+        setShowCardModal(true);
+        try {
+          sessionStorage.setItem("yatama_print_students", JSON.stringify(matched));
+        } catch (e) {}
+      }
+    } else if (!cardParam && showCardModal) {
+      setShowCardModal(false);
+      setSelectedCardStudents([]);
+    }
+  }, [searchParams, allStudents]);
+
+  const openCardModal = (studentsList) => {
+    if (!studentsList || studentsList.length === 0) return;
+    setSelectedCardStudents(studentsList);
+    setShowCardModal(true);
+    try {
+      sessionStorage.setItem("yatama_print_students", JSON.stringify(studentsList));
+    } catch (e) {}
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set("card", studentsList.map((s) => s.id).join(","));
+      return next;
+    });
+  };
+
+  const closeCardModal = () => {
+    setShowCardModal(false);
+    setSelectedCardStudents([]);
+    try {
+      sessionStorage.removeItem("yatama_print_students");
+    } catch (e) {}
+    if (selectedCardStudents.length > 1) {
+      setSelectedStudents([]);
+    }
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("card");
+      return next;
+    });
+  };
+
   const handleBatchPrintQR = () => {
     if (selectedStudents.length === 0) {
       alert("Pilih siswa terlebih dahulu");
@@ -277,8 +347,7 @@ export default function Students() {
     const selectedData = students.filter((s) =>
       selectedStudents.includes(s.id),
     );
-    setSelectedCardStudents(selectedData);
-    setShowCardModal(true);
+    openCardModal(selectedData);
   };
 
   const handleDownloadSingleQR = async (student) => {
@@ -296,7 +365,6 @@ export default function Students() {
     }
   };
 
-  const allStudents = data?.data || [];
   const students = allStudents.filter((s) =>
     s.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (s.nisn && s.nisn.includes(searchQuery))
@@ -423,10 +491,7 @@ export default function Students() {
               isSelected={selectedStudents.includes(student.id)}
               onSelect={handleSelectStudent}
               onDownloadQR={handleDownloadSingleQR}
-              onShowCard={(s) => {
-                setSelectedCardStudents([s]);
-                setShowCardModal(true);
-              }}
+              onShowCard={(s) => openCardModal([s])}
               onEdit={handleEdit}
               onDelete={handleDelete}
               isDeletePending={deleteMutation.isPending}
@@ -450,39 +515,37 @@ export default function Students() {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="border-2 border-gray-400 rounded-lg px-2 py-1 font-bold text-xs md:text-sm text-gray-900 bg-transparent focus:outline-none focus:border-primary-green cursor-pointer"
+              className="bg-white border-2 border-gray-900 rounded-lg px-2 py-1 text-xs md:text-sm font-bold shadow-sm focus:outline-none"
             >
               <option value={10}>10</option>
-              <option value={15}>15</option>
-              <option value={25}>25</option>
+              <option value={20}>20</option>
               <option value={50}>50</option>
+              <option value={100}>100</option>
             </select>
             <span className="text-xs md:text-sm font-bold text-gray-700">
               data
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-1.5 md:p-2 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="px-3 py-1 bg-white border-2 border-gray-900 rounded-lg text-xs md:text-sm font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
             >
-              <span className="material-symbols-outlined text-sm md:text-base">
-                chevron_left
-              </span>
+              Sebelumnya
             </button>
-            <span className="text-xs md:text-sm font-bold text-gray-700">
+            <span className="text-xs md:text-sm font-bold text-gray-700 px-2">
               Halaman {currentPage} dari {totalPages || 1}
             </span>
             <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() =>
+                setCurrentPage((p) => Math.min(totalPages, p + 1))
+              }
               disabled={currentPage === totalPages || totalPages === 0}
-              className="p-1.5 md:p-2 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="px-3 py-1 bg-white border-2 border-gray-900 rounded-lg text-xs md:text-sm font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
             >
-              <span className="material-symbols-outlined text-sm md:text-base">
-                chevron_right
-              </span>
+              Selanjutnya
             </button>
           </div>
         </div>
@@ -504,29 +567,21 @@ export default function Students() {
 
       {/* Download ZIP Success Modal */}
       {downloadSuccessModal.isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/50 animate-fade-in"
-            onClick={() => setDownloadSuccessModal({ isOpen: false, count: 0 })}
-          />
-          <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-6 max-w-sm w-full space-y-4 z-10 animate-slide-up text-center">
-            <div className="w-14 h-14 bg-emerald-100 border-2 border-gray-900 rounded-full flex items-center justify-center text-emerald-600 mx-auto">
-              <span className="material-symbols-outlined text-3xl font-black">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white border-3 border-gray-900 rounded-2xl p-6 max-w-sm w-full shadow-neo text-center space-y-4">
+            <div className="w-16 h-16 bg-primary-green/20 border-2 border-gray-900 rounded-full flex items-center justify-center mx-auto">
+              <span className="material-symbols-outlined text-primary-green text-3xl">
                 folder_zip
               </span>
             </div>
-            <h2 className="text-xl font-black text-gray-900">
-              Download Berhasil!
-            </h2>
-            <p className="text-sm text-gray-600 font-medium leading-relaxed">
-              Berhasil mengunduh{" "}
-              <span className="font-bold text-gray-900">
-                {downloadSuccessModal.count} QR Code
-              </span>{" "}
-              siswa ke dalam berkas ZIP.
+            <h3 className="text-lg font-black text-gray-900">
+              Download ZIP Selesai!
+            </h3>
+            <p className="text-sm font-bold text-gray-600">
+              Berhasil mendownload {downloadSuccessModal.count} file QR Siswa
+              dalam format ZIP.
             </p>
             <button
-              type="button"
               onClick={() =>
                 setDownloadSuccessModal({ isOpen: false, count: 0 })
               }
@@ -558,14 +613,7 @@ export default function Students() {
       {showCardModal && selectedCardStudents?.length > 0 && (
         <StudentCardPrint
           students={selectedCardStudents}
-          onClose={() => {
-            setShowCardModal(false);
-            setSelectedCardStudents([]);
-            // Clear selections after print if it was a batch print
-            if (selectedCardStudents.length > 1) {
-              setSelectedStudents([]);
-            }
-          }}
+          onClose={closeCardModal}
           type="student"
         />
       )}
