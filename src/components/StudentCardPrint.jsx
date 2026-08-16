@@ -224,7 +224,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             .card-header {
               background: linear-gradient(135deg, #059669 0%, #10b981 100%);
               color: white;
-              padding: 6px;
+              padding: 5px 6px;
               display: flex;
               align-items: center;
               justify-content: space-between;
@@ -240,6 +240,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               display: flex;
               align-items: center;
               justify-content: center;
+              margin-left: 2mm;
             }
             .card-header .logo img {
               width: 100%;
@@ -251,6 +252,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               width: 10mm;
               height: 10mm;
               flex-shrink: 0;
+              margin-right: 2mm;
             }
             .card-header .title-group {
               flex: 1;
@@ -290,13 +292,13 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             }
 
             .card-body {
-              padding: 5px 8px 6px;
+              padding: 6px 8px 8px;
               flex: 1;
               display: flex;
               flex-direction: column;
               align-items: center;
+              justify-content: space-around;
               position: relative;
-              justify-content: space-between;
             }
             .card-body::before {
               content: '';
@@ -312,9 +314,20 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               z-index: 1;
               pointer-events: none;
             }
+            .student-role {
+              font-size: 10.5px;
+              color: #059669;
+              font-weight: 900;
+              margin: 1px auto 5px;
+              text-transform: uppercase;
+              z-index: 10;
+              text-align: center;
+              width: 100%;
+              line-height: 1.2;
+            }
             .photo-frame {
-              width: 22mm;
-              height: 28mm;
+              width: 23mm;
+              height: 29mm;
               border: 2px solid #059669;
               border-radius: 4px;
               background: #f9fafb;
@@ -323,7 +336,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               display: flex;
               justify-content: center;
               align-items: center;
-              margin: 0 auto 2px;
+              margin: 0 auto 5px;
             }
             .photo-frame img {
               width: 100%;
@@ -336,33 +349,23 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               font-size: 12.5px;
               font-weight: 900;
               color: #111827;
-              margin: 3px auto 0;
+              margin: 0 auto;
               text-align: center;
               line-height: 1.2;
               width: 100%;
               z-index: 10;
               display: block;
             }
-            .student-role {
-              font-size: 10.5px;
-              color: #059669;
-              font-weight: 900;
-              margin: 0 auto 3px;
-              text-transform: uppercase;
-              z-index: 10;
-              text-align: center;
-              width: 100%;
-            }
 
             .info-grid {
               width: 100%;
               display: grid;
               grid-template-columns: 30px 4px 1fr;
-              gap: 3px 0;
+              gap: 3.5px 0;
               font-size: 8.5px;
-              line-height: 1.25;
-              margin-top: 4px;
-              margin-bottom: auto;
+              line-height: 1.3;
+              margin-top: 7px;
+              margin-bottom: 2px;
               padding-left: 4px;
               z-index: 10;
             }
@@ -385,7 +388,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               font-size: 8px;
               width: 100%;
               font-weight: bold;
-              padding: 4px 0;
+              padding: 4.5px 0;
               text-align: center;
               display: block;
               z-index: 10;
