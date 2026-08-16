@@ -45,7 +45,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     try {
       const wrappers = cardRef.current.querySelectorAll('.id-card-wrapper');
       if (wrappers.length === 0) return;
-      
+
       if (wrappers.length === 1) {
         const canvas = await html2canvas(wrappers[0], { scale: 3, useCORS: true, logging: false, backgroundColor: null });
         const link = document.createElement("a");
@@ -56,15 +56,15 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         const JSZip = (await import('jszip')).default;
         const { saveAs } = await import('file-saver');
         const zip = new JSZip();
-        
+
         for (let i = 0; i < wrappers.length; i++) {
           const student = students[i];
           const canvas = await html2canvas(wrappers[i], { scale: 3, useCORS: true, logging: false, backgroundColor: null });
           const imgData = canvas.toDataURL("image/png").split("base64,")[1];
-          zip.file(`kartu-${student.nama.replace(/\s+/g, "-")}.png`, imgData, {base64: true});
+          zip.file(`kartu-${student.nama.replace(/\s+/g, "-")}.png`, imgData, { base64: true });
         }
-        
-        const content = await zip.generateAsync({type:"blob"});
+
+        const content = await zip.generateAsync({ type: "blob" });
         saveAs(content, "kartu_pelajar_batch.zip");
       }
     } catch (error) {
@@ -99,7 +99,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     `);
 
     printWindow.document.close();
-    
+
     // Wait for images and QR to load
     setTimeout(() => {
       printWindow.print();
@@ -227,32 +227,26 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               padding: 5px 6px;
               display: flex;
               align-items: center;
-              justify-content: space-between;
               border-bottom-left-radius: 8px;
               border-bottom-right-radius: 8px;
               min-height: 15.5mm;
               box-sizing: border-box;
             }
             .card-header .logo {
-              width: 10mm;
-              height: 10mm;
+              width: 10.5mm;
+              height: 10.5mm;
               flex-shrink: 0;
               display: flex;
               align-items: center;
               justify-content: center;
-              margin-left: 2mm;
+              margin-left: 2.8mm;
+              margin-right: 1.2mm;
             }
             .card-header .logo img {
               width: 100%;
               height: 100%;
               object-fit: contain;
               display: block;
-            }
-            .card-header .logo-spacer {
-              width: 10mm;
-              height: 10mm;
-              flex-shrink: 0;
-              margin-right: 2mm;
             }
             .card-header .title-group {
               flex: 1;
@@ -262,7 +256,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               align-items: center;
               justify-content: center;
               min-width: 0;
-              padding: 0 1px;
+              padding-left: 0.5mm;
+              padding-right: 2.5mm;
             }
             .card-header h1 {
               font-size: 10px;
@@ -507,7 +502,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               .filter(Boolean)
               .join(", ");
             const rawValidUntil = isTeacher ? "Selama Menjadi Guru" : calculateValidUntil(person.kelas);
-            const validUntil = typeof rawValidUntil === "number" 
+            const validUntil = typeof rawValidUntil === "number"
               ? `${new Date().getFullYear()} - ${rawValidUntil}`
               : rawValidUntil;
 
@@ -524,19 +519,18 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                       <h2>RAUDHATUL YATAMA</h2>
                       <h3>KABUPATEN BANJAR</h3>
                     </div>
-                    <div className="logo-spacer" />
                   </div>
-                  
+
                   <div className="card-body">
                     <div className="student-role">
                       {isTeacher ? "GURU / PENDIDIK" : "KARTU PELAJAR"}
                     </div>
-                    
+
                     <div className="photo-frame">
                       {person.foto ? (
-                        <img 
-                          src={getPhotoUrl(person.foto)} 
-                          alt={person.nama} 
+                        <img
+                          src={getPhotoUrl(person.foto)}
+                          alt={person.nama}
                           crossOrigin="anonymous"
                           onError={(e) => {
                             e.target.onerror = null;
@@ -545,13 +539,13 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                           }}
                         />
                       ) : (
-                        <img 
-                          src={getFallbackAvatar()} 
-                          alt={person.nama} 
+                        <img
+                          src={getFallbackAvatar()}
+                          alt={person.nama}
                         />
                       )}
                     </div>
-                    
+
                     <div className="student-name">{person.nama}</div>
 
                     <div className="info-grid">
@@ -568,10 +562,10 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                           <div className="info-value">{person.nisn || "-"}</div>
                         </>
                       )}
-                      
+
                       <div className="info-label">TTL</div><div className="info-colon">:</div>
                       <div className="info-value" style={{ whiteSpace: "normal" }}>{ttl || "-"}</div>
-                      
+
                       <div className="info-label">Alamat</div><div className="info-colon">:</div>
                       <div className="info-value" style={{ whiteSpace: "normal" }}>
                         {person.alamat || "-"}
@@ -588,7 +582,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                   <div className="back-header">
                     KARTU {isTeacher ? "GURU" : "PELAJAR"} & ABSENSI
                   </div>
-                  
+
                   <div className="qr-container">
                     <div className="qr-box">
                       {qrCodes[person.id] && <img src={qrCodes[person.id]} alt="QR" />}
