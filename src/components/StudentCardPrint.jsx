@@ -206,8 +206,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               page-break-inside: avoid;
             }
             .id-card {
-              width: 54mm;
-              height: 86mm;
+              width: 204px;
+              height: 325px;
               background: white;
               border-radius: 8px;
               overflow: hidden;
@@ -229,18 +229,18 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               align-items: center;
               border-bottom-left-radius: 8px;
               border-bottom-right-radius: 8px;
-              min-height: 15.5mm;
+              min-height: 58px;
               box-sizing: border-box;
             }
             .card-header .logo {
-              width: 10.5mm;
-              height: 10.5mm;
+              width: 40px;
+              height: 40px;
               flex-shrink: 0;
               display: flex;
               align-items: center;
               justify-content: center;
-              margin-left: 2.8mm;
-              margin-right: 1.2mm;
+              margin-left: 10px;
+              margin-right: 5px;
             }
             .card-header .logo img {
               width: 100%;
@@ -256,8 +256,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               align-items: center;
               justify-content: center;
               min-width: 0;
-              padding-left: 0.5mm;
-              padding-right: 2.5mm;
+              padding-left: 2px;
+              padding-right: 10px;
             }
             .card-header h1 {
               font-size: 10px;
@@ -287,7 +287,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             }
 
             .card-body {
-              padding: 6px 8px 8px;
+              padding: 6px 10px 8px;
               flex: 1;
               display: flex;
               flex-direction: column;
@@ -300,7 +300,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               position: absolute;
               top: 50%; left: 50%;
               transform: translate(-50%, -50%);
-              width: 38mm; height: 38mm;
+              width: 145px; height: 145px;
               background-image: url('/logo.jpg');
               background-size: contain;
               background-repeat: no-repeat;
@@ -321,8 +321,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               line-height: 1.2;
             }
             .photo-frame {
-              width: 23mm;
-              height: 29mm;
+              width: 87px;
+              height: 110px;
               border: 2px solid #059669;
               border-radius: 4px;
               background: #f9fafb;
@@ -401,7 +401,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               position: absolute;
               top: 50%; left: 50%;
               transform: translate(-50%, -50%);
-              width: 42mm; height: 42mm;
+              width: 160px; height: 160px;
               background-image: url('/logo.jpg');
               background-size: contain;
               background-repeat: no-repeat;
@@ -432,10 +432,10 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               padding: 4px 0;
             }
             .qr-box {
-              width: 28mm;
-              height: 28mm;
+              width: 106px;
+              height: 106px;
               background: white;
-              padding: 1.5mm;
+              padding: 6px;
               border-radius: 4px;
               border: 1.5px solid #10b981;
               display: flex;
@@ -483,6 +483,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                 padding: 0;
               }
               .id-card {
+                width: 54mm !important;
+                height: 86mm !important;
                 box-shadow: none;
                 border: none;
                 page-break-after: always;
