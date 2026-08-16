@@ -7,6 +7,14 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   const [qrCodes, setQrCodes] = useState({});
 
   useEffect(() => {
+    // Prevent body scrolling when modal is open
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
+
+  useEffect(() => {
     const generateQRs = async () => {
       const newQrCodes = {};
       for (const student of students) {
@@ -134,9 +142,10 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       const baseUrl = apiBase.replace(/\/api(\/v1)?$/, "");
       fullUrl = `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
     }
-    // Direct load, CORS handled by backend .htaccess
-    const cacheBuster = fullUrl.includes('?') ? `&cb=${Date.now()}` : `?cb=${Date.now()}`;
-    return fullUrl + cacheBuster;
+    // We use wsrv.nl proxy because it reliably returns CORS headers for html2canvas
+    const encodedUrl = encodeURIComponent(fullUrl);
+    const cacheBuster = `&cb=${Date.now()}`;
+    return `https://wsrv.nl/?url=${encodedUrl}${cacheBuster}`;
   };
 
   const getFallbackAvatar = () => {
@@ -145,8 +154,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex flex-col z-50 overflow-hidden">
-      <div className="bg-white p-4 shadow-md flex justify-between items-center z-10 relative">
+    <div className="fixed inset-0 bg-gray-100 flex flex-col z-[100] overflow-hidden">
+      <div className="bg-white p-4 shadow-md flex justify-between items-center z-10 relative shrink-0">
         <div>
           <h2 className="text-xl font-bold">Preview Cetak Kartu</h2>
           <p className="text-sm text-gray-500">{students.length} Kartu siap dicetak</p>
