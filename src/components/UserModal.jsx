@@ -1,27 +1,38 @@
 import React, { useState } from "react";
-
-const ROLES = [
-  { value: "admin_ma", label: "Admin MA" },
-  { value: "admin_mts", label: "Admin MTS" },
-  { value: "guru", label: "Guru" },
-  { value: "siswa", label: "Siswa" },
-];
+import { useAppStore } from "../store/useAppStore";
 
 const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
-  const [formData, setFormData] = useState(
-    user || {
+  const currentUserLembaga = useAppStore((state) => state.userLembaga);
+  const currentUserRole = useAppStore((state) => state.userRole);
+
+  const [formData, setFormData] = useState(() => {
+    if (user) return user;
+    
+    // Default form data based on current user's lembaga
+    return {
       name: "",
       email: "",
       password: "",
       role: "guru",
-      lembaga: "ma",
+      lembaga: (currentUserLembaga && currentUserLembaga !== "yayasan") ? currentUserLembaga : "ma",
       kelas: "",
-    },
-  );
+    };
+  });
 
   React.useEffect(() => {
-    if (user) setFormData(user);
-  }, [user]);
+    if (user) {
+      setFormData(user);
+    } else {
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        role: "guru",
+        lembaga: (currentUserLembaga && currentUserLembaga !== "yayasan") ? currentUserLembaga : "ma",
+        kelas: "",
+      });
+    }
+  }, [user, currentUserLembaga]);
 
   if (!isOpen) return null;
 
@@ -105,7 +116,12 @@ const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
               }
               className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl font-bold text-sm focus:border-primary-green focus:outline-none"
             >
-              {ROLES.map((r) => (
+              {ROLES.filter((r) => {
+                if (currentUserLembaga === "yayasan") return true;
+                if (currentUserLembaga === "ma") return r.value !== "admin_mts";
+                if (currentUserLembaga === "mts") return r.value !== "admin_ma";
+                return true;
+              }).map((r) => (
                 <option key={r.value} value={r.value}>
                   {r.label}
                 </option>
@@ -118,11 +134,12 @@ const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
             </label>
             <select
               required
+              disabled={currentUserLembaga !== "yayasan"}
               value={formData.lembaga || "ma"}
               onChange={(e) =>
                 setFormData({ ...formData, lembaga: e.target.value })
               }
-              className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl font-bold text-sm focus:border-primary-green focus:outline-none"
+              className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl font-bold text-sm focus:border-primary-green focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <option value="ma">MA</option>
               <option value="mts">MTS</option>
