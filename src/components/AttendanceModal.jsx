@@ -85,7 +85,6 @@ export default function AttendanceModal({
           status,
           notes,
           date,
-          is_test: false,
         };
         if (isTeacher) {
           payload.teacher_id = student.teacher_id || student.id;
