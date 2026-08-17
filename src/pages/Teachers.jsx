@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { teacherService } from "../services";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
@@ -13,7 +12,6 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 export default function Teachers() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: "",
@@ -322,41 +320,33 @@ export default function Teachers() {
 
   const allTeachers = data?.data || [];
 
-  // Try to load cached teacher data immediately on mount if card param is in URL
+  // Restore print modal state from sessionStorage on reload/refresh
   useEffect(() => {
-    const cardParam = searchParams.get("card");
-    if (cardParam) {
-      try {
-        const cached = sessionStorage.getItem("yatama_print_teachers");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setSelectedCardTeachers(parsed);
-            setShowCardModal(true);
-          }
+    try {
+      const cached = sessionStorage.getItem("yatama_print_teachers");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSelectedCardTeachers(parsed);
+          setShowCardModal(true);
         }
-      } catch (e) {}
-    }
+      }
+    } catch (e) {}
   }, []);
 
-  // Sync with allTeachers data when loaded or when cardParam changes
+  // Update cached teacher details when fresh API data arrives
   useEffect(() => {
-    const cardParam = searchParams.get("card");
-    if (cardParam && allTeachers.length > 0) {
-      const ids = cardParam.split(",");
-      const matched = allTeachers.filter((t) => ids.includes(String(t.id)));
-      if (matched.length > 0) {
-        setSelectedCardTeachers(matched);
-        setShowCardModal(true);
+    if (showCardModal && selectedCardTeachers.length > 0 && allTeachers.length > 0) {
+      const currentIds = selectedCardTeachers.map((t) => t.id);
+      const updated = allTeachers.filter((t) => currentIds.includes(t.id));
+      if (updated.length > 0) {
+        setSelectedCardTeachers(updated);
         try {
-          sessionStorage.setItem("yatama_print_teachers", JSON.stringify(matched));
+          sessionStorage.setItem("yatama_print_teachers", JSON.stringify(updated));
         } catch (e) {}
       }
-    } else if (!cardParam && showCardModal) {
-      setShowCardModal(false);
-      setSelectedCardTeachers([]);
     }
-  }, [searchParams, allTeachers]);
+  }, [allTeachers]);
 
   const openCardModal = (teachersList) => {
     if (!teachersList || teachersList.length === 0) return;
@@ -365,11 +355,6 @@ export default function Teachers() {
     try {
       sessionStorage.setItem("yatama_print_teachers", JSON.stringify(teachersList));
     } catch (e) {}
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set("card", teachersList.map((t) => t.id).join(","));
-      return next;
-    });
   };
 
   const closeCardModal = () => {
@@ -381,11 +366,6 @@ export default function Teachers() {
     if (selectedCardTeachers.length > 1) {
       setSelectedTeachers([]);
     }
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.delete("card");
-      return next;
-    });
   };
 
   const handleBatchPrintQR = () => {

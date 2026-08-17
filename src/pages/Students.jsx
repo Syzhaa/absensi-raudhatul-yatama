@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { studentService } from "../services";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
@@ -15,7 +14,6 @@ import { saveAs } from "file-saver";
 export default function Students() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const selectedKelas = useAppStore((state) => state.selectedKelas);
-  const [searchParams, setSearchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -271,43 +269,35 @@ export default function Students() {
     }
   };
 
-  // Try to load cached student data immediately on mount if card param is in URL
-  useEffect(() => {
-    const cardParam = searchParams.get("card");
-    if (cardParam) {
-      try {
-        const cached = sessionStorage.getItem("yatama_print_students");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setSelectedCardStudents(parsed);
-            setShowCardModal(true);
-          }
-        }
-      } catch (e) {}
-    }
-  }, []);
-
   const allStudents = data?.data || [];
 
-  // Sync with allStudents data when loaded or when cardParam changes
+  // Restore print modal state from sessionStorage on reload/refresh
   useEffect(() => {
-    const cardParam = searchParams.get("card");
-    if (cardParam && allStudents.length > 0) {
-      const ids = cardParam.split(",");
-      const matched = allStudents.filter((s) => ids.includes(String(s.id)));
-      if (matched.length > 0) {
-        setSelectedCardStudents(matched);
-        setShowCardModal(true);
+    try {
+      const cached = sessionStorage.getItem("yatama_print_students");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setSelectedCardStudents(parsed);
+          setShowCardModal(true);
+        }
+      }
+    } catch (e) {}
+  }, []);
+
+  // Update cached student details when fresh API data arrives
+  useEffect(() => {
+    if (showCardModal && selectedCardStudents.length > 0 && allStudents.length > 0) {
+      const currentIds = selectedCardStudents.map((s) => s.id);
+      const updated = allStudents.filter((s) => currentIds.includes(s.id));
+      if (updated.length > 0) {
+        setSelectedCardStudents(updated);
         try {
-          sessionStorage.setItem("yatama_print_students", JSON.stringify(matched));
+          sessionStorage.setItem("yatama_print_students", JSON.stringify(updated));
         } catch (e) {}
       }
-    } else if (!cardParam && showCardModal) {
-      setShowCardModal(false);
-      setSelectedCardStudents([]);
     }
-  }, [searchParams, allStudents]);
+  }, [allStudents]);
 
   const openCardModal = (studentsList) => {
     if (!studentsList || studentsList.length === 0) return;
@@ -316,11 +306,6 @@ export default function Students() {
     try {
       sessionStorage.setItem("yatama_print_students", JSON.stringify(studentsList));
     } catch (e) {}
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set("card", studentsList.map((s) => s.id).join(","));
-      return next;
-    });
   };
 
   const closeCardModal = () => {
@@ -332,11 +317,6 @@ export default function Students() {
     if (selectedCardStudents.length > 1) {
       setSelectedStudents([]);
     }
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.delete("card");
-      return next;
-    });
   };
 
   const handleBatchPrintQR = () => {

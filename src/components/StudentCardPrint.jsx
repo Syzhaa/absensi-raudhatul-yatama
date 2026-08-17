@@ -225,10 +225,19 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             }
             .id-card-wrapper {
               display: flex;
-              gap: 12px;
-              margin-bottom: 20px;
+              flex-direction: column;
+              align-items: center;
+              gap: 16px;
+              margin-bottom: 24px;
               page-break-inside: avoid;
               flex-shrink: 0;
+            }
+            @media (min-width: 640px) {
+              .id-card-wrapper {
+                flex-direction: row;
+                align-items: flex-start;
+                gap: 14px;
+              }
             }
             .id-card {
               width: 204px;
