@@ -288,22 +288,22 @@ export default function Holidays() {
               noEventsInRange: "Tidak ada libur di rentang waktu ini.",
             }}
             eventPropGetter={(event) => {
-              let bg = "bg-primary-green";
-              let text = "text-gray-900";
-              let border = "border-gray-900";
+              let bg = "bg-red-600";
+              let text = "text-white";
+              let border = "border-red-800";
               
               if (event.resource.applies_to === "students") {
-                bg = "bg-emerald-300";
+                bg = "bg-rose-500";
               } else if (event.resource.applies_to === "teachers") {
-                bg = "bg-blue-300";
+                bg = "bg-red-500";
               }
 
               return {
                 className: `${bg} ${text} border-2 ${border} font-bold rounded-lg px-2 shadow-sm`,
                 style: {
                   borderRadius: "8px",
-                  color: "#111827",
-                  border: "2px solid #111827"
+                  color: "#ffffff",
+                  border: "2px solid #991b1b"
                 }
               };
             }}
