@@ -24,13 +24,19 @@ export function useAttendanceSSE(selectedDate, queryClient) {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        let buffer = "";
 
         while (active) {
           const { value, done } = await reader.read();
           if (done) break;
 
-          const chunks = decoder.decode(value).split("\n\n");
-          for (const chunk of chunks) {
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split("\n\n");
+          
+          // The last part might be incomplete, keep it in the buffer
+          buffer = parts.pop() || "";
+
+          for (const chunk of parts) {
             if (chunk.startsWith("data: ")) {
               try {
                 const data = JSON.parse(chunk.substring(6));
@@ -69,8 +75,9 @@ export function useAttendanceSSE(selectedDate, queryClient) {
                   );
                 }
                 
-                // Invalidate dashboard supaya stats ter-update realtime
+                // Invalidate dashboard dan guru-roster supaya stats ter-update realtime
                 queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+                queryClient.invalidateQueries({ queryKey: ["guru-roster"] });
               } catch (e) {
                 console.error("SSE Error:", e);
               }
