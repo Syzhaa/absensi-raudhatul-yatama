@@ -393,6 +393,14 @@ export default function Holidays() {
         </form>
       </Modal>
 
+      {/* Mobile FAB */}
+      <button
+        onClick={() => openModal()}
+        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-neo-xl flex items-center justify-center z-40 active:translate-y-1 transition-transform"
+      >
+        <span className="material-symbols-outlined text-3xl font-black">add</span>
+      </button>
+
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         title={confirmModal.title}
