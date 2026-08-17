@@ -135,23 +135,7 @@ const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-900 mb-1">
-              Lembaga
-            </label>
-            <select
-              required
-              disabled={currentUserLembaga !== "yayasan"}
-              value={formData.lembaga || "ma"}
-              onChange={(e) =>
-                setFormData({ ...formData, lembaga: e.target.value })
-              }
-              className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl font-bold text-sm focus:border-primary-green focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <option value="ma">MA</option>
-              <option value="mts">MTS</option>
-            </select>
-          </div>
+
           {formData.role === "guru" && (
             <div>
               <label className="block text-sm font-bold text-gray-900 mb-1">
