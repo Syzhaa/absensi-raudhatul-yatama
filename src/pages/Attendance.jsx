@@ -8,10 +8,11 @@ import AttendanceModal from "../components/AttendanceModal";
 import { AttendanceItem } from "../components/AttendanceItems";
 import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
 import { getAutoHoliday } from "../utils/holidays";
+import { format } from "date-fns";
 
 export default function Attendance() {
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0],
+    format(new Date(), "yyyy-MM-dd")
   );
   const [roleFilter, setRoleFilter] = useState("all");
   const [kelasFilter, setKelasFilter] = useState("all");

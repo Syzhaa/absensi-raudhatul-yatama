@@ -5,11 +5,12 @@ import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { useAppStore } from "../store/useAppStore";
 import AttendanceModal from "../components/AttendanceModal";
 import { getAutoHoliday } from "../utils/holidays";
+import { format } from "date-fns";
 
 import { AttendanceItem } from "../components/AttendanceItems";
 
 export default function GuruAttendance() {
-  const today = new Date().toISOString().split("T")[0];
+  const today = format(new Date(), "yyyy-MM-dd");
   const [date, setDate] = useState(today);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);

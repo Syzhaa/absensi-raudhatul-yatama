@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { attendanceService } from "../services";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { useScanner } from "../hooks/useScanner";
@@ -53,7 +54,7 @@ export default function ScanQR() {
         const token =
           localStorage.getItem("auth_token") || localStorage.getItem("token");
         const isTestMode = localStorage.getItem("is_test_mode") === "true";
-        const today = new Date().toISOString().split("T")[0];
+        const today = format(new Date(), "yyyy-MM-dd");
 
         const response = await fetch(
           `${import.meta.env.VITE_API_BASE_URL}/attendance/logs/stream?date=${today}${isTestMode ? "&is_test=1" : ""}${effectiveLembaga ? `&lembaga=${effectiveLembaga}` : ""}`,
@@ -161,7 +162,7 @@ export default function ScanQR() {
       return teacherService.setAttendanceStatus(data.teacher_id, {
         status: data.status,
         note: data.note,
-        date: new Date().toISOString().split("T")[0],
+        date: format(new Date(), "yyyy-MM-dd"),
         is_test: localStorage.getItem("is_test_mode") === "true",
       });
     },
