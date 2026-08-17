@@ -225,7 +225,7 @@ export default function Layout({ children }) {
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => setIsSidebarOpen(true)}
-                className="portrait:hidden landscape:flex md:hidden p-1.5 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center"
+                className="flex portrait:!hidden md:!hidden p-1.5 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center"
               >
                 <span className="material-symbols-outlined">menu</span>
               </button>
