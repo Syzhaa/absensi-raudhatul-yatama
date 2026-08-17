@@ -5,7 +5,6 @@ import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { useAppStore } from "../store/useAppStore";
 import { getAutoHoliday } from "../utils/holidays";
 import { format } from "date-fns";
-import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
 import api from "../services/api";
 
 export default function Dashboard() {
@@ -14,9 +13,6 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
 
   const today = format(new Date(), "yyyy-MM-dd");
-
-  // Aktifkan SSE di Dashboard supaya update realtime tanpa polling
-  useAttendanceSSE(today, queryClient);
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard", effectiveLembaga, selectedKelas, today],

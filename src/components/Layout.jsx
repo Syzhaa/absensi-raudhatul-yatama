@@ -90,6 +90,7 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const isTestMode = useAppStore((state) => state.isTestMode);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const userRole = useAppStore((state) => state.userRole);
   const superAdminLembaga = useAppStore((state) => state.superAdminLembaga);
   const selectedKelas = useAppStore((state) => state.selectedKelas);
@@ -189,7 +190,7 @@ export default function Layout({ children }) {
         )}
 
         {/* Desktop Sidebar */}
-        <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-white border-r-3 border-gray-900 flex-shrink-0 z-40 overflow-y-auto">
+        <aside className={`${isDesktopSidebarOpen ? 'hidden md:flex' : 'hidden'} flex-col w-64 h-screen sticky top-0 bg-white border-r-3 border-gray-900 flex-shrink-0 z-40 overflow-y-auto`}>
           <div className="p-5 border-b-3 border-gray-900 flex items-center gap-3 sticky top-0 z-10">
             <div className="w-10 h-10 bg-white border-2 border-gray-900 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0">
               <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain" />
@@ -227,6 +228,12 @@ export default function Layout({ children }) {
                 className="portrait:hidden landscape:flex md:hidden p-1.5 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center"
               >
                 <span className="material-symbols-outlined">menu</span>
+              </button>
+              <button 
+                onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
+                className="hidden md:flex p-1.5 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center"
+              >
+                <span className="material-symbols-outlined">{isDesktopSidebarOpen ? 'menu_open' : 'menu'}</span>
               </button>
               <HeaderSelectors />
             </div>
