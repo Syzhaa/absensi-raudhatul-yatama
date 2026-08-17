@@ -215,9 +215,11 @@ export default function Layout({ children }) {
               <Link to="/profile" className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-gray-900 flex items-center justify-center bg-blue-100 text-blue-900 hover:bg-blue-200 transition-colors shadow-sm">
                 <span className="material-symbols-outlined text-lg md:text-xl">person</span>
               </Link>
-              <Link to="/settings" className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-gray-900 flex items-center justify-center bg-gray-100 text-gray-900 hover:bg-gray-200 transition-colors shadow-sm">
-                <span className="material-symbols-outlined text-lg md:text-xl">settings</span>
-              </Link>
+              {userRole !== 'guru' && (
+                <Link to="/settings" className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-gray-900 flex items-center justify-center bg-gray-100 text-gray-900 hover:bg-gray-200 transition-colors shadow-sm">
+                  <span className="material-symbols-outlined text-lg md:text-xl">settings</span>
+                </Link>
+              )}
               <button 
                 onClick={() => setIsLogoutModalOpen(true)} 
                 className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-red-500 flex items-center justify-center bg-red-50 text-red-600 hover:bg-red-100 transition-colors shadow-sm"
