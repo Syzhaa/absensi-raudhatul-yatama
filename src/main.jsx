@@ -24,10 +24,14 @@ if ("caches" in window) {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Sync across tabs: refetch when window regains focus (admin edits in tab 1 -> tab 2 updates)
+      // Realtime-first: data absensi harus selalu fresh
       refetchOnWindowFocus: true,
+      refetchOnMount: true,
+      refetchOnReconnect: true,
       retry: 1,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      // staleTime 0 = setiap query dianggap stale setelah fetch,
+      // sehingga invalidateQueries selalu trigger refetch
+      staleTime: 0,
     },
   },
 });
