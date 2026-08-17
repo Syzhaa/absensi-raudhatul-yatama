@@ -174,7 +174,7 @@ export default function Users() {
               setEditUser(null);
               setShowModal(true);
             }}
-            className="px-4 py-2 bg-primary-green text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center gap-1.5"
+            className="hidden md:flex px-4 py-2 bg-primary-green text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all items-center gap-1.5"
           >
             <span className="material-symbols-outlined text-lg">add</span>
             Tambah User
@@ -402,6 +402,17 @@ export default function Users() {
           </div>
         </div>
       )}
+
+      {/* Mobile FAB */}
+      <button
+        onClick={() => {
+          setEditUser(null);
+          setShowModal(true);
+        }}
+        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-neo-xl flex items-center justify-center z-40 active:translate-y-1 transition-transform"
+      >
+        <span className="material-symbols-outlined text-3xl font-black">add</span>
+      </button>
 
       {/* Modals */}
       <UserModal
