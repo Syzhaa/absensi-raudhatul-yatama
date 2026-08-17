@@ -58,12 +58,12 @@ function TimeInput({ label, value, onChange, description }) {
 const settingsService = {
   getByLembaga: async (lembaga) => {
     const params = lembaga ? { lembaga } : {};
-    const response = await api.get(`/attendance/settings`, { params });
+    const response = await api.get(`/attendance/settings/my`, { params });
     return response.data;
   },
   updateLembaga: async (lembaga, data) => {
     const params = lembaga ? { lembaga } : {};
-    const response = await api.put(`/attendance/settings`, data, { params });
+    const response = await api.put(`/attendance/settings/my`, data, { params });
     return response.data;
   },
 };

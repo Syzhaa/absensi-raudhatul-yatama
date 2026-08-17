@@ -105,7 +105,7 @@ export default function Layout({ children }) {
     queryFn: async () => {
       try {
         const params = effectiveLembaga ? { lembaga: effectiveLembaga } : {};
-        const res = await api.get('/attendance/settings', { params });
+        const res = await api.get('/attendance/settings/my', { params });
         const backendTestMode = !!res.data?.data?.test_mode;
         setTestMode(backendTestMode);
         return res.data;
@@ -113,7 +113,6 @@ export default function Layout({ children }) {
         return null;
       }
     },
-    // We want to fetch it aggressively on mount and when lembaga changes
     staleTime: 0,
   });
 
