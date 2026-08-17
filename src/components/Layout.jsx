@@ -231,9 +231,9 @@ export default function Layout({ children }) {
       </div>
 
       {/* Mobile Bottom Nav */}
-      <nav className="hidden md:!hidden fixed bottom-4 left-4 right-4 z-40 portrait:block landscape:hidden">
-        <div className="bg-white border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden">
-          <div className="flex justify-center w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <nav className="hidden md:!hidden fixed bottom-4 left-0 w-full z-40 portrait:flex landscape:hidden justify-center px-4 pointer-events-none">
+        <div className="bg-white border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden pointer-events-auto max-w-full">
+          <div className="flex overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (

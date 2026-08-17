@@ -6,49 +6,7 @@ import { useAppStore } from "../store/useAppStore";
 import AttendanceModal from "../components/AttendanceModal";
 import { getAutoHoliday } from "../utils/holidays";
 
-function StudentRow({ student, onEdit }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const statusColor = student.status === "belum_absen"
-    ? "bg-gray-100 text-gray-600"
-    : student.status === "hadir"
-      ? "bg-emerald-100 text-emerald-800"
-      : student.status === "terlambat"
-        ? "bg-amber-200 text-amber-900"
-        : "bg-blue-100 text-blue-800";
-
-  return (
-    <div className="bg-white border-2 border-gray-900 rounded-xl p-2.5 md:p-3 shadow-sm md:shadow-neo flex items-center gap-2 md:gap-3">
-      <div className="min-w-0 flex-1">
-        <h3 className="font-black text-sm md:text-base text-gray-900 truncate">{student.nama}</h3>
-        <p className="text-[10px] md:text-xs text-gray-500 font-bold">Kelas {student.kelas} • NIS {student.nis || "-"}</p>
-        <div className="flex flex-wrap gap-1 mt-1.5">
-          <span className={`px-1.5 py-0.5 rounded text-[9px] md:text-[11px] font-black ${statusColor}`}>
-            {student.status === "belum_absen" ? "BELUM ABSEN" : student.status.toUpperCase()}
-          </span>
-          <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-800 rounded text-[9px] md:text-[11px] font-bold">
-            Masuk: {student.check_in || "—"}
-          </span>
-          <span className="px-1.5 py-0.5 bg-purple-50 text-purple-800 rounded text-[9px] md:text-[11px] font-bold">
-            Pulang: {student.check_out || "—"}
-          </span>
-        </div>
-      </div>
-      <button onClick={() => onEdit(student)} className="hidden md:block p-2 border-2 border-gray-900 rounded-lg bg-amber-100" title="Edit Absensi">
-        <span className="material-symbols-outlined">edit</span>
-      </button>
-      <div className="relative md:hidden">
-        <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 border-2 border-gray-900 rounded-lg bg-gray-100">
-          <span className="material-symbols-outlined">more_vert</span>
-        </button>
-        {menuOpen && (
-          <button onClick={() => { setMenuOpen(false); onEdit(student); }} className="absolute right-0 top-full mt-1 w-40 p-3 bg-white border-2 border-gray-900 rounded-xl shadow-neo font-bold text-sm z-20">
-            Edit Absensi
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
+import { AttendanceItem } from "../components/AttendanceItems";
 
 export default function GuruAttendance() {
   const today = new Date().toISOString().split("T")[0];
@@ -121,9 +79,34 @@ export default function GuruAttendance() {
 
       <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama siswa..." className="w-full px-3 py-2 md:px-4 md:py-3 bg-white border-2 border-gray-900 rounded-xl text-sm" />
       <div className="space-y-2">
-        {isLoading ? <p className="font-bold">Memuat daftar hadir...</p> : students.map((student) => (
-          <StudentRow key={student.student_id} student={student} onEdit={setSelected} />
-        ))}
+        {isLoading ? (
+          <p className="font-bold">Memuat daftar hadir...</p>
+        ) : (
+          students.map((student) => {
+            const isLibur = activeHoliday && (student.status === "belum_absen" || student.status === "alpha" || !student.status);
+            const status = isLibur ? "libur" : (student.status || "belum_absen");
+
+            const item = {
+              id: `student-${student.student_id}`,
+              student_id: student.student_id,
+              role: "student",
+              student: student,
+              lembaga: effectiveLembaga,
+              status: status,
+              check_in: student.check_in,
+              check_out: student.check_out,
+              notes: student.notes || (isLibur ? `Libur: ${activeHoliday.name}` : null),
+            };
+
+            return (
+              <AttendanceItem
+                key={item.id}
+                item={item}
+                onEdit={() => setSelected(student)}
+              />
+            );
+          })
+        )}
       </div>
       <AttendanceModal
         isOpen={!!selected}
