@@ -93,6 +93,32 @@ export default function Attendance() {
     enabled: !isLembagaLoading,
   });
 
+  // 5. Fetch Holidays Calendar
+  const { data: holidaysData } = useQuery({
+    queryKey: ["holidays", effectiveLembaga],
+    queryFn: async () => {
+      try {
+        const res = await api.get("/attendance/holidays", {
+          params: { lembaga: effectiveLembaga },
+        });
+        return res.data?.data || [];
+      } catch (err) {
+        console.error("Holidays fetch failed:", err);
+        return [];
+      }
+    },
+    enabled: !isLembagaLoading,
+  });
+
+  const activeHoliday = useMemo(() => {
+    const list = Array.isArray(holidaysData) ? holidaysData : [];
+    return (
+      list.find(
+        (h) => selectedDate >= h.start_date && selectedDate <= h.end_date
+      ) || null
+    );
+  }, [holidaysData, selectedDate]);
+
   const isLoading =
     isMasterStudentsLoading ||
     isMasterTeachersLoading ||
@@ -131,41 +157,65 @@ export default function Attendance() {
     // Build complete Student items
     const studentRoster = (masterStudents || []).map((student) => {
       const log = studentLogMap.get(student.id);
+      let status = log ? log.status : "belum_absen";
+      let notes = log ? log.notes : null;
+
+      // If this date is an active holiday and student has no check_in or is alpha/belum_absen
+      if (activeHoliday && (activeHoliday.applies_to === "all" || activeHoliday.applies_to === "students")) {
+        if (!log || status === "alpha" || status === "belum_absen") {
+          status = "libur";
+          notes = `Libur: ${activeHoliday.name}`;
+        }
+      }
+
       return {
         id: `student-${student.id}`,
         student_id: student.id,
         role: "student",
         student: student,
         lembaga: student.lembaga || effectiveLembaga,
-        status: log ? log.status : "belum_absen",
+        status: status,
         check_in: log ? log.check_in : null,
         check_out: log ? log.check_out : null,
         attendance_id: log ? log.id : null,
         created_at: log ? log.created_at : null,
-        has_attended: !!log,
+        has_attended: !!log || status === "libur",
+        notes: notes,
       };
     });
 
     // Build complete Teacher items
     const teacherRoster = (masterTeachers || []).map((teacher) => {
       const log = teacherLogMap.get(teacher.id);
+      let status = log ? log.status : "belum_absen";
+      let notes = log ? log.notes : null;
+
+      // If this date is an active holiday and teacher has no check_in or is alpha/belum_absen
+      if (activeHoliday && (activeHoliday.applies_to === "all" || activeHoliday.applies_to === "teachers")) {
+        if (!log || status === "alpha" || status === "belum_absen") {
+          status = "libur";
+          notes = `Libur: ${activeHoliday.name}`;
+        }
+      }
+
       return {
         id: `teacher-${teacher.id}`,
         teacher_id: teacher.id,
         role: "teacher",
         teacher: teacher,
         lembaga: teacher.lembaga || effectiveLembaga,
-        status: log ? log.status : "belum_absen",
+        status: status,
         check_in: log ? log.check_in : null,
         check_out: log ? log.check_out : null,
         attendance_id: log ? log.id : null,
         created_at: log ? log.created_at : null,
-        has_attended: !!log,
+        has_attended: !!log || status === "libur",
+        notes: notes,
       };
     });
 
     return [...studentRoster, ...teacherRoster];
-  }, [masterStudents, masterTeachers, studentLogs, teacherLogs, effectiveLembaga]);
+  }, [masterStudents, masterTeachers, studentLogs, teacherLogs, effectiveLembaga, activeHoliday]);
 
   // Counts for Stats & Filters
   const stats = useMemo(() => {
@@ -174,6 +224,7 @@ export default function Attendance() {
     let hadir = 0;
     let pulang = 0;
     let izinSakitAlpha = 0;
+    let liburCount = 0;
 
     fullRoster.forEach((item) => {
       // Filter by role & kelas for stats
@@ -186,7 +237,9 @@ export default function Attendance() {
         return;
       }
 
-      if (!item.has_attended || item.status === "belum_absen") {
+      if (item.status === "libur") {
+        liburCount++;
+      } else if (!item.has_attended || item.status === "belum_absen") {
         belumAbsen++;
       } else {
         if (item.check_in || ["hadir", "terlambat"].includes(item.status)) {
@@ -195,13 +248,13 @@ export default function Attendance() {
         if (item.check_out) {
           pulang++;
         }
-        if (["izin", "sakit", "alpha", "libur"].includes(item.status)) {
+        if (["izin", "sakit", "alpha"].includes(item.status)) {
           izinSakitAlpha++;
         }
       }
     });
 
-    return { total, belumAbsen, hadir, pulang, izinSakitAlpha };
+    return { total, belumAbsen, hadir, pulang, izinSakitAlpha, liburCount };
   }, [fullRoster, roleFilter, kelasFilter]);
 
   const filteredRecords = useMemo(() => {
@@ -227,7 +280,9 @@ export default function Attendance() {
         } else if (statusFilter === "pulang") {
           if (!item.check_out) return false;
         } else if (statusFilter === "manual") {
-          if (!["izin", "sakit", "alpha", "libur"].includes(item.status)) return false;
+          if (!["izin", "sakit", "alpha"].includes(item.status)) return false;
+        } else if (statusFilter === "libur") {
+          if (item.status !== "libur") return false;
         }
 
         // Search filter
@@ -370,6 +425,28 @@ export default function Attendance() {
         </div>
       </div>
 
+      {/* Active Holiday Banner */}
+      {activeHoliday && (
+        <div className="bg-emerald-400 border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-5 shadow-neo flex items-center gap-3.5 text-gray-900 animate-slide-up">
+          <div className="w-11 h-11 md:w-12 md:h-12 bg-white border-2 border-gray-900 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+            <span className="material-symbols-outlined text-2xl text-emerald-700">
+              celebration
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="inline-block px-2 py-0.5 bg-gray-900 text-emerald-300 text-[10px] font-black rounded uppercase tracking-wider mb-0.5">
+              Hari Libur
+            </div>
+            <h3 className="text-sm md:text-base font-black text-gray-900 truncate">
+              {activeHoliday.name}
+            </h3>
+            <p className="text-xs font-bold text-gray-800 opacity-90">
+              {activeHoliday.description || "Presensi ditiadakan / libur terjadwal."}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Role Tabs & Filters Row */}
       <div className="flex flex-col sm:flex-row justify-between gap-3 items-stretch sm:items-center">
         {/* Role Toggle Tabs */}
@@ -421,17 +498,22 @@ export default function Attendance() {
               <option value="masuk">Sudah Masuk</option>
               <option value="pulang">Sudah Pulang</option>
               <option value="manual">Izin / Sakit / Alpha</option>
+              <option value="libur">Libur</option>
            </select>
            
            <div className="flex flex-row flex-1 sm:flex-initial justify-end gap-1.5 overflow-hidden">
              <span className="px-2 py-1 text-[9px] sm:text-[10px] font-black bg-emerald-100 text-emerald-900 border-2 border-gray-900 rounded-full text-center shadow-sm whitespace-nowrap">
                 Total: {filteredRecords.length}
              </span>
-             {stats.belumAbsen > 0 && (
+             {stats.liburCount > 0 ? (
+               <span className="px-2 py-1 text-[9px] sm:text-[10px] font-black bg-teal-200 text-teal-950 border-2 border-gray-900 rounded-full text-center shadow-sm whitespace-nowrap">
+                  Libur: {stats.liburCount}
+               </span>
+             ) : stats.belumAbsen > 0 ? (
                <span className="px-2 py-1 text-[9px] sm:text-[10px] font-black bg-amber-200 text-amber-950 border-2 border-gray-900 rounded-full text-center animate-pulse shadow-sm whitespace-nowrap">
                   Belum: {stats.belumAbsen}
                </span>
-             )}
+             ) : null}
            </div>
         </div>
       </div>

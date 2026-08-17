@@ -52,6 +52,8 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit, onQui
                 ? "bg-blue-200 text-blue-900"
                 : item.status === "alpha"
                 ? "bg-red-200 text-red-900"
+                : item.status === "libur"
+                ? "bg-teal-300 text-teal-950"
                 : "bg-gray-200 text-gray-900"
             }`}
           >
@@ -74,39 +76,50 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit, onQui
       </div>
 
       <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          {item.check_in ? (
-            <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-lg text-xs font-bold">
-              <span className="material-symbols-outlined text-sm text-emerald-700">
-                login
+        {item.status === "libur" ? (
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5 px-3 py-1 bg-teal-100 text-teal-950 border border-teal-300 rounded-lg text-xs font-bold">
+              <span className="material-symbols-outlined text-sm text-teal-700">
+                event
               </span>
-              Masuk:{" "}
-              <strong className="font-black text-gray-900">
-                {item.check_in}
-              </strong>
+              {item.notes || "Hari Libur Terjadwal"}
             </span>
-          ) : (
-            <span className="px-2.5 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs font-medium border border-gray-200">
-              Belum Masuk
-            </span>
-          )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 flex-wrap">
+            {item.check_in ? (
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-lg text-xs font-bold">
+                <span className="material-symbols-outlined text-sm text-emerald-700">
+                  login
+                </span>
+                Masuk:{" "}
+                <strong className="font-black text-gray-900">
+                  {item.check_in}
+                </strong>
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs font-medium border border-gray-200">
+                Belum Masuk
+              </span>
+            )}
 
-          {item.check_out ? (
-            <span className="flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-xs font-bold">
-              <span className="material-symbols-outlined text-sm text-purple-700">
-                logout
+            {item.check_out ? (
+              <span className="flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-900 border border-purple-300 rounded-lg text-xs font-bold">
+                <span className="material-symbols-outlined text-sm text-purple-700">
+                  logout
+                </span>
+                Pulang:{" "}
+                <strong className="font-black text-gray-900">
+                  {item.check_out}
+                </strong>
               </span>
-              Pulang:{" "}
-              <strong className="font-black text-gray-900">
-                {item.check_out}
-              </strong>
-            </span>
-          ) : (
-            <span className="px-2.5 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs font-medium border border-gray-200">
-              Belum Pulang
-            </span>
-          )}
-        </div>
+            ) : (
+              <span className="px-2.5 py-1 bg-gray-100 text-gray-400 rounded-lg text-xs font-medium border border-gray-200">
+                Belum Pulang
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Quick Hadir Button for Belum Absen */}
         {isBelumAbsen && onQuickHadir && (

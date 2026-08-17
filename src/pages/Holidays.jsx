@@ -57,10 +57,19 @@ export default function Holidays() {
     enabled: !isLembagaLoading,
   });
 
+  const invalidateAllRelatedQueries = () => {
+    queryClient.invalidateQueries(["holidays"]);
+    queryClient.invalidateQueries(["dashboard"]);
+    queryClient.invalidateQueries(["attendance_students"]);
+    queryClient.invalidateQueries(["attendance_teachers"]);
+    queryClient.invalidateQueries(["students_master"]);
+    queryClient.invalidateQueries(["teachers_master"]);
+  };
+
   const createMutation = useMutation({
     mutationFn: (data) => holidayService.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(["holidays"]);
+      invalidateAllRelatedQueries();
       closeModal();
       showAlert("Berhasil", "Kalender libur berhasil dibuat");
     },
@@ -70,7 +79,7 @@ export default function Holidays() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => holidayService.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(["holidays"]);
+      invalidateAllRelatedQueries();
       closeModal();
       showAlert("Berhasil", "Kalender libur berhasil diupdate");
     },
@@ -80,7 +89,7 @@ export default function Holidays() {
   const deleteMutation = useMutation({
     mutationFn: (id) => holidayService.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(["holidays"]);
+      invalidateAllRelatedQueries();
       showAlert("Berhasil", "Kalender libur berhasil dihapus");
     },
     onError: (err) => showAlert("Error", err.response?.data?.message || "Gagal hapus libur"),

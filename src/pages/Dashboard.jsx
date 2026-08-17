@@ -14,6 +14,8 @@ export default function Dashboard() {
   });
 
   const stats = data?.data || {};
+  const isHoliday = stats.is_holiday;
+  const holidayName = stats.holiday_name || "Hari Libur Terjadwal";
 
   const statCards = [
     {
@@ -65,7 +67,13 @@ export default function Dashboard() {
       color: "bg-blue-100",
       iconColor: "text-blue-900",
     },
-    {
+    isHoliday ? {
+      label: "Libur",
+      value: stats.students_libur || stats.total_students || 0,
+      icon: "event",
+      color: "bg-teal-200",
+      iconColor: "text-teal-900",
+    } : {
       label: "Alpha",
       value: stats.students_alpha || 0,
       icon: "cancel",
@@ -83,29 +91,53 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-      {statCards.map((stat, idx) => (
-        <div
-          key={idx}
-          className={`${stat.color} border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-6 shadow-neo flex flex-col gap-2`}
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-xs md:text-sm font-black uppercase tracking-wide text-gray-700">
-              {stat.label}
-            </span>
-            <span
-              className={`material-symbols-outlined ${stat.iconColor}`}
-              style={{ fontSize: "28px" }}
-              aria-hidden="true"
-            >
-              {stat.icon}
+    <div className="space-y-4 md:space-y-6">
+      {/* Holiday Banner if Today is a Holiday */}
+      {isHoliday && (
+        <div className="bg-emerald-400 border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-6 shadow-neo flex items-center gap-4 text-gray-900 animate-slide-up">
+          <div className="w-12 h-12 md:w-14 md:h-14 bg-white border-2 border-gray-900 rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+            <span className="material-symbols-outlined text-2xl md:text-3xl text-emerald-700">
+              celebration
             </span>
           </div>
-          <div className="text-3xl md:text-4xl font-black text-gray-900">
-            {stat.value}
+          <div className="min-w-0 flex-1">
+            <div className="inline-block px-2.5 py-0.5 bg-gray-900 text-emerald-300 text-[10px] md:text-xs font-black rounded-md uppercase tracking-wider mb-1">
+              Hari Ini Libur
+            </div>
+            <h2 className="text-base md:text-xl font-black text-gray-900 truncate">
+              {holidayName}
+            </h2>
+            <p className="text-xs md:text-sm font-bold text-gray-800 opacity-90">
+              Kegiatan presensi otomatis ditiadakan / ditutup untuk hari ini.
+            </p>
           </div>
         </div>
-      ))}
+      )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        {statCards.map((stat, idx) => (
+          <div
+            key={idx}
+            className={`${stat.color} border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-6 shadow-neo flex flex-col gap-2`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs md:text-sm font-black uppercase tracking-wide text-gray-700">
+                {stat.label}
+              </span>
+              <span
+                className={`material-symbols-outlined ${stat.iconColor}`}
+                style={{ fontSize: "28px" }}
+                aria-hidden="true"
+              >
+                {stat.icon}
+              </span>
+            </div>
+            <div className="text-3xl md:text-4xl font-black text-gray-900">
+              {stat.value}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
