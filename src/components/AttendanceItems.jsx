@@ -1,6 +1,6 @@
 import { memo } from "react";
 
-export const AttendanceItem = memo(function AttendanceItem({ item, onEdit, onQuickHadir }) {
+export const AttendanceItem = memo(function AttendanceItem({ item, onEdit, onQuickHadir, onQuickLibur }) {
   const isStudent = item.role === "student";
   const person = isStudent ? item.student || item : item.teacher || item;
   const isBelumAbsen = !item.status || item.status === "belum_absen";
@@ -121,15 +121,30 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit, onQui
           </div>
         )}
 
-        {/* Quick Hadir Button for Belum Absen */}
-        {isBelumAbsen && onQuickHadir && (
-          <button
-            onClick={() => onQuickHadir(item)}
-            className="px-3 py-1 bg-primary-green text-gray-900 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center gap-1 ml-auto"
-          >
-            <span className="material-symbols-outlined text-sm">check_circle</span>
-            Hadir Manual
-          </button>
+        {/* Quick Hadir & Libur Buttons for Belum Absen */}
+        {isBelumAbsen && (
+          <div className="flex items-center gap-1.5 ml-auto">
+            {onQuickLibur && (
+              <button
+                onClick={() => onQuickLibur(item)}
+                title="Tandai Libur"
+                className="px-2.5 py-1 bg-teal-200 text-teal-950 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo hover:bg-teal-300 active:translate-y-0.5 transition-all flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-sm">event</span>
+                Libur
+              </button>
+            )}
+            {onQuickHadir && (
+              <button
+                onClick={() => onQuickHadir(item)}
+                title="Hadir Manual"
+                className="px-2.5 py-1 bg-primary-green text-gray-900 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo hover:bg-emerald-400 active:translate-y-0.5 transition-all flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-sm">check_circle</span>
+                Hadir
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

@@ -113,9 +113,12 @@ export default function Attendance() {
   const activeHoliday = useMemo(() => {
     const list = Array.isArray(holidaysData) ? holidaysData : [];
     return (
-      list.find(
-        (h) => selectedDate >= h.start_date && selectedDate <= h.end_date
-      ) || null
+      list.find((h) => {
+        // Normalize: handle both "2026-08-17" and "2026-08-17T00:00:00.000000Z" formats
+        const hStart = (h.start_date || "").substring(0, 10);
+        const hEnd = (h.end_date || "").substring(0, 10);
+        return selectedDate >= hStart && selectedDate <= hEnd;
+      }) || null
     );
   }, [holidaysData, selectedDate]);
 
@@ -374,6 +377,33 @@ export default function Attendance() {
     }
   };
 
+  const handleQuickLibur = async (item) => {
+    try {
+      const payload = {
+        status: "libur",
+        date: selectedDate,
+        notes: activeHoliday ? `Libur: ${activeHoliday.name}` : "Libur",
+        is_test: false,
+      };
+      if (item.role === "teacher") {
+        payload.teacher_id = item.teacher_id;
+      } else {
+        payload.student_id = item.student_id;
+      }
+
+      await logsService.createManual(payload);
+
+      queryClient.invalidateQueries({
+        queryKey: ["attendance_students", selectedDate],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["attendance_teachers", selectedDate],
+      });
+    } catch (err) {
+      alert(err.response?.data?.message || "Gagal tandai libur");
+    }
+  };
+
   const handleModalClose = () => {
     setShowModal(false);
     setSelectedPerson(null);
@@ -546,6 +576,7 @@ export default function Attendance() {
               item={item}
               onEdit={handleEditAttendance}
               onQuickHadir={handleQuickHadir}
+              onQuickLibur={handleQuickLibur}
             />
           ))
         )}
