@@ -21,6 +21,54 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
+const CustomToolbar = (toolbar) => {
+  const goToBack = () => toolbar.onNavigate("PREV");
+  const goToNext = () => toolbar.onNavigate("NEXT");
+  const goToCurrent = () => toolbar.onNavigate("TODAY");
+
+  return (
+    <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={goToCurrent}
+          className="px-4 py-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold text-sm shadow-[2px_2px_0px_#111827] hover:bg-gray-50 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111827] transition-all"
+        >
+          Hari Ini
+        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={goToBack}
+            className="p-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold text-sm shadow-[2px_2px_0px_#111827] hover:bg-gray-50 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111827] transition-all flex items-center justify-center"
+          >
+            <span className="material-symbols-outlined text-lg">chevron_left</span>
+          </button>
+          <button
+            onClick={goToNext}
+            className="p-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold text-sm shadow-[2px_2px_0px_#111827] hover:bg-gray-50 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111827] transition-all flex items-center justify-center"
+          >
+            <span className="material-symbols-outlined text-lg">chevron_right</span>
+          </button>
+        </div>
+      </div>
+      <h2 className="text-xl font-black text-gray-900 capitalize">
+        {toolbar.label}
+      </h2>
+      <div className="flex items-center gap-2">
+        <select
+          value={toolbar.view}
+          onChange={(e) => toolbar.onView(e.target.value)}
+          className="px-3 py-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold text-sm shadow-[2px_2px_0px_#111827] focus:outline-none cursor-pointer"
+        >
+          <option value="month">Bulan</option>
+          <option value="week">Minggu</option>
+          <option value="day">Hari</option>
+          <option value="agenda">Agenda</option>
+        </select>
+      </div>
+    </div>
+  );
+};
+
 export default function Holidays() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingHoliday, setEditingHoliday] = useState(null);
@@ -220,6 +268,9 @@ export default function Holidays() {
           <Calendar
             localizer={localizer}
             events={events}
+            components={{
+              toolbar: CustomToolbar
+            }}
             startAccessor="start"
             endAccessor="end"
             culture="id"
