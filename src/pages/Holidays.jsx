@@ -7,6 +7,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import HolidaysAPI from "date-holidays";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const locales = {
@@ -220,18 +221,68 @@ export default function Holidays() {
 
   // Convert API holidays to react-big-calendar events
   const events = useMemo(() => {
-    if (!holidays) return [];
-    return holidays.map((holiday) => {
-      const startStr = holiday.start_date.split("T")[0];
-      const endStr = holiday.end_date.split("T")[0];
-      return {
-        id: holiday.id,
-        title: holiday.name,
-        start: new Date(`${startStr}T00:00:00`),
-        end: new Date(`${endStr}T23:59:59`),
-        resource: holiday,
-      };
-    });
+    let allEvents = [];
+
+    if (holidays) {
+      allEvents = holidays.map((holiday) => {
+        const startStr = holiday.start_date.split("T")[0];
+        const endStr = holiday.end_date.split("T")[0];
+        return {
+          id: holiday.id,
+          title: holiday.name,
+          start: new Date(`${startStr}T00:00:00`),
+          end: new Date(`${endStr}T23:59:59`),
+          resource: holiday,
+          type: "custom"
+        };
+      });
+    }
+
+    // Auto generate Sundays and National Holidays
+    const hd = new HolidaysAPI("ID");
+    for (let year = 2024; year <= 2030; year++) {
+      // 1. National Holidays
+      const nationalHolidays = hd.getHolidays(year);
+      nationalHolidays.forEach(nh => {
+        const start = new Date(nh.start);
+        const end = new Date(nh.end || nh.start); // fallback if end is missing
+        start.setHours(0,0,0,0);
+        end.setHours(23,59,59,999);
+        
+        allEvents.push({
+          id: `national-${nh.name}-${year}`,
+          title: nh.name,
+          start: start,
+          end: end,
+          resource: { applies_to: "all" },
+          type: "national"
+        });
+      });
+
+      // 2. Sundays
+      let d = new Date(year, 0, 1);
+      while (d.getDay() !== 0) {
+        d.setDate(d.getDate() + 1);
+      }
+      while (d.getFullYear() === year) {
+        const start = new Date(d);
+        const end = new Date(d);
+        start.setHours(0,0,0,0);
+        end.setHours(23,59,59,999);
+
+        allEvents.push({
+          id: `sunday-${d.getTime()}`,
+          title: "Libur Hari Minggu",
+          start: start,
+          end: end,
+          resource: { applies_to: "all" },
+          type: "sunday"
+        });
+        d.setDate(d.getDate() + 7);
+      }
+    }
+
+    return allEvents;
   }, [holidays]);
 
   const handleSelectSlot = (slotInfo) => {
@@ -239,6 +290,10 @@ export default function Holidays() {
   };
 
   const handleSelectEvent = (event) => {
+    if (event.type === "national" || event.type === "sunday") {
+      showAlert("Info", `Ini adalah hari libur otomatis (${event.title}) dan tidak dapat diedit secara manual.`);
+      return;
+    }
     openModal(event.resource);
   };
 
