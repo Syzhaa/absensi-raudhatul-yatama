@@ -164,8 +164,8 @@ export default function Holidays() {
       setDuration(holiday.start_date === holiday.end_date ? "single" : "multiple");
       setFormData({
         name: holiday.name,
-        start_date: holiday.start_date,
-        end_date: holiday.end_date,
+        start_date: holiday.start_date.split("T")[0],
+        end_date: holiday.end_date.split("T")[0],
         applies_to: holiday.applies_to,
         description: holiday.description || "",
       });
@@ -222,11 +222,13 @@ export default function Holidays() {
   const events = useMemo(() => {
     if (!holidays) return [];
     return holidays.map((holiday) => {
+      const startStr = holiday.start_date.split("T")[0];
+      const endStr = holiday.end_date.split("T")[0];
       return {
         id: holiday.id,
         title: holiday.name,
-        start: new Date(holiday.start_date + "T00:00:00"),
-        end: new Date(holiday.end_date + "T23:59:59"),
+        start: new Date(`${startStr}T00:00:00`),
+        end: new Date(`${endStr}T23:59:59`),
         resource: holiday,
       };
     });
