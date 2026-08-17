@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Modal from "./Modal";
 import { getPhotoUrl } from "../services/api";
+import { useAppStore } from "../store/useAppStore";
 
 export default function TeacherForm({
   isOpen,
@@ -13,6 +14,7 @@ export default function TeacherForm({
 }) {
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(editingTeacher?.foto || null);
+  const userRole = useAppStore((state) => state.userRole);
 
   useEffect(() => {
     if (isOpen) {
@@ -136,14 +138,16 @@ export default function TeacherForm({
           </div>
         </div>
 
-        <div>
-          <label className={labelClass}>Lembaga *</label>
-          <select {...field("lembaga")} className={selectClass} required>
-            <option value="MA">MA</option>
-            <option value="MTs">MTs</option>
-            <option value="Yayasan">Yayasan</option>
-          </select>
-        </div>
+        {userRole === "super_admin" && (
+          <div>
+            <label className={labelClass}>Lembaga *</label>
+            <select {...field("lembaga")} className={selectClass} required>
+              <option value="MA">MA</option>
+              <option value="MTs">MTs</option>
+              <option value="Yayasan">Yayasan</option>
+            </select>
+          </div>
+        )}
 
         <div>
           <label className={labelClass}>Nama Guru *</label>
