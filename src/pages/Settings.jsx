@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
 import { authService } from "../services";
-import { LogoutModal, TestModeModal, ClearDataModal, ClearSuccessModal } from "../components/SettingsModals";
+import { LogoutModal, TestModeModal, ClearDataModal, ClearSuccessModal, SettingsSuccessModal } from "../components/SettingsModals";
 
 import { useAppStore } from "../store/useAppStore";
+import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 
 function TimeInput({ label, value, onChange, description }) {
   const [localValue, setLocalValue] = useState(value ? value.slice(0, 5) : "");
@@ -55,22 +56,25 @@ function TimeInput({ label, value, onChange, description }) {
 }
 
 const settingsService = {
-  getByMyLembaga: async () => {
-    const response = await api.get(`/attendance/settings/my`);
+  getByLembaga: async (lembaga) => {
+    const params = lembaga ? { lembaga } : {};
+    const response = await api.get(`/attendance/settings`, { params });
     return response.data;
   },
-  updateMyLembaga: async (data) => {
-    const response = await api.put(`/attendance/settings/my`, data);
+  updateLembaga: async (lembaga, data) => {
+    const params = lembaga ? { lembaga } : {};
+    const response = await api.put(`/attendance/settings`, data, { params });
     return response.data;
   },
 };
 
 export default function Settings({ onLogout }) {
-  const userLembaga = useAppStore((state) => state.userLembaga);
+  const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showTestModeModal, setShowTestModeModal] = useState(false);
   const [showClearDataModal, setShowClearDataModal] = useState(false);
   const [showSuccessClearModal, setShowSuccessClearModal] = useState(false);
+  const [showSettingsSuccessModal, setShowSettingsSuccessModal] = useState(false);
   const [isClearingTestLogs, setIsClearingTestLogs] = useState(false);
   const queryClient = useQueryClient();
   const setTestMode = useAppStore((state) => state.setTestMode);
@@ -110,11 +114,10 @@ export default function Settings({ onLogout }) {
   };
 
   const { data: settingsData, isLoading } = useQuery({
-    queryKey: ["settings", "my"],
-    queryFn: () => settingsService.getByMyLembaga(),
+    queryKey: ["settings", effectiveLembaga],
+    queryFn: () => settingsService.getByLembaga(effectiveLembaga),
+    enabled: !isLembagaLoading,
   });
-
-  const isTestMode = useAppStore((state) => state.isTestMode);
 
   const [formData, setFormData] = useState({
     attendance_open: settingsData?.data?.attendance_open || "06:00:00",
@@ -122,7 +125,7 @@ export default function Settings({ onLogout }) {
     late_after: settingsData?.data?.late_after || "07:30:00",
     attendance_close: settingsData?.data?.attendance_close || "08:00:00",
     timezone: settingsData?.data?.timezone || "Asia/Makassar",
-    test_mode: isTestMode,
+    test_mode: settingsData?.data?.test_mode || false,
   });
 
   // Update form when settings data changes
@@ -136,16 +139,16 @@ export default function Settings({ onLogout }) {
         late_after: currentSettings.late_after || "07:30:00",
         attendance_close: currentSettings.attendance_close || "08:00:00",
         timezone: currentSettings.timezone || "Asia/Makassar",
-        test_mode: isTestMode, // Pertahankan state lokal dari Zustand
+        test_mode: !!currentSettings.test_mode,
       }));
     }
-  }, [settingsData?.data, isTestMode]);
+  }, [settingsData?.data]);
 
   const updateMutation = useMutation({
-    mutationFn: (data) => settingsService.updateMyLembaga(data),
+    mutationFn: (data) => settingsService.updateLembaga(effectiveLembaga, data),
     onSuccess: () => {
       queryClient.invalidateQueries(["settings"]);
-      alert("Pengaturan berhasil disimpan!");
+      setShowSettingsSuccessModal(true);
     },
     onError: (error) => {
       alert("Gagal menyimpan: " + (error.response?.data?.message || "Error"));
@@ -271,7 +274,7 @@ export default function Settings({ onLogout }) {
             <p className="font-bold text-xs md:text-sm text-gray-600 mt-1">
               Anda sedang mengatur sistem operasional untuk lembaga:{" "}
               <span className="text-gray-900 font-black px-1.5 py-0.5 bg-gray-100 rounded border border-gray-300">
-                {userLembaga ? userLembaga.toUpperCase() : "-"}
+                {effectiveLembaga ? effectiveLembaga.toUpperCase() : "SEMUA LEMBAGA"}
               </span>
             </p>
           </div>
@@ -410,7 +413,7 @@ export default function Settings({ onLogout }) {
             <li>
               • Berlaku khusus untuk otoritas Anda (
               <strong className="text-gray-900">
-                {userLembaga ? userLembaga.toUpperCase() : "Lembaga Aktif"}
+                {effectiveLembaga ? effectiveLembaga.toUpperCase() : "Semua Lembaga"}
               </strong>
               ).
             </li>
@@ -497,6 +500,11 @@ export default function Settings({ onLogout }) {
       {/* 4. Clear Test Data Success Modal */}
       {showSuccessClearModal && (
         <ClearSuccessModal onClose={() => setShowSuccessClearModal(false)} />
+      )}
+
+      {/* 5. Settings Save Success Modal */}
+      {showSettingsSuccessModal && (
+        <SettingsSuccessModal onClose={() => setShowSettingsSuccessModal(false)} />
       )}
     </div>
   );

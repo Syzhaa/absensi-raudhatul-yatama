@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useAppStore } from "../store/useAppStore";
 
 export function useAttendanceSSE(selectedDate, queryClient) {
   useEffect(() => {
@@ -9,7 +10,7 @@ export function useAttendanceSSE(selectedDate, queryClient) {
       try {
         const token =
           localStorage.getItem("auth_token") || localStorage.getItem("token");
-        const isTestMode = localStorage.getItem("is_test_mode") === "true";
+        const isTestMode = useAppStore.getState().isTestMode;
 
         const response = await fetch(
           `${import.meta.env.VITE_API_BASE_URL}/attendance/logs/stream?date=${selectedDate}${isTestMode ? "&is_test=1" : ""}`,

@@ -4,6 +4,7 @@ import { authService } from '../services';
 import { useAppStore } from '../store/useAppStore';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
+import { settingsService } from '../services';
 import { useEffectiveLembaga } from '../hooks/useEffectiveLembaga';
 import { menuForRole } from '../auth/accessPolicy';
 import ConfirmModal from './ConfirmModal';
@@ -94,7 +95,27 @@ export default function Layout({ children }) {
   const selectedKelas = useAppStore((state) => state.selectedKelas);
   const setUserRole = useAppStore((state) => state.setUserRole);
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
+  const setTestMode = useAppStore((state) => state.setTestMode);
+  const { effectiveLembaga } = useEffectiveLembaga();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  // Sync test_mode globally based on effectiveLembaga
+  useQuery({
+    queryKey: ['global_settings', effectiveLembaga],
+    queryFn: async () => {
+      try {
+        const params = effectiveLembaga ? { lembaga: effectiveLembaga } : {};
+        const res = await api.get('/attendance/settings', { params });
+        const backendTestMode = !!res.data?.data?.test_mode;
+        setTestMode(backendTestMode);
+        return res.data;
+      } catch (err) {
+        return null;
+      }
+    },
+    // We want to fetch it aggressively on mount and when lembaga changes
+    staleTime: 0,
+  });
 
   const allMenuItems = menuForRole(userRole);
   const menuItems = allMenuItems.filter(item => !['/settings', '/profile'].includes(item.path));

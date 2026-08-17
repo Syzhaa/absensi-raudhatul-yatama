@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useAppStore } from "../store/useAppStore";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -32,7 +33,7 @@ api.interceptors.request.use(
     config.headers["X-Timezone"] = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     // Inject Test Mode flag secara otomatis jika mode testing aktif
-    const isTestMode = localStorage.getItem("is_test_mode") === "true";
+    const isTestMode = useAppStore.getState().isTestMode;
     if (isTestMode) {
       config.headers["X-Test-Mode"] = "true";
       config.params = { ...config.params, mode: "test", is_test: true };

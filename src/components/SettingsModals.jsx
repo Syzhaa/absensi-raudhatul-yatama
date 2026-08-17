@@ -156,3 +156,35 @@ export function ClearSuccessModal({ onClose }) {
     </div>
   );
 }
+
+export function SettingsSuccessModal({ onClose }) {
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div
+        className="fixed inset-0 bg-black/50 animate-fade-in"
+        onClick={onClose}
+      />
+
+      <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-6 max-w-sm w-full space-y-4 z-10 animate-slide-up text-center">
+        <div className="w-14 h-14 bg-emerald-100 border-2 border-gray-900 rounded-full flex items-center justify-center text-emerald-600 mx-auto">
+          <span className="material-symbols-outlined text-3xl font-black">
+            check_circle
+          </span>
+        </div>
+        <h2 className="text-xl font-black text-gray-900">
+          Pengaturan Disimpan!
+        </h2>
+        <p className="text-sm text-gray-600 font-medium leading-relaxed">
+          Semua konfigurasi jam operasional dan mode testing berhasil diperbarui.
+        </p>
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-3 px-4 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all"
+        >
+          Selesai
+        </button>
+      </div>
+    </div>
+  );
+}

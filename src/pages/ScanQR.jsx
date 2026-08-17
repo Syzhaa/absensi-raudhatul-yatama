@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { attendanceService } from "../services";
+import { useAppStore } from "../store/useAppStore";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { useScanner } from "../hooks/useScanner";
 import ScanResultModal from "../components/ScanResultModal";
@@ -53,7 +54,7 @@ export default function ScanQR() {
       try {
         const token =
           localStorage.getItem("auth_token") || localStorage.getItem("token");
-        const isTestMode = localStorage.getItem("is_test_mode") === "true";
+        const isTestMode = useAppStore.getState().isTestMode;
         const today = format(new Date(), "yyyy-MM-dd");
 
         const response = await fetch(
@@ -163,7 +164,7 @@ export default function ScanQR() {
         status: data.status,
         note: data.note,
         date: format(new Date(), "yyyy-MM-dd"),
-        is_test: localStorage.getItem("is_test_mode") === "true",
+        is_test: useAppStore.getState().isTestMode,
       });
     },
     onSuccess: () => {
