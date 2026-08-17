@@ -358,9 +358,9 @@ export default function Holidays() {
               }
 
               return {
-                className: `${bg} ${text} border-2 ${border} font-bold rounded-lg px-2 shadow-sm`,
+                className: `${bg} ${text} border-2 ${border} font-bold rounded-lg px-1 md:px-2 py-0.5 shadow-sm text-[9px] md:text-xs leading-tight truncate`,
                 style: {
-                  borderRadius: "8px",
+                  borderRadius: "6px",
                   color: "#ffffff",
                   border: "2px solid #991b1b"
                 }
