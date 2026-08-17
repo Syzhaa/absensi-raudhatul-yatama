@@ -40,9 +40,10 @@ function HeaderSelectors() {
   )].sort();
 
   const isSuperAdmin = userData?.data?.role === 'super_admin';
-  const isLembagaAdmin = userData?.data?.role === 'admin';
+  const role = userData?.data?.role;
+  const showClassFilter = ['super_admin', 'admin', 'admin_ma', 'admin_mts', 'guru'].includes(role);
 
-  if (!isSuperAdmin && !isLembagaAdmin) {
+  if (!showClassFilter) {
     return (
       <div key="role-label" className="flex flex-col">
         <span className="font-black text-sm md:text-base text-gray-900 leading-tight capitalize">
