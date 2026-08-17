@@ -60,7 +60,7 @@ export default function Users() {
   const createMutation = useMutation({
     mutationFn: (data) => api.post("/admin/users", data),
     onSuccess: () => {
-      queryClient.invalidateQueries(["users"]);
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       setShowModal(false);
       setEditUser(null);
       showAlert("Berhasil", "User berhasil dibuat");
@@ -71,7 +71,7 @@ export default function Users() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => api.put(`/admin/users/${id}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(["users"]);
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       setShowModal(false);
       setEditUser(null);
       showAlert("Berhasil", "User berhasil diupdate");
@@ -82,7 +82,7 @@ export default function Users() {
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/admin/users/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries(["users"]);
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       showAlert("Berhasil", "User berhasil dihapus");
     },
     onError: (err) => showAlert("Error", err.response?.data?.message || "Gagal menghapus user"),
@@ -92,7 +92,7 @@ export default function Users() {
     mutationFn: ({ student_ids, new_kelas }) =>
       api.post("/admin/students/promote", { student_ids, new_kelas }),
     onSuccess: () => {
-      queryClient.invalidateQueries(["users"]);
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       setShowPromoteModal(false);
       setSelectedUsers([]);
       showAlert("Berhasil", "Siswa berhasil dipromosikan");
