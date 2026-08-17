@@ -28,37 +28,35 @@ const CustomToolbar = (toolbar) => {
   const goToCurrent = () => toolbar.onNavigate("TODAY");
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center justify-between mb-3 gap-y-3 gap-x-2">
+      <div className="flex items-center gap-1.5 order-1">
         <button
           onClick={goToCurrent}
-          className="px-4 py-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold text-sm shadow-[2px_2px_0px_#111827] hover:bg-gray-50 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111827] transition-all"
+          className="px-3 py-1.5 md:px-4 md:py-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold text-xs md:text-sm shadow-[2px_2px_0px_#111827] hover:bg-gray-50 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111827] transition-all"
         >
           Hari Ini
         </button>
         <div className="flex items-center gap-1">
           <button
             onClick={goToBack}
-            className="p-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold text-sm shadow-[2px_2px_0px_#111827] hover:bg-gray-50 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111827] transition-all flex items-center justify-center"
+            className="p-1 md:p-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold shadow-[2px_2px_0px_#111827] hover:bg-gray-50 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111827] transition-all flex items-center justify-center"
           >
-            <span className="material-symbols-outlined text-lg">chevron_left</span>
+            <span className="material-symbols-outlined text-base md:text-lg">chevron_left</span>
           </button>
           <button
             onClick={goToNext}
-            className="p-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold text-sm shadow-[2px_2px_0px_#111827] hover:bg-gray-50 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111827] transition-all flex items-center justify-center"
+            className="p-1 md:p-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold shadow-[2px_2px_0px_#111827] hover:bg-gray-50 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111827] transition-all flex items-center justify-center"
           >
-            <span className="material-symbols-outlined text-lg">chevron_right</span>
+            <span className="material-symbols-outlined text-base md:text-lg">chevron_right</span>
           </button>
         </div>
       </div>
-      <h2 className="text-xl font-black text-gray-900 capitalize">
-        {toolbar.label}
-      </h2>
-      <div className="flex items-center gap-2">
+      
+      <div className="flex items-center order-2 md:order-3">
         <select
           value={toolbar.view}
           onChange={(e) => toolbar.onView(e.target.value)}
-          className="px-3 py-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold text-sm shadow-[2px_2px_0px_#111827] focus:outline-none cursor-pointer"
+          className="px-2 py-1.5 md:px-3 md:py-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold text-xs md:text-sm shadow-[2px_2px_0px_#111827] focus:outline-none cursor-pointer"
         >
           <option value="month">Bulan</option>
           <option value="week">Minggu</option>
@@ -66,6 +64,10 @@ const CustomToolbar = (toolbar) => {
           <option value="agenda">Agenda</option>
         </select>
       </div>
+
+      <h2 className="text-base md:text-xl font-black text-gray-900 capitalize w-full text-center order-3 md:order-2 md:w-auto md:text-left">
+        {toolbar.label}
+      </h2>
     </div>
   );
 };
