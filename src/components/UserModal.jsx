@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import { useAppStore } from "../store/useAppStore";
 
+const ROLES = [
+  { value: "admin_ma", label: "Admin MA" },
+  { value: "admin_mts", label: "Admin MTS" },
+  { value: "guru", label: "Guru" },
+  { value: "siswa", label: "Siswa" },
+];
+
 const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
   const currentUserLembaga = useAppStore((state) => state.userLembaga);
   const currentUserRole = useAppStore((state) => state.userRole);
