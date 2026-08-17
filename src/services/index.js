@@ -1,4 +1,5 @@
 import api from "./api";
+import { format } from "date-fns";
 
 export const authService = {
   login: async (email, password, deviceId) => {
@@ -40,16 +41,17 @@ export const logsService = {
   },
 };
 export const attendanceService = {
-  getDashboard: async (lembaga = null, kelas = null) => {
+  getDashboard: async (lembaga = null, kelas = null, date = null) => {
     const params = {};
     if (lembaga) params.lembaga = lembaga;
     if (kelas) params.kelas = kelas;
+    if (date) params.date = date;
     const response = await api.get("/attendance/dashboard", { params });
     return response.data;
   },
 
   getRecentLogs: async (limit = 5, lembaga = null) => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = format(new Date(), "yyyy-MM-dd");
     const params = { date: today };
     if (lembaga) params.lembaga = lembaga;
 

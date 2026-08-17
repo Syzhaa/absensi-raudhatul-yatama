@@ -29,6 +29,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     config.headers.Accept = "application/json";
+    config.headers["X-Timezone"] = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
     // Inject Test Mode flag secara otomatis jika mode testing aktif
     const isTestMode = localStorage.getItem("is_test_mode") === "true";

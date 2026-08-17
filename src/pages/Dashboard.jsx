@@ -9,19 +9,43 @@ export default function Dashboard() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const selectedKelas = useAppStore((state) => state.selectedKelas);
 
+  const today = format(new Date(), "yyyy-MM-dd");
+
   const { data, isLoading } = useQuery({
-    queryKey: ["dashboard", effectiveLembaga, selectedKelas],
-    queryFn: () => attendanceService.getDashboard(effectiveLembaga, selectedKelas),
+    queryKey: ["dashboard", effectiveLembaga, selectedKelas, today],
+    queryFn: () => attendanceService.getDashboard(effectiveLembaga, selectedKelas, today),
+    enabled: !isLembagaLoading,
+  });
+
+  const { data: holidaysData } = useQuery({
+    queryKey: ["holidays", effectiveLembaga],
+    queryFn: async () => {
+      try {
+        const res = await api.get("/attendance/holidays", { params: { lembaga: effectiveLembaga } });
+        return res.data?.data || [];
+      } catch (err) {
+        return [];
+      }
+    },
     enabled: !isLembagaLoading,
   });
 
   const stats = data?.data || {};
 
-  // Gabung: deteksi libur dari API backend + Hari Minggu + Libur Nasional Indonesia
-  const today = format(new Date(), "yyyy-MM-dd");
-  const autoHoliday = getAutoHoliday(today);
-  const isHoliday = stats.is_holiday || !!autoHoliday;
-  const holidayName = stats.holiday_name || autoHoliday?.name || "Hari Libur Terjadwal";
+  const activeHoliday = useMemo(() => {
+    const list = Array.isArray(holidaysData) ? holidaysData : [];
+    const apiHoliday = list.find((h) => {
+      const hStart = (h.start_date || "").substring(0, 10);
+      const hEnd = (h.end_date || "").substring(0, 10);
+      return today >= hStart && today <= hEnd;
+    });
+    if (apiHoliday) return apiHoliday;
+    return getAutoHoliday(today);
+  }, [holidaysData, today]);
+
+  const isHoliday = !!activeHoliday;
+  const holidayName = activeHoliday?.name || "Hari Libur Terjadwal";
+  const holidayDesc = activeHoliday?.description || "Kegiatan presensi otomatis ditiadakan / ditutup untuk hari ini.";
 
   const statCards = [
     {
@@ -113,8 +137,8 @@ export default function Dashboard() {
             <h2 className="text-base md:text-xl font-black text-gray-900 truncate">
               {holidayName}
             </h2>
-            <p className="text-xs md:text-sm font-bold text-gray-800 opacity-90">
-              Kegiatan presensi otomatis ditiadakan / ditutup untuk hari ini.
+            <p className="text-xs font-bold text-gray-800 opacity-90">
+              {holidayDesc}
             </p>
           </div>
         </div>
