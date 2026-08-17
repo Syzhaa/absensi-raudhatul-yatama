@@ -26,6 +26,12 @@ export default function Attendance() {
   const queryClient = useQueryClient();
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
 
+  // Sync kelasFilter dengan selectedKelas dari header global
+  const selectedKelas = useAppStore((state) => state.selectedKelas);
+  useEffect(() => {
+    setKelasFilter(selectedKelas || "all");
+  }, [selectedKelas]);
+
   // 1. Fetch Master Active Students
   const { data: masterStudents, isLoading: isMasterStudentsLoading } = useQuery({
     queryKey: ["students_master", effectiveLembaga],
