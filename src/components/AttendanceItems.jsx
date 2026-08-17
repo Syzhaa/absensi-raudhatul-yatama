@@ -1,6 +1,6 @@
 import { memo } from "react";
 
-export const AttendanceItem = memo(function AttendanceItem({ item, onEdit, onQuickHadir, onQuickLibur }) {
+export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
   const isStudent = item.role === "student";
   const person = isStudent ? item.student || item : item.teacher || item;
   const isBelumAbsen = !item.status || item.status === "belum_absen";
@@ -121,23 +121,13 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit, onQui
           </div>
         )}
 
-        {/* Quick Hadir & Libur Buttons for Belum Absen */}
+        {/* Manual Button for Belum Absen */}
         {isBelumAbsen && (
           <div className="flex items-center gap-1.5 ml-auto">
-            {onQuickLibur && (
+            {onEdit && (
               <button
-                onClick={() => onQuickLibur(item)}
-                title="Tandai Libur"
-                className="px-2.5 py-1 bg-teal-200 text-teal-950 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo hover:bg-teal-300 active:translate-y-0.5 transition-all flex items-center gap-1"
-              >
-                <span className="material-symbols-outlined text-sm">event</span>
-                Libur
-              </button>
-            )}
-            {onQuickHadir && (
-              <button
-                onClick={() => onQuickHadir(item)}
-                title="Hadir Manual"
+                onClick={() => onEdit(item)}
+                title="Absen Manual"
                 className="px-2.5 py-1 bg-primary-green text-gray-900 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo hover:bg-emerald-400 active:translate-y-0.5 transition-all flex items-center gap-1"
               >
                 <span className="material-symbols-outlined text-sm">check_circle</span>

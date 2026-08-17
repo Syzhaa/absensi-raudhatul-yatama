@@ -364,59 +364,6 @@ export default function Attendance() {
     setShowModal(true);
   };
 
-  const handleQuickHadir = async (item) => {
-    try {
-      const payload = {
-        status: "hadir",
-        date: selectedDate,
-        is_test: false,
-      };
-      if (item.role === "teacher") {
-        payload.teacher_id = item.teacher_id;
-      } else {
-        payload.student_id = item.student_id;
-      }
-
-      await logsService.createManual(payload);
-      
-      queryClient.invalidateQueries({
-        queryKey: ["attendance_students", selectedDate],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["attendance_teachers", selectedDate],
-      });
-    } catch (err) {
-      alert(err.response?.data?.message || "Gagal absen manual");
-    }
-  };
-
-  const handleQuickLibur = async (item) => {
-    try {
-      const payload = {
-        status: "libur",
-        date: selectedDate,
-        notes: activeHoliday ? `Libur: ${activeHoliday.name}` : "Libur",
-        is_test: false,
-      };
-      if (item.role === "teacher") {
-        payload.teacher_id = item.teacher_id;
-      } else {
-        payload.student_id = item.student_id;
-      }
-
-      await logsService.createManual(payload);
-
-      queryClient.invalidateQueries({
-        queryKey: ["attendance_students", selectedDate],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["attendance_teachers", selectedDate],
-      });
-    } catch (err) {
-      alert(err.response?.data?.message || "Gagal tandai libur");
-    }
-  };
-
   const handleModalClose = () => {
     setShowModal(false);
     setSelectedPerson(null);
@@ -588,8 +535,6 @@ export default function Attendance() {
               key={item.id}
               item={item}
               onEdit={handleEditAttendance}
-              onQuickHadir={handleQuickHadir}
-              onQuickLibur={activeHoliday ? undefined : handleQuickLibur}
             />
           ))
         )}
