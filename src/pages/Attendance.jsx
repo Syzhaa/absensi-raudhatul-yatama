@@ -581,7 +581,7 @@ export default function Attendance() {
               item={item}
               onEdit={handleEditAttendance}
               onQuickHadir={handleQuickHadir}
-              onQuickLibur={handleQuickLibur}
+              onQuickLibur={activeHoliday ? undefined : handleQuickLibur}
             />
           ))
         )}
