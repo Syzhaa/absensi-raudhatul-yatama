@@ -16,6 +16,7 @@ export default function Dashboard() {
     queryKey: ["dashboard", effectiveLembaga, selectedKelas, today],
     queryFn: () => attendanceService.getDashboard(effectiveLembaga, selectedKelas, today),
     enabled: !isLembagaLoading,
+    refetchInterval: 30 * 1000, // auto-refresh tiap 30 detik
   });
 
   const { data: holidaysData } = useQuery({
