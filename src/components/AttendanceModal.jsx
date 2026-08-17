@@ -112,6 +112,8 @@ export default function AttendanceModal({
 
       if (onStatusUpdate) onStatusUpdate();
       onClose();
+      
+      alert("Berhasil! Status absensi berhasil diperbarui.");
     } catch (err) {
       alert(err.response?.data?.message || "Gagal simpan absensi manual");
     } finally {
