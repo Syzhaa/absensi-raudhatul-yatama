@@ -71,7 +71,7 @@ export default function Attendance() {
 
   // 3. Fetch Attendance Logs for Students on Selected Date
   const { data: studentLogs, isLoading: isStudentLogsLoading } = useQuery({
-    queryKey: ["attendance_students", selectedDate, effectiveLembaga],
+    queryKey: ["attendance_students", selectedDate],
     queryFn: async () => {
       try {
         const params = { date: selectedDate, lembaga: effectiveLembaga };
@@ -87,7 +87,7 @@ export default function Attendance() {
 
   // 4. Fetch Attendance Logs for Teachers on Selected Date
   const { data: teacherLogs, isLoading: isTeacherLogsLoading } = useQuery({
-    queryKey: ["attendance_teachers", selectedDate, effectiveLembaga],
+    queryKey: ["attendance_teachers", selectedDate],
     queryFn: async () => {
       try {
         const res = await api.get("/attendance/logs/teachers", {

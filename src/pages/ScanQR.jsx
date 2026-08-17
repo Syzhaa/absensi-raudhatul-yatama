@@ -138,6 +138,9 @@ export default function ScanQR() {
       });
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
       queryClient.invalidateQueries({ queryKey: ["recentLogs"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance_students"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance_teachers"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
 
       // Auto-clear result after 2.5 seconds to ready for next scan visually
       setTimeout(() => {
@@ -169,7 +172,9 @@ export default function ScanQR() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance_teachers"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance_students"] });
       queryClient.invalidateQueries({ queryKey: ["recentLogs"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
       setResult({
         success: true,
         manual: true,
