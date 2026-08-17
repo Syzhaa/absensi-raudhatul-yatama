@@ -1,16 +1,30 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { holidayService } from "../services";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
+import { Calendar, dateFnsLocalizer } from "react-big-calendar";
+import { format, parse, startOfWeek, getDay } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+
+const locales = {
+  id: idLocale,
+};
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
 
 export default function Holidays() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingHoliday, setEditingHoliday] = useState(null);
   const [duration, setDuration] = useState("single");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterDate, setFilterDate] = useState("");
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const queryClient = useQueryClient();
 
@@ -58,12 +72,12 @@ export default function Holidays() {
   });
 
   const invalidateAllRelatedQueries = () => {
-    queryClient.invalidateQueries(["holidays"]);
-    queryClient.invalidateQueries(["dashboard"]);
-    queryClient.invalidateQueries(["attendance_students"]);
-    queryClient.invalidateQueries(["attendance_teachers"]);
-    queryClient.invalidateQueries(["students_master"]);
-    queryClient.invalidateQueries(["teachers_master"]);
+    queryClient.invalidateQueries({ queryKey: ["holidays"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["attendance_students"] });
+    queryClient.invalidateQueries({ queryKey: ["attendance_teachers"] });
+    queryClient.invalidateQueries({ queryKey: ["students_master"] });
+    queryClient.invalidateQueries({ queryKey: ["teachers_master"] });
   };
 
   const createMutation = useMutation({
@@ -87,15 +101,16 @@ export default function Holidays() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => holidayService.delete(id),
+    mutationFn: (deleteId) => holidayService.delete(deleteId),
     onSuccess: () => {
       invalidateAllRelatedQueries();
+      closeModal();
       showAlert("Berhasil", "Kalender libur berhasil dihapus");
     },
     onError: (err) => showAlert("Error", err.response?.data?.message || "Gagal hapus libur"),
   });
 
-  const openModal = (holiday = null) => {
+  const openModal = (holiday = null, startDate = null) => {
     if (holiday) {
       setEditingHoliday(holiday);
       setDuration(holiday.start_date === holiday.end_date ? "single" : "multiple");
@@ -108,11 +123,15 @@ export default function Holidays() {
       });
     } else {
       setEditingHoliday(null);
+      let initDate = "";
+      if (startDate) {
+        initDate = format(startDate, "yyyy-MM-dd");
+      }
       setDuration("single");
       setFormData({
         name: "",
-        start_date: "",
-        end_date: "",
+        start_date: initDate,
+        end_date: initDate,
         applies_to: "all",
         description: "",
       });
@@ -129,7 +148,7 @@ export default function Holidays() {
     e.preventDefault();
     const payload = { 
       ...formData, 
-      lembaga: effectiveLembaga?.toLowerCase() // Normalize to lowercase for backend validation
+      lembaga: effectiveLembaga?.toLowerCase() 
     };
     if (duration === "single") {
       payload.end_date = payload.start_date;
@@ -142,238 +161,189 @@ export default function Holidays() {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (deleteId) => {
     showConfirm(
       "Hapus Kalender Libur",
       "Yakin ingin menghapus kalender libur ini?",
-      () => deleteMutation.mutate(id),
+      () => deleteMutation.mutate(deleteId),
       true
     );
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "-";
-    const date = new Date(dateString);
-    if (isNaN(date)) return dateString;
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    }).format(date);
+  // Convert API holidays to react-big-calendar events
+  const events = useMemo(() => {
+    if (!holidays) return [];
+    return holidays.map((holiday) => {
+      return {
+        id: holiday.id,
+        title: holiday.name,
+        start: new Date(holiday.start_date + "T00:00:00"),
+        end: new Date(holiday.end_date + "T23:59:59"),
+        resource: holiday,
+      };
+    });
+  }, [holidays]);
+
+  const handleSelectSlot = (slotInfo) => {
+    openModal(null, slotInfo.start);
   };
 
-  const filteredHolidays = holidays?.filter(holiday => {
-    const matchesSearch = holiday.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (holiday.description && holiday.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesDate = !filterDate || (filterDate >= holiday.start_date && filterDate <= holiday.end_date);
-    return matchesSearch && matchesDate;
-  });
+  const handleSelectEvent = (event) => {
+    openModal(event.resource);
+  };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4">
-      <div className="bg-white border-2 border-gray-900 rounded-2xl p-4 shadow-neo flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h1 className="text-xl font-black uppercase text-gray-900">
-            Kalender Libur - {effectiveLembaga || "Semua"}
+    <div className="max-w-6xl mx-auto space-y-4">
+      {/* Header */}
+      <div className="bg-white border-3 border-gray-900 rounded-2xl p-4 shadow-neo flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight uppercase">
+            Kalender Libur {effectiveLembaga && `- ${effectiveLembaga}`}
           </h1>
-          <button
-            onClick={() => openModal()}
-            className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green text-gray-900 font-black border-2 md:border-3 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all text-sm"
-          >
-            <span className="material-symbols-outlined text-lg">add</span>
-            Tambah Libur
-          </button>
         </div>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="relative flex-1">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-              search
-            </span>
-            <input
-              type="text"
-              placeholder="Cari kalender libur..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-sm focus:bg-white focus:outline-none transition-colors"
-            />
-          </div>
-          {/* Filter Date */}
-          <div className="relative sm:w-48 shrink-0">
-            <input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-sm focus:bg-white focus:outline-none transition-colors"
-            />
-          </div>
-        </div>
+        <button
+          onClick={() => openModal()}
+          className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green text-gray-900 font-black border-2 md:border-3 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all text-sm"
+        >
+          <span className="material-symbols-outlined text-lg">add</span>
+          Tambah Libur
+        </button>
       </div>
 
-      {isLoading ? (
-        <div className="bg-white border-2 border-gray-900 rounded-2xl p-8 text-center animate-pulse">
-          Memuat data...
-        </div>
-      ) : filteredHolidays && filteredHolidays.length > 0 ? (
-        <div className="space-y-3">
-          {filteredHolidays.map((holiday) => (
-            <div
-              key={holiday.id}
-              className="bg-white border-2 border-gray-900 rounded-xl p-4 shadow-neo flex items-start justify-between"
-            >
-              <div className="flex-1">
-                <h3 className="font-black text-gray-900">{holiday.name}</h3>
-                <p className="text-sm font-bold text-gray-600 mt-1">
-                  {formatDate(holiday.start_date)}
-                  {holiday.start_date !== holiday.end_date && ` s/d ${formatDate(holiday.end_date)}`}
-                </p>
-                <div className="flex gap-2 mt-2">
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-md border border-emerald-300">
-                    {holiday.applies_to === "all" ? "Semua" : holiday.applies_to === "students" ? "Siswa" : "Guru"}
-                  </span>
-                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-bold rounded-md border border-blue-300 uppercase">
-                    {holiday.lembaga}
-                  </span>
-                </div>
-                {holiday.description && (
-                  <p className="text-xs text-gray-500 mt-2">{holiday.description}</p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => openModal(holiday)}
-                  className="p-2 bg-amber-100 border-2 border-gray-900 rounded-lg hover:bg-amber-200"
-                >
-                  <span className="material-symbols-outlined text-lg">edit</span>
-                </button>
-                <button
-                  onClick={() => handleDelete(holiday.id)}
-                  className="p-2 bg-red-100 border-2 border-gray-900 rounded-lg hover:bg-red-200"
-                >
-                  <span className="material-symbols-outlined text-lg">delete</span>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white border-2 border-gray-900 rounded-2xl p-12 text-center">
-          <span className="material-symbols-outlined text-5xl text-gray-400">calendar_month</span>
-          <p className="text-gray-600 font-bold mt-2">Belum ada kalender libur</p>
-        </div>
-      )}
+      {/* Calendar Area */}
+      <div className="bg-white border-3 border-gray-900 rounded-2xl p-4 shadow-neo flex-1" style={{ height: "75vh" }}>
+        {isLoading ? (
+          <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold animate-pulse">
+            Memuat Kalender...
+          </div>
+        ) : (
+          <Calendar
+            localizer={localizer}
+            events={events}
+            startAccessor="start"
+            endAccessor="end"
+            culture="id"
+            selectable
+            onSelectSlot={handleSelectSlot}
+            onSelectEvent={handleSelectEvent}
+            messages={{
+              next: "Maju",
+              previous: "Mundur",
+              today: "Hari Ini",
+              month: "Bulan",
+              week: "Minggu",
+              day: "Hari",
+              agenda: "Agenda",
+              noEventsInRange: "Tidak ada libur di rentang waktu ini.",
+            }}
+            eventPropGetter={(event) => {
+              let bg = "bg-primary-green";
+              let text = "text-gray-900";
+              let border = "border-gray-900";
+              
+              if (event.resource.applies_to === "students") {
+                bg = "bg-emerald-300";
+              } else if (event.resource.applies_to === "teachers") {
+                bg = "bg-blue-300";
+              }
 
+              return {
+                className: `${bg} ${text} border-2 ${border} font-bold rounded-lg px-2 shadow-sm`,
+                style: {
+                  borderRadius: "8px",
+                  color: "#111827",
+                  border: "2px solid #111827"
+                }
+              };
+            }}
+          />
+        )}
+      </div>
+
+      {/* Mobile FAB */}
       <button
         onClick={() => openModal()}
-        className="md:hidden fixed right-5 z-40 w-14 h-14 bg-primary-green text-gray-900 font-black border-3 border-gray-900 rounded-full shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center justify-center group portrait:bottom-24 landscape:bottom-6"
-        title="Tambah Libur"
+        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-neo-xl flex items-center justify-center z-40 active:translate-y-1 transition-transform"
       >
-        <span className="material-symbols-outlined text-3xl group-hover:scale-110 transition-transform">
-          add
-        </span>
+        <span className="material-symbols-outlined text-3xl font-black">add</span>
       </button>
 
+      {/* Modal Tambah/Edit */}
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
         title={editingHoliday ? "Edit Kalender Libur" : "Tambah Kalender Libur"}
-        size="lg"
-        footer={
-          <div className="space-y-2">
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="w-full py-3.5 px-6 bg-primary-green text-gray-900 font-bold text-base md:text-lg rounded-full border-2 border-gray-900 shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              <span className="material-symbols-outlined text-xl">
-                {editingHoliday ? "save" : "check"}
-              </span>
-              <span>
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Menyimpan..."
-                  : editingHoliday
-                    ? "Update Libur"
-                    : "Simpan Libur"}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={closeModal}
-              className="w-full py-2 text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors text-center"
-            >
-              Batal
-            </button>
-          </div>
-        }
       >
-        <form id="holiday-form" onSubmit={handleSubmit} className="space-y-4 pb-24 sm:pb-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Nama Libur *</label>
+            <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Nama Libur</label>
             <input
               type="text"
+              required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              maxLength={100}
-              placeholder="Lebaran, Natal, dll"
-              className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400"
+              className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
+              placeholder="Contoh: Libur Idul Fitri"
             />
           </div>
           <div>
             <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Durasi Libur</label>
-            <select
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all cursor-pointer"
-            >
-              <option value="single">1 Hari Saja</option>
-              <option value="multiple">Lebih dari 1 Hari</option>
-            </select>
+            <div className="flex bg-gray-100 p-1 rounded-xl border-2 border-gray-200">
+              <button
+                type="button"
+                onClick={() => setDuration("single")}
+                className={`flex-1 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${
+                  duration === "single" ? "bg-white text-primary-green border-2 border-primary-green shadow-sm" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Satu Hari
+              </button>
+              <button
+                type="button"
+                onClick={() => setDuration("multiple")}
+                className={`flex-1 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${
+                  duration === "multiple" ? "bg-white text-primary-green border-2 border-primary-green shadow-sm" : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Beberapa Hari
+              </button>
+            </div>
           </div>
-          
-          {duration === "single" ? (
+
+          <div className={`grid gap-4 ${duration === "multiple" ? "grid-cols-2" : "grid-cols-1"}`}>
             <div>
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Tanggal Libur *</label>
+              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
+                {duration === "multiple" ? "Tanggal Mulai" : "Tanggal"}
+              </label>
               <input
                 type="date"
-                value={formData.start_date}
-                onChange={(e) => setFormData({ ...formData, start_date: e.target.value, end_date: e.target.value })}
                 required
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400"
+                value={formData.start_date}
+                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
               />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {duration === "multiple" && (
               <div>
-                <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Tanggal Mulai *</label>
+                <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Tanggal Selesai</label>
                 <input
                   type="date"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
                   required
-                  className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Tanggal Selesai *</label>
-                <input
-                  type="date"
+                  min={formData.start_date}
                   value={formData.end_date}
                   onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  required
-                  className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400"
+                  className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
                 />
               </div>
-            </div>
-          )}
+            )}
+          </div>
+
           <div>
             <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Berlaku Untuk</label>
             <select
               value={formData.applies_to}
               onChange={(e) => setFormData({ ...formData, applies_to: e.target.value })}
-              className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all cursor-pointer"
+              className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
             >
               <option value="all">Semua (Siswa & Guru)</option>
               <option value="students">Siswa Saja</option>
@@ -390,16 +360,34 @@ export default function Holidays() {
               className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400 resize-none"
             />
           </div>
+
+          <div className="flex gap-2 pt-4">
+            <button
+              type="button"
+              onClick={closeModal}
+              className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:bg-gray-200"
+            >
+              Batal
+            </button>
+            {editingHoliday && (
+              <button
+                type="button"
+                onClick={() => handleDelete(editingHoliday.id)}
+                className="flex-1 py-3 bg-red-100 text-red-700 font-bold rounded-xl border-2 border-red-200 hover:bg-red-200"
+              >
+                Hapus
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={createMutation.isPending || updateMutation.isPending}
+              className="flex-[2] py-3 bg-primary-green text-gray-900 font-black rounded-xl border-2 border-gray-900 shadow-neo hover:clean-shadow-md active:translate-y-1 transition-all disabled:opacity-50"
+            >
+              {createMutation.isPending || updateMutation.isPending ? "Menyimpan..." : "Simpan"}
+            </button>
+          </div>
         </form>
       </Modal>
-
-      {/* Mobile FAB */}
-      <button
-        onClick={() => openModal()}
-        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-neo-xl flex items-center justify-center z-40 active:translate-y-1 transition-transform"
-      >
-        <span className="material-symbols-outlined text-3xl font-black">add</span>
-      </button>
 
       <ConfirmModal
         isOpen={confirmModal.isOpen}
