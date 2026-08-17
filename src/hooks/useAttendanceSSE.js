@@ -39,39 +39,41 @@ export function useAttendanceSSE(selectedDate, queryClient) {
                   queryClient.setQueryData(
                     ["attendance_students", selectedDate],
                     (old) => {
-                      if (!old) return { data: [data] };
-                      const exists = old.data.findIndex(
+                      if (!Array.isArray(old)) return [data];
+                      const exists = old.findIndex(
                         (item) => item.id === data.id,
                       );
                       if (exists >= 0) {
-                        const newData = [...old.data];
+                        const newData = [...old];
                         newData[exists] = data;
-                        return { ...old, data: newData };
+                        return newData;
                       }
-                      return { ...old, data: [data, ...old.data] };
+                      return [data, ...old];
                     },
                   );
                 } else if (data.role === "teacher") {
                   queryClient.setQueryData(
                     ["attendance_teachers", selectedDate],
                     (old) => {
-                      if (!old) return { data: [data] };
-                      const exists = old.data.findIndex(
+                      if (!Array.isArray(old)) return [data];
+                      const exists = old.findIndex(
                         (item) => item.id === data.id,
                       );
                       if (exists >= 0) {
-                        const newData = [...old.data];
+                        const newData = [...old];
                         newData[exists] = data;
-                        return { ...old, data: newData };
+                        return newData;
                       }
-                      return { ...old, data: [data, ...old.data] };
+                      return [data, ...old];
                     },
                   );
                 }
                 
                 // Invalidate dashboard supaya stats ter-update realtime
                 queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-              } catch (e) {}
+              } catch (e) {
+                console.error("SSE Error:", e);
+              }
             }
           }
         }
