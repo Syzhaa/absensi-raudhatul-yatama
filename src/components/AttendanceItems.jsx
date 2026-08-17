@@ -6,7 +6,7 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit, onQui
   const isBelumAbsen = !item.status || item.status === "belum_absen";
 
   const subtitle = isStudent
-    ? `Kelas ${person?.kelas || "-"} • NIS: ${person?.nis || "-"}`
+    ? `Kelas ${person?.kelas || "-"} • NISN: ${person?.nisn || person?.nis || "-"}`
     : `${person?.nip ? "NIP: " + person.nip : "Guru / Staf"}`;
 
   const lembagaName = (item.lembaga || person?.lembaga || "MA").toUpperCase();
@@ -162,7 +162,7 @@ export const AbsentStudentItem = memo(function AbsentStudentItem({
           {student.nama}
         </h4>
         <p className="text-xs text-gray-500">
-          Kelas {student.kelas} • NIS: {student.nis || "-"}
+          Kelas {student.kelas} • NISN: {student.nisn || student.nis || "-"}
         </p>
       </div>
       <button
