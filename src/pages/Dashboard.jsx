@@ -1,22 +1,27 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { attendanceService } from "../services";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { useAppStore } from "../store/useAppStore";
 import { getAutoHoliday } from "../utils/holidays";
 import { format } from "date-fns";
+import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
+import api from "../services/api";
 
 export default function Dashboard() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const selectedKelas = useAppStore((state) => state.selectedKelas);
+  const queryClient = useQueryClient();
 
   const today = format(new Date(), "yyyy-MM-dd");
+
+  // Aktifkan SSE di Dashboard supaya update realtime tanpa polling
+  useAttendanceSSE(today, queryClient);
 
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard", effectiveLembaga, selectedKelas, today],
     queryFn: () => attendanceService.getDashboard(effectiveLembaga, selectedKelas, today),
     enabled: !isLembagaLoading,
-    refetchInterval: 30 * 1000, // auto-refresh tiap 30 detik
   });
 
   const { data: holidaysData } = useQuery({

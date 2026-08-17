@@ -83,7 +83,6 @@ export default function Attendance() {
       }
     },
     enabled: !isLembagaLoading,
-    refetchInterval: 15 * 1000, // polling fallback tiap 15 detik
   });
 
   // 4. Fetch Attendance Logs for Teachers on Selected Date
@@ -101,7 +100,6 @@ export default function Attendance() {
       }
     },
     enabled: !isLembagaLoading,
-    refetchInterval: 15 * 1000, // polling fallback tiap 15 detik
   });
 
   // 5. Fetch Holidays Calendar

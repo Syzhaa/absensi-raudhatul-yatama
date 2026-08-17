@@ -68,6 +68,9 @@ export function useAttendanceSSE(selectedDate, queryClient) {
                     },
                   );
                 }
+                
+                // Invalidate dashboard supaya stats ter-update realtime
+                queryClient.invalidateQueries({ queryKey: ["dashboard"] });
               } catch (e) {}
             }
           }
