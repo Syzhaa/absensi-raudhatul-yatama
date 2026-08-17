@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { attendanceService } from "../services";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { useAppStore } from "../store/useAppStore";
+import { getAutoHoliday } from "../utils/holidays";
 
 export default function Dashboard() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
@@ -14,8 +15,12 @@ export default function Dashboard() {
   });
 
   const stats = data?.data || {};
-  const isHoliday = stats.is_holiday;
-  const holidayName = stats.holiday_name || "Hari Libur Terjadwal";
+
+  // Gabung: deteksi libur dari API backend + Hari Minggu + Libur Nasional Indonesia
+  const today = new Date().toISOString().split("T")[0];
+  const autoHoliday = getAutoHoliday(today);
+  const isHoliday = stats.is_holiday || !!autoHoliday;
+  const holidayName = stats.holiday_name || autoHoliday?.name || "Hari Libur Terjadwal";
 
   const statCards = [
     {

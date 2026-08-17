@@ -7,6 +7,7 @@ import { useAppStore } from "../store/useAppStore";
 import AttendanceModal from "../components/AttendanceModal";
 import { AttendanceItem } from "../components/AttendanceItems";
 import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
+import { getAutoHoliday } from "../utils/holidays";
 
 export default function Attendance() {
   const [selectedDate, setSelectedDate] = useState(
@@ -112,14 +113,18 @@ export default function Attendance() {
 
   const activeHoliday = useMemo(() => {
     const list = Array.isArray(holidaysData) ? holidaysData : [];
-    return (
-      list.find((h) => {
-        // Normalize: handle both "2026-08-17" and "2026-08-17T00:00:00.000000Z" formats
-        const hStart = (h.start_date || "").substring(0, 10);
-        const hEnd = (h.end_date || "").substring(0, 10);
-        return selectedDate >= hStart && selectedDate <= hEnd;
-      }) || null
-    );
+
+    // 1. Cek dari kalender libur yang dibuat admin (prioritas utama)
+    const apiHoliday = list.find((h) => {
+      const hStart = (h.start_date || "").substring(0, 10);
+      const hEnd = (h.end_date || "").substring(0, 10);
+      return selectedDate >= hStart && selectedDate <= hEnd;
+    });
+
+    if (apiHoliday) return apiHoliday;
+
+    // 2. Fallback: Hari Minggu atau Hari Libur Nasional Indonesia
+    return getAutoHoliday(selectedDate);
   }, [holidaysData, selectedDate]);
 
   const isLoading =
