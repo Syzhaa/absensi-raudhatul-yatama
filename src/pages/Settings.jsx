@@ -6,6 +6,54 @@ import { LogoutModal, TestModeModal, ClearDataModal, ClearSuccessModal } from ".
 
 import { useAppStore } from "../store/useAppStore";
 
+function TimeInput({ label, value, onChange, description }) {
+  const [localValue, setLocalValue] = useState(value ? value.slice(0, 5) : "");
+
+  useEffect(() => {
+    if (value && value.slice(0, 5) !== localValue) {
+      setLocalValue(value.slice(0, 5));
+    }
+  }, [value]);
+
+  const handleChange = (e) => {
+    let val = e.target.value.replace(/[^0-9]/g, "");
+    if (val.length >= 3) {
+      val = val.slice(0, 2) + ":" + val.slice(2, 4);
+    }
+    setLocalValue(val);
+    if (val.length === 5 || val === "") {
+      onChange(val);
+    }
+  };
+
+  return (
+    <div>
+      <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
+        {label} *
+      </label>
+      <div className="relative">
+        <input
+          type="text"
+          inputMode="numeric"
+          value={localValue}
+          onChange={handleChange}
+          placeholder="00:00"
+          maxLength="5"
+          pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+          className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all pr-12"
+          required
+        />
+        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+          schedule
+        </span>
+      </div>
+      <p className="text-[11px] text-gray-500 font-medium mt-1">
+        {description}
+      </p>
+    </div>
+  );
+}
+
 const settingsService = {
   getByMyLembaga: async () => {
     const response = await api.get(`/attendance/settings/my`);
@@ -238,89 +286,53 @@ export default function Settings({ onLogout }) {
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
-                Jam Buka Absensi *
-              </label>
-              <input
-                type="time"
-                value={formData.attendance_open?.slice(0, 5)}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    attendance_open: e.target.value + ":00",
-                  })
-                }
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all"
-                required
-              />
-              <p className="text-[11px] text-gray-500 font-medium mt-1">
-                Siswa bisa mulai scan (Contoh: 06:00)
-              </p>
-            </div>
+            <TimeInput
+              label="Jam Buka Absensi"
+              value={formData.attendance_open}
+              onChange={(val) =>
+                setFormData({
+                  ...formData,
+                  attendance_open: val ? val + ":00" : "",
+                })
+              }
+              description="Siswa bisa mulai scan (Contoh: 06:00)"
+            />
 
-            <div>
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
-                Batas Tepat Waktu *
-              </label>
-              <input
-                type="time"
-                value={formData.attendance_limit?.slice(0, 5)}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    attendance_limit: e.target.value + ":00",
-                  })
-                }
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all"
-                required
-              />
-              <p className="text-[11px] text-gray-500 font-medium mt-1">
-                Batas waktu status Hadir (Contoh: 07:30)
-              </p>
-            </div>
+            <TimeInput
+              label="Batas Tepat Waktu"
+              value={formData.attendance_limit}
+              onChange={(val) =>
+                setFormData({
+                  ...formData,
+                  attendance_limit: val ? val + ":00" : "",
+                })
+              }
+              description="Batas waktu status Hadir (Contoh: 07:30)"
+            />
 
-            <div>
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
-                Mulai Terlambat *
-              </label>
-              <input
-                type="time"
-                value={formData.late_after?.slice(0, 5)}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    late_after: e.target.value + ":00",
-                  })
-                }
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all"
-                required
-              />
-              <p className="text-[11px] text-gray-500 font-medium mt-1">
-                Status otomatis Terlambat (Contoh: 07:31)
-              </p>
-            </div>
+            <TimeInput
+              label="Mulai Terlambat"
+              value={formData.late_after}
+              onChange={(val) =>
+                setFormData({
+                  ...formData,
+                  late_after: val ? val + ":00" : "",
+                })
+              }
+              description="Status otomatis Terlambat (Contoh: 07:31)"
+            />
 
-            <div>
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
-                Jam Tutup Absensi *
-              </label>
-              <input
-                type="time"
-                value={formData.attendance_close?.slice(0, 5)}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    attendance_close: e.target.value + ":00",
-                  })
-                }
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all"
-                required
-              />
-              <p className="text-[11px] text-gray-500 font-medium mt-1">
-                Absensi tidak menerima scan (Contoh: 08:00)
-              </p>
-            </div>
+            <TimeInput
+              label="Jam Tutup Absensi"
+              value={formData.attendance_close}
+              onChange={(val) =>
+                setFormData({
+                  ...formData,
+                  attendance_close: val ? val + ":00" : "",
+                })
+              }
+              description="Absensi tidak menerima scan (Contoh: 14:00)"
+            />
 
             <div className="md:col-span-2">
               <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
