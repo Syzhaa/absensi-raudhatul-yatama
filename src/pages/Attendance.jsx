@@ -37,10 +37,11 @@ export default function Attendance() {
     queryKey: ["students_master", effectiveLembaga],
     queryFn: async () => {
       try {
-        const params = {};
+        const params = { per_page: 9999, status: "aktif" };
         if (effectiveLembaga) params.lembaga = effectiveLembaga;
         const res = await studentService.getAll(params);
-        const data = res?.data || res || [];
+        // Handle paginated response: res.data.data (Laravel pagination) atau res.data (flat array)
+        const data = res?.data?.data || res?.data || res || [];
         return Array.isArray(data) ? data : [];
       } catch (err) {
         console.error("Master students fetch failed:", err);
@@ -55,10 +56,10 @@ export default function Attendance() {
     queryKey: ["teachers_master", effectiveLembaga],
     queryFn: async () => {
       try {
-        const params = {};
+        const params = { per_page: 9999, status: "aktif" };
         if (effectiveLembaga) params.lembaga = effectiveLembaga;
         const res = await teacherService.getAll(params);
-        const data = res?.data || res || [];
+        const data = res?.data?.data || res?.data || res || [];
         return Array.isArray(data) ? data : [];
       } catch (err) {
         console.error("Master teachers fetch failed:", err);
