@@ -2,101 +2,10 @@ import { useEffect } from "react";
 import { useAppStore } from "../store/useAppStore";
 
 export function useAttendanceSSE(selectedDate, queryClient) {
+  // SSE disabled - data will refresh on page load/navigation instead
   useEffect(() => {
-    let active = true;
-    const abortController = new AbortController();
-
-    const connectSSE = async () => {
-      try {
-        const token =
-          localStorage.getItem("auth_token") || localStorage.getItem("token");
-        const isTestMode = useAppStore.getState().isTestMode;
-
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/attendance/logs/stream?date=${selectedDate}${isTestMode ? "&is_test=1" : ""}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            signal: abortController.signal,
-          },
-        );
-
-        if (!response.ok) return;
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        while (active) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const parts = buffer.split("\n\n");
-          
-          // The last part might be incomplete, keep it in the buffer
-          buffer = parts.pop() || "";
-
-          for (const chunk of parts) {
-            if (chunk.startsWith("data: ")) {
-              try {
-                const data = JSON.parse(chunk.substring(6));
-
-                if (data.role === "student") {
-                  queryClient.setQueryData(
-                    ["attendance_students", selectedDate],
-                    (old) => {
-                      if (!Array.isArray(old)) return [data];
-                      const exists = old.findIndex(
-                        (item) => item.id === data.id,
-                      );
-                      if (exists >= 0) {
-                        const newData = [...old];
-                        newData[exists] = data;
-                        return newData;
-                      }
-                      return [data, ...old];
-                    },
-                  );
-                } else if (data.role === "teacher") {
-                  queryClient.setQueryData(
-                    ["attendance_teachers", selectedDate],
-                    (old) => {
-                      if (!Array.isArray(old)) return [data];
-                      const exists = old.findIndex(
-                        (item) => item.id === data.id,
-                      );
-                      if (exists >= 0) {
-                        const newData = [...old];
-                        newData[exists] = data;
-                        return newData;
-                      }
-                      return [data, ...old];
-                    },
-                  );
-                }
-                
-                // Invalidate dashboard dan guru-roster supaya stats ter-update realtime
-                queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-                queryClient.invalidateQueries({ queryKey: ["guru-roster"] });
-              } catch (e) {
-                console.error("SSE Error:", e);
-              }
-            }
-          }
-        }
-      } catch (error) {
-        if (active && error.name !== "AbortError") {
-          setTimeout(connectSSE, 3000);
-        }
-      }
-    };
-
-    connectSSE();
-
-    return () => {
-      active = false;
-      abortController.abort();
-    };
+    // No-op: SSE stream removed to avoid CORS complexity
+    // Frontend will fetch data normally on mount or manual refresh
+    return () => {};
   }, [selectedDate, queryClient]);
-
 }

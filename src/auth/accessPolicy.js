@@ -7,6 +7,7 @@ const adminMenu = [
   { path: "/holidays", label: "Libur", icon: "event" },
   { path: "/users", label: "User", icon: "manage_accounts" },
   { path: "/whatsapp-api", label: "WA Notifier", icon: "forum" },
+  { path: "/whatsapp-templates", label: "Template WA", icon: "sms" },
   { path: "/profile", label: "Profil", icon: "account_circle" },
   { path: "/settings", label: "Setting", icon: "settings" },
 ];

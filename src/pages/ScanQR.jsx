@@ -46,84 +46,11 @@ export default function ScanQR() {
   }, [scanType]);
 
   // SSE Realtime Updates for Scan logs
+  // SSE disabled - data will refresh on page navigation/scan instead
   useEffect(() => {
-    let active = true;
-    const abortController = new AbortController();
-
-    const connectSSE = async () => {
-      try {
-        const token =
-          localStorage.getItem("auth_token") || localStorage.getItem("token");
-        const isTestMode = useAppStore.getState().isTestMode;
-        const today = format(new Date(), "yyyy-MM-dd");
-
-        const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/attendance/logs/stream?date=${today}${isTestMode ? "&is_test=1" : ""}${effectiveLembaga ? `&lembaga=${effectiveLembaga}` : ""}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            signal: abortController.signal,
-          },
-        );
-
-        if (!response.ok) return;
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-
-        while (active) {
-          const { value, done } = await reader.read();
-          if (done) break;
-
-          const chunks = decoder.decode(value).split("\n\n");
-          for (const chunk of chunks) {
-            if (chunk.startsWith("data: ")) {
-              try {
-                const data = JSON.parse(chunk.substring(6));
-
-                queryClient.setQueryData(
-                  ["recentLogs", effectiveLembaga],
-                  (old) => {
-                    const currentLogs = old?.data || [];
-                    // Remove if already exists
-                    const filteredLogs = currentLogs.filter(
-                      (log) =>
-                        log.id !== data.id ||
-                        (log.student?.id !== data.student?.id &&
-                          log.teacher?.id !== data.teacher?.id),
-                    );
-
-                    // Add to top and keep only 5
-                    const newLogs = [data, ...filteredLogs].slice(0, 5);
-                    return { ...old, data: newLogs };
-                  },
-                );
-
-                // Also invalidate the main attendance list so the dashboard is kept up to date
-                queryClient.invalidateQueries({
-                  queryKey: ["attendance_students"],
-                });
-                queryClient.invalidateQueries({
-                  queryKey: ["attendance_teachers"],
-                });
-              } catch (e) {}
-            }
-          }
-        }
-      } catch (error) {
-        if (active && error.name !== "AbortError") {
-          setTimeout(connectSSE, 3000);
-        }
-      }
-    };
-
-    connectSSE();
-
-    return () => {
-      active = false;
-      abortController.abort();
-    };
+    // No-op: SSE stream removed to avoid CORS complexity
+    // Recent logs will update via invalidateQueries after scan
+    return () => {};
   }, [queryClient]);
 
   const scanMutation = useMutation({

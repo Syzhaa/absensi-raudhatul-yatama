@@ -20,6 +20,7 @@ const GuruAttendance = lazy(() => import("./pages/GuruAttendance"));
 const Holidays = lazy(() => import("./pages/Holidays"));
 const Users = lazy(() => import("./pages/Users"));
 const Profile = lazy(() => import("./pages/Profile"));
+const WhatsappTemplates = lazy(() => import("./pages/WhatsappTemplates"));
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -155,6 +156,14 @@ function App() {
             element={
               canAccessPath(userRole, "/whatsapp-api")
                 ? <WhatsappApi />
+                : <Navigate to="/" replace />
+            }
+          />
+          <Route
+            path="/whatsapp-templates"
+            element={
+              canAccessPath(userRole, "/whatsapp-templates")
+                ? <WhatsappTemplates />
                 : <Navigate to="/" replace />
             }
           />
