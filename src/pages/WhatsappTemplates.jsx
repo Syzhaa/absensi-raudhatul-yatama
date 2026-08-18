@@ -96,17 +96,13 @@ export default function WhatsappTemplates() {
     );
   };
 
-  // Debug: log data structure
-  console.log("API Response:", data);
+  // Debug: log data structure removed
   
   const templates = data?.data?.data || [];
   const pagination = data?.data || {};
-  
-  console.log("Templates:", templates);
-  console.log("Pagination:", pagination);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 p-4 md:p-6">
+    <div className="min-h-screen p-4 md:p-6">
       {/* Header - Desktop Only Button */}
       <div className="max-w-7xl mx-auto mb-4">
         <div className="flex items-center justify-end">
@@ -123,31 +119,31 @@ export default function WhatsappTemplates() {
       {/* Stats Cards - Compact */}
       {stats?.data && (
         <div className="max-w-7xl mx-auto mb-4 grid grid-cols-4 md:grid-cols-7 gap-2">
-          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-gray-500 text-[10px] font-bold mb-0.5">Total</div>
             <div className="text-xl font-black text-gray-900">{stats.data.total}</div>
           </div>
-          <div className="bg-green-50 border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-green-600 text-[10px] font-bold mb-0.5">Aktif</div>
             <div className="text-xl font-black text-green-700">{stats.data.active}</div>
           </div>
-          <div className="bg-red-50 border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-red-600 text-[10px] font-bold mb-0.5">Nonaktif</div>
             <div className="text-xl font-black text-red-700">{stats.data.inactive}</div>
           </div>
-          <div className="bg-blue-50 border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-blue-600 text-[10px] font-bold mb-0.5">Hadir</div>
             <div className="text-xl font-black text-blue-700">{stats.data.by_status?.hadir || 0}</div>
           </div>
-          <div className="bg-yellow-50 border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-yellow-600 text-[10px] font-bold mb-0.5">Telat</div>
             <div className="text-xl font-black text-yellow-700">{stats.data.by_status?.terlambat || 0}</div>
           </div>
-          <div className="bg-purple-50 border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-purple-600 text-[10px] font-bold mb-0.5">Izin</div>
             <div className="text-xl font-black text-purple-700">{stats.data.by_status?.izin || 0}</div>
           </div>
-          <div className="bg-teal-50 border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-teal-600 text-[10px] font-bold mb-0.5">Pulang</div>
             <div className="text-xl font-black text-teal-700">{stats.data.by_status?.pulang || 0}</div>
           </div>
@@ -162,7 +158,7 @@ export default function WhatsappTemplates() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari template..."
-            className="w-full pl-9 pr-3 py-2 bg-white border-2 md:border-3 border-gray-900 rounded-xl text-xs md:text-sm font-bold shadow-neo focus:ring-0 focus:outline-none"
+            className="w-full pl-9 pr-3 py-2 border-2 md:border-3 border-gray-900 rounded-xl text-xs md:text-sm font-bold shadow-neo focus:ring-0 focus:outline-none"
           />
           <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-lg">
             search
@@ -173,7 +169,7 @@ export default function WhatsappTemplates() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-white border-2 border-gray-900 rounded-lg text-xs font-bold shadow-[2px_2px_0px_#111827] focus:outline-none"
+            className="px-3 py-2 border-2 border-gray-900 rounded-lg text-xs font-bold shadow-[2px_2px_0px_#111827] focus:outline-none"
           >
             {STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -184,7 +180,7 @@ export default function WhatsappTemplates() {
           <select
             value={activeFilter}
             onChange={(e) => setActiveFilter(e.target.value)}
-            className="px-3 py-2 bg-white border-2 border-gray-900 rounded-lg text-xs font-bold shadow-[2px_2px_0px_#111827] focus:outline-none"
+            className="px-3 py-2 border-2 border-gray-900 rounded-lg text-xs font-bold shadow-[2px_2px_0px_#111827] focus:outline-none"
           >
             <option value="">Semua Status</option>
             <option value="1">Aktif</option>
