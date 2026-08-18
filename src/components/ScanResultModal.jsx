@@ -1,3 +1,6 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
+
 export default function ScanResultModal({ result, scanType, handleCloseModal }) {
   const resultScanType = result?.scanType || scanType;
   const isResultCheckIn = resultScanType === "check_in";
@@ -25,6 +28,16 @@ export default function ScanResultModal({ result, scanType, handleCloseModal }) 
     month: "short",
     year: "numeric",
   });
+
+  const queryClient = useQueryClient();
+  const { effectiveLembaga } = useEffectiveLembaga();
+  const settingsData = queryClient.getQueryData(["settings", effectiveLembaga]) 
+                    || queryClient.getQueryData(["global_settings", effectiveLembaga]);
+  const timezoneSetting = settingsData?.data?.timezone || "Asia/Makassar";
+  
+  let tzLabel = "WITA";
+  if (timezoneSetting === "Asia/Jakarta") tzLabel = "WIB";
+  else if (timezoneSetting === "Asia/Jayapura") tzLabel = "WIT";
 
   return (
     <>
@@ -74,7 +87,7 @@ export default function ScanResultModal({ result, scanType, handleCloseModal }) 
                   <span className="font-bold text-gray-600">Time</span>
                   <span className="font-bold text-gray-600">:</span>
                   <span className="font-bold text-gray-900">
-                    {displayTime} WIB
+                    {displayTime} {tzLabel}
                   </span>
                 </div>
                 <div className="grid grid-cols-[55px_10px_1fr] items-baseline pb-1.5">
