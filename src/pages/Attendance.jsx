@@ -6,6 +6,7 @@ import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { useAppStore } from "../store/useAppStore";
 import AttendanceModal from "../components/AttendanceModal";
 import { AttendanceItem } from "../components/AttendanceItems";
+import ConfirmModal from "../components/ConfirmModal";
 import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
 import { getAutoHoliday } from "../utils/holidays";
 import { format } from "date-fns";
@@ -22,6 +23,23 @@ export default function Attendance() {
   const [itemsPerPage, setItemsPerPage] = useState(15);
   const [showModal, setShowModal] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
+  
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "alert",
+    onConfirm: null,
+  });
+
+  const showAlert = (title, message) =>
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      type: "alert",
+      onConfirm: () => setConfirmModal((prev) => ({ ...prev, isOpen: false })),
+    });
 
   const queryClient = useQueryClient();
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
@@ -597,6 +615,16 @@ export default function Attendance() {
         date={selectedDate}
         lembaga={effectiveLembaga}
         onStatusUpdate={handleStatusUpdate}
+        onSuccessMessage={(msg) => showAlert("Berhasil", msg)}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        type={confirmModal.type}
+        onConfirm={confirmModal.onConfirm}
       />
     </div>
   );

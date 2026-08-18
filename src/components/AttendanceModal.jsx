@@ -42,6 +42,7 @@ export default function AttendanceModal({
   date,
   lembaga,
   onStatusUpdate,
+  onSuccessMessage,
 }) {
   const [status, setStatus] = useState("hadir");
   const [notes, setNotes] = useState("");
@@ -113,7 +114,9 @@ export default function AttendanceModal({
       if (onStatusUpdate) onStatusUpdate();
       onClose();
       
-      alert("Berhasil! Status absensi berhasil diperbarui.");
+      if (onSuccessMessage) {
+        onSuccessMessage("Status absensi berhasil diperbarui.");
+      }
     } catch (err) {
       alert(err.response?.data?.message || "Gagal simpan absensi manual");
     } finally {
