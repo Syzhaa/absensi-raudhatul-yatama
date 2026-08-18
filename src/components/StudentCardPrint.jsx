@@ -146,14 +146,15 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   };
 
   const getPhotoUrl = (url) => {
-    if (!url) return null;
+    if (!url || url === 'storage/' || url === '/storage/') return null;
+    
     let fullUrl = url;
     if (!url.startsWith("http")) {
       const apiBase = import.meta.env.VITE_API_BASE_URL || "https://apima.sylink.my.id/api/v1";
       const baseUrl = apiBase.replace(/\/api(\/v1)?$/, "");
       fullUrl = `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
     }
-    // We use wsrv.nl proxy because it reliably returns CORS headers for html2canvas
+    // We use wsrv.nl proxy because it reliably returns CORS headers for html-to-image
     const encodedUrl = encodeURIComponent(fullUrl);
     const cacheBuster = `&cb=${Date.now()}`;
     return `https://wsrv.nl/?url=${encodedUrl}${cacheBuster}`;

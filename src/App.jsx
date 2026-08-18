@@ -9,6 +9,7 @@ import { useBackgroundSync } from "./hooks/useBackgroundSync";
 import api from "./services/api";
 import { useAppStore } from "./store/useAppStore";
 import { canAccessPath } from "./auth/accessPolicy";
+import WhatsappApi from "./pages/WhatsappApi";
 
 // Lazy load heavy components
 const ScanQR = lazy(() => import("./pages/ScanQR"));
@@ -146,6 +147,14 @@ function App() {
             element={
               canAccessPath(userRole, "/settings")
                 ? <Settings onLogout={() => setIsAuthenticated(false)} />
+                : <Navigate to="/" replace />
+            }
+          />
+          <Route
+            path="/whatsapp-api"
+            element={
+              canAccessPath(userRole, "/whatsapp-api")
+                ? <WhatsappApi />
                 : <Navigate to="/" replace />
             }
           />

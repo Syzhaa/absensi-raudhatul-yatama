@@ -6,6 +6,7 @@ const adminMenu = [
   { path: "/attendance", label: "Absen", icon: "calendar_month" },
   { path: "/holidays", label: "Libur", icon: "event" },
   { path: "/users", label: "User", icon: "manage_accounts" },
+  { path: "/whatsapp-api", label: "WA Notifier", icon: "forum" },
   { path: "/profile", label: "Profil", icon: "account_circle" },
   { path: "/settings", label: "Setting", icon: "settings" },
 ];
