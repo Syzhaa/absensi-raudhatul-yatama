@@ -207,7 +207,7 @@ export default function WhatsappTemplates() {
           templates.map((template) => (
             <div
               key={template.id}
-              className="bg-white border-2 md:border-3 border-gray-900 rounded-xl shadow-[2px_2px_0px_#111827] hover:shadow-[4px_4px_0px_#111827] transition-all p-4"
+              className="border-2 md:border-3 border-gray-900 rounded-xl shadow-[2px_2px_0px_#111827] hover:shadow-[4px_4px_0px_#111827] transition-all p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -302,7 +302,7 @@ export default function WhatsappTemplates() {
       {/* Mobile FAB */}
       <button
         onClick={handleCreate}
-        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-neo-xl flex items-center justify-center z-40 active:translate-y-1 transition-transform"
+        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-[2px_2px_0px_#111827] flex items-center justify-center z-40 active:translate-y-1 transition-transform"
       >
         <span className="material-symbols-outlined text-2xl">add</span>
       </button>
