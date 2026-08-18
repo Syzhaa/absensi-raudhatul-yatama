@@ -22,7 +22,7 @@ export const getPhotoUrl = (url) => {
   return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
-// Request interceptor untuk inject token & flag test mode
+// Request interceptor untuk inject token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("auth_token");
@@ -31,13 +31,6 @@ api.interceptors.request.use(
     }
     config.headers.Accept = "application/json";
     config.headers["X-Timezone"] = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-    // Inject Test Mode flag secara otomatis jika mode testing aktif
-    const isTestMode = useAppStore.getState().isTestMode;
-    if (isTestMode) {
-      config.headers["X-Test-Mode"] = "true";
-      config.params = { ...config.params, mode: "test", is_test: true };
-    }
 
     return config;
   },

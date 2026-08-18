@@ -6,6 +6,7 @@ import { useAppStore } from "../store/useAppStore";
 import AttendanceModal from "../components/AttendanceModal";
 import { getAutoHoliday } from "../utils/holidays";
 import { format } from "date-fns";
+import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
 
 import { AttendanceItem } from "../components/AttendanceItems";
 
@@ -17,6 +18,9 @@ export default function GuruAttendance() {
   const selectedKelas = useAppStore((state) => state.selectedKelas);
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const queryClient = useQueryClient();
+
+  // Aktifkan SSE untuk realtime update roster
+  useAttendanceSSE(date, queryClient);
 
   const { data, isLoading } = useQuery({
     queryKey: ["guru-roster", date, effectiveLembaga, selectedKelas],

@@ -4,13 +4,10 @@ import { persist } from "zustand/middleware";
 export const useAppStore = create(
   persist(
     (set) => ({
-      isTestMode: false,
       userLembaga: null,
       userRole: null,
       selectedKelas: null,
       superAdminLembaga: "MA", // Super Admin lembaga override (MA or MTs)
-      toggleTestMode: () => set((state) => ({ isTestMode: !state.isTestMode })),
-      setTestMode: (value) => set({ isTestMode: value }),
       setUserLembaga: (lembaga) => set({ userLembaga: lembaga }),
       setUserRole: (role) => set({ userRole: role }),
       setSelectedKelas: (kelas) => set({ selectedKelas: kelas }),

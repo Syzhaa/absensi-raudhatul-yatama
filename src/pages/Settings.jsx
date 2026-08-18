@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
 import { authService } from "../services";
-import { LogoutModal, TestModeModal, ClearDataModal, ClearSuccessModal, SettingsSuccessModal } from "../components/SettingsModals";
+import { LogoutModal, ClearDataModal, ClearSuccessModal, SettingsSuccessModal, ClearAllAttendanceModal } from "../components/SettingsModals";
 
 import { useAppStore } from "../store/useAppStore";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
@@ -73,11 +73,12 @@ export default function Settings({ onLogout }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showTestModeModal, setShowTestModeModal] = useState(false);
   const [showClearDataModal, setShowClearDataModal] = useState(false);
+  const [showClearAllModal, setShowClearAllModal] = useState(false);
   const [showSuccessClearModal, setShowSuccessClearModal] = useState(false);
   const [showSettingsSuccessModal, setShowSettingsSuccessModal] = useState(false);
   const [isClearingTestLogs, setIsClearingTestLogs] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
   const queryClient = useQueryClient();
-  const setTestMode = useAppStore((state) => state.setTestMode);
 
   const handleLogout = async () => {
     try {
@@ -92,11 +93,23 @@ export default function Settings({ onLogout }) {
   };
 
   const confirmToggleTestMode = () => {
-    const nextMode = !formData.test_mode;
-    setFormData((prev) => ({ ...prev, test_mode: nextMode }));
-    setTestMode(nextMode);
-    queryClient.invalidateQueries();
+    // Test mode removed - this function is deprecated
     setShowTestModeModal(false);
+  };
+
+  const handleClearAllAttendance = async () => {
+    setIsClearingAll(true);
+    try {
+      await api.delete("/attendance/clear-all");
+      queryClient.invalidateQueries();
+      setShowClearAllModal(false);
+      setShowSuccessClearModal(true);
+    } catch (err) {
+      console.error("Failed to clear all attendance:", err);
+      alert("Gagal menghapus data absen: " + (err.response?.data?.message || "Error"));
+    } finally {
+      setIsClearingAll(false);
+    }
   };
 
   const handleClearTestData = async () => {
@@ -125,7 +138,6 @@ export default function Settings({ onLogout }) {
     late_after: settingsData?.data?.late_after || "07:30:00",
     attendance_close: settingsData?.data?.attendance_close || "08:00:00",
     timezone: settingsData?.data?.timezone || "Asia/Makassar",
-    test_mode: settingsData?.data?.test_mode || false,
   });
 
   // Update form when settings data changes
@@ -139,7 +151,6 @@ export default function Settings({ onLogout }) {
         late_after: currentSettings.late_after || "07:30:00",
         attendance_close: currentSettings.attendance_close || "08:00:00",
         timezone: currentSettings.timezone || "Asia/Makassar",
-        test_mode: !!currentSettings.test_mode,
       }));
     }
   }, [settingsData?.data]);
@@ -187,79 +198,36 @@ export default function Settings({ onLogout }) {
         </div>
       </div>
 
-      {/* 1. Mode Testing Card / Banner (Top Priority) */}
-      <div
-        className={`border-2 md:border-3 rounded-2xl p-4 shadow-neo transition-all ${
-          formData.test_mode
-            ? "bg-amber-100 border-amber-500 text-amber-900"
-            : "bg-white border-gray-900 text-gray-900"
-        }`}
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <span
-              className={`material-symbols-outlined text-3xl flex-shrink-0 ${
-                formData.test_mode ? "text-amber-700" : "text-gray-700"
-              }`}
-            >
-              science
+      {/* Danger Zone - Admin Actions */}
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 shadow-neo">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 bg-red-100 border-2 border-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-red-600">
+              warning
             </span>
-            <div className="min-w-0">
-              <h3 className="font-black text-base md:text-lg tracking-tight">
-                Mode Testing
-              </h3>
-              <p className="text-xs text-gray-600 font-medium">
-                Simulasi absensi tanpa mengganggu data asli
-              </p>
-            </div>
           </div>
-
-          {/* iOS Style Toggle Switch with Double Opt-in Popup */}
-          <button
-            type="button"
-            onClick={() => setShowTestModeModal(true)}
-            className={`relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full border-2 border-gray-900 transition-colors duration-200 ease-in-out focus:outline-none ${
-              formData.test_mode ? "bg-amber-400" : "bg-gray-200"
-            }`}
-            role="switch"
-            aria-checked={formData.test_mode}
-          >
-            <span
-              className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white border border-gray-900 shadow transition duration-200 ease-in-out mt-0.5 ${
-                formData.test_mode ? "translate-x-6.5" : "translate-x-0.5"
-              }`}
-            />
-          </button>
-        </div>
-
-        {/* Dynamic Warning Message & Clear Test Data Button when Test Mode is Active */}
-        {formData.test_mode && (
-          <div className="mt-3 space-y-2">
-            <div className="p-3 bg-amber-200/80 border border-amber-400 rounded-xl text-xs md:text-sm font-bold text-amber-900 flex items-start gap-2">
-              <span className="material-symbols-outlined text-base flex-shrink-0 text-amber-800">
-                warning
-              </span>
-              <span>
-                Semua pengaturan di bawah ini sekarang berjalan dalam simulasi.
-              </span>
-            </div>
-
-            {/* 3. Tombol Hapus Data Test */}
+          <div className="flex-1">
+            <h3 className="font-black text-sm md:text-base text-gray-900 tracking-tight">
+              Hapus Semua Data Absensi
+            </h3>
+            <p className="text-xs text-gray-600 font-medium mt-1">
+              Menghapus semua data absensi siswa dan guru. Tindakan ini tidak dapat dibatalkan.
+            </p>
             <button
               type="button"
-              onClick={() => setShowClearDataModal(true)}
-              className="w-full py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-black text-xs md:text-sm rounded-xl border-2 border-gray-900 shadow-neo transition-all flex items-center justify-center gap-2 active:translate-y-0.5"
+              onClick={() => setShowClearAllModal(true)}
+              className="mt-3 w-full md:w-auto py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-black text-xs md:text-sm rounded-xl border-2 border-gray-900 shadow-neo transition-all flex items-center justify-center gap-2 active:translate-y-0.5"
             >
               <span className="material-symbols-outlined text-base">
                 delete_forever
               </span>
-              <span>🗑️ Hapus Semua Data Test</span>
+              <span>🗑️ Hapus Semua Data Absensi</span>
             </button>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* 3. Static Lembaga Badge */}
+      {/* Static Lembaga Badge */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 shadow-neo">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 bg-primary-green/20 border-2 border-primary-green rounded-full flex items-center justify-center flex-shrink-0">
@@ -479,12 +447,12 @@ export default function Settings({ onLogout }) {
         />
       )}
 
-      {/* 1. Double Opt-in Confirmation Modal for Test Mode */}
-      {showTestModeModal && (
-        <TestModeModal
-          testMode={formData.test_mode}
-          onCancel={() => setShowTestModeModal(false)}
-          onConfirm={confirmToggleTestMode}
+      {/* Clear All Attendance Confirmation Modal */}
+      {showClearAllModal && (
+        <ClearAllAttendanceModal
+          isClearing={isClearingAll}
+          onCancel={() => setShowClearAllModal(false)}
+          onConfirm={handleClearAllAttendance}
         />
       )}
 

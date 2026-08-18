@@ -50,8 +50,8 @@ export const attendanceService = {
     return response.data;
   },
 
-  getRecentLogs: async (limit = 5, lembaga = null) => {
-    const today = format(new Date(), "yyyy-MM-dd");
+  getRecentLogs: async (limit = 5, lembaga = null, date = null) => {
+    const today = date || format(new Date(), "yyyy-MM-dd");
     const params = { date: today };
     if (lembaga) params.lembaga = lembaga;
 
