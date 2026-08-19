@@ -12,7 +12,24 @@ const STATUS_OPTIONS = [
   { value: "sakit", label: "Sakit", color: "bg-purple-100 text-purple-800" },
   { value: "alpha", label: "Alpha", color: "bg-red-100 text-red-800" },
   { value: "libur", label: "Libur", color: "bg-gray-100 text-gray-800" },
+  { value: "pulang", label: "Pulang", color: "bg-teal-100 text-teal-800" },
 ];
+
+const formatWhatsAppText = (text) => {
+  if (!text) return '-';
+  // Replace literal \n with actual newlines
+  let html = text.replace(/\\n/g, '\n');
+  // Escape HTML to prevent XSS
+  html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // Apply WhatsApp formatting
+  html = html.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+  html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+  html = html.replace(/~(.*?)~/g, '<del>$1</del>');
+  // Convert newlines to br
+  html = html.replace(/\n/g, '<br />');
+  
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+};
 
 export default function WhatsappTemplates() {
   const queryClient = useQueryClient();
@@ -119,31 +136,31 @@ export default function WhatsappTemplates() {
       {/* Stats Cards - Compact */}
       {stats?.data && (
         <div className="max-w-7xl mx-auto mb-4 grid grid-cols-4 md:grid-cols-7 gap-2">
-          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-gray-500 text-[10px] font-bold mb-0.5">Total</div>
             <div className="text-xl font-black text-gray-900">{stats.data.total}</div>
           </div>
-          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-green-600 text-[10px] font-bold mb-0.5">Aktif</div>
             <div className="text-xl font-black text-green-700">{stats.data.active}</div>
           </div>
-          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-red-600 text-[10px] font-bold mb-0.5">Nonaktif</div>
             <div className="text-xl font-black text-red-700">{stats.data.inactive}</div>
           </div>
-          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-blue-600 text-[10px] font-bold mb-0.5">Hadir</div>
             <div className="text-xl font-black text-blue-700">{stats.data.by_status?.hadir || 0}</div>
           </div>
-          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-yellow-600 text-[10px] font-bold mb-0.5">Telat</div>
             <div className="text-xl font-black text-yellow-700">{stats.data.by_status?.terlambat || 0}</div>
           </div>
-          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-purple-600 text-[10px] font-bold mb-0.5">Izin</div>
             <div className="text-xl font-black text-purple-700">{stats.data.by_status?.izin || 0}</div>
           </div>
-          <div className="border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
+          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
             <div className="text-teal-600 text-[10px] font-bold mb-0.5">Pulang</div>
             <div className="text-xl font-black text-teal-700">{stats.data.by_status?.pulang || 0}</div>
           </div>
@@ -203,7 +220,7 @@ export default function WhatsappTemplates() {
           templates.map((template) => (
             <div
               key={template.id}
-              className="border-2 md:border-3 border-gray-900 rounded-xl shadow-[2px_2px_0px_#111827] hover:shadow-[4px_4px_0px_#111827] transition-all p-4"
+              className="bg-white border-2 md:border-3 border-gray-900 rounded-xl shadow-[2px_2px_0px_#111827] hover:shadow-[4px_4px_0px_#111827] transition-all p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
@@ -226,16 +243,16 @@ export default function WhatsappTemplates() {
                   {/* Opening Preview */}
                   <div className="mb-2">
                     <div className="text-[10px] font-bold text-gray-500 mb-0.5">Salam:</div>
-                    <div className="text-xs text-gray-700 line-clamp-2">
-                      {template.opening || '-'}
+                    <div className="text-xs text-gray-700">
+                      {formatWhatsAppText(template.opening)}
                     </div>
                   </div>
 
                   {/* Closing Preview */}
                   <div>
                     <div className="text-[10px] font-bold text-gray-500 mb-0.5">Penutup:</div>
-                    <div className="text-xs text-gray-700 line-clamp-2">
-                      {template.closing || '-'}
+                    <div className="text-xs text-gray-700">
+                      {formatWhatsAppText(template.closing)}
                     </div>
                   </div>
                 </div>

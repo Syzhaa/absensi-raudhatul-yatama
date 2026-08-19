@@ -287,6 +287,21 @@ export default function Holidays() {
     return allEvents;
   }, [holidays]);
 
+  const existingHolidaysOnSelectedDate = useMemo(() => {
+    if (!formData.start_date || editingHoliday) return [];
+    
+    const selectedDate = new Date(`${formData.start_date}T00:00:00`);
+    
+    return events.filter(event => {
+      const eventStart = new Date(event.start);
+      eventStart.setHours(0,0,0,0);
+      const eventEnd = new Date(event.end);
+      eventEnd.setHours(23,59,59,999);
+      
+      return selectedDate >= eventStart && selectedDate <= eventEnd;
+    });
+  }, [formData.start_date, events, editingHoliday]);
+
   const handleSelectSlot = (slotInfo) => {
     openModal(null, slotInfo.start);
   };
@@ -300,7 +315,7 @@ export default function Holidays() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4">
+    <div className="w-full md:max-w-none max-w-6xl mx-auto space-y-4">
       {/* Header */}
       <div className="bg-white border-3 border-gray-900 rounded-2xl p-4 shadow-neo flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -373,7 +388,7 @@ export default function Holidays() {
       {/* Mobile FAB */}
       <button
         onClick={() => openModal()}
-        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-neo-xl flex items-center justify-center z-40 active:translate-y-1 transition-transform"
+        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-neo flex items-center justify-center z-40 active:translate-y-1 transition-transform"
       >
         <span className="material-symbols-outlined text-3xl font-black">add</span>
       </button>
@@ -384,25 +399,41 @@ export default function Holidays() {
         onClose={closeModal}
         title={editingHoliday ? "Edit Kalender Libur" : "Tambah Kalender Libur"}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-2.5 sm:space-y-3">
+          {existingHolidaysOnSelectedDate.length > 0 && (
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-3 mb-2 animate-fade-in">
+              <p className="text-xs font-bold text-amber-800 mb-2 uppercase tracking-wider">Sudah ada libur di tanggal ini:</p>
+              <ul className="space-y-1.5">
+                {existingHolidaysOnSelectedDate.map(event => (
+                  <li key={event.id} className="flex items-center gap-2 text-xs font-bold text-amber-900 bg-amber-100/70 px-3 py-2 rounded-lg border border-amber-200 shadow-sm">
+                    <span className="material-symbols-outlined text-[18px]">event_available</span>
+                    <span className="flex-1">{event.title}</span>
+                    <span className="text-[10px] bg-amber-200 px-1.5 py-0.5 rounded-md">
+                      {event.type === 'national' ? 'Nasional' : event.type === 'sunday' ? 'Minggu' : 'Custom'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div>
-            <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Nama Libur</label>
+            <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1">Nama Libur</label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
+              className="w-full px-3 py-2 sm:py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
               placeholder="Contoh: Libur Idul Fitri"
             />
           </div>
           <div>
-            <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Durasi Libur</label>
+            <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1">Durasi Libur</label>
             <div className="flex bg-gray-100 p-1 rounded-xl border-2 border-gray-200">
               <button
                 type="button"
                 onClick={() => setDuration("single")}
-                className={`flex-1 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${
+                className={`flex-1 py-1.5 sm:py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${
                   duration === "single" ? "bg-white text-primary-green border-2 border-primary-green shadow-sm" : "text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -411,7 +442,7 @@ export default function Holidays() {
               <button
                 type="button"
                 onClick={() => setDuration("multiple")}
-                className={`flex-1 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${
+                className={`flex-1 py-1.5 sm:py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${
                   duration === "multiple" ? "bg-white text-primary-green border-2 border-primary-green shadow-sm" : "text-gray-500 hover:text-gray-700"
                 }`}
               >
@@ -420,9 +451,9 @@ export default function Holidays() {
             </div>
           </div>
 
-          <div className={`grid gap-4 ${duration === "multiple" ? "grid-cols-2" : "grid-cols-1"}`}>
+          <div className={`grid gap-3 sm:gap-4 ${duration === "multiple" ? "grid-cols-2" : "grid-cols-1"}`}>
             <div>
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
+              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1">
                 {duration === "multiple" ? "Tanggal Mulai" : "Tanggal"}
               </label>
               <input
@@ -430,30 +461,30 @@ export default function Holidays() {
                 required
                 value={formData.start_date}
                 onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
+                className="w-full px-3 py-2 sm:py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
               />
             </div>
             {duration === "multiple" && (
               <div>
-                <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Tanggal Selesai</label>
+                <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1">Tanggal Selesai</label>
                 <input
                   type="date"
                   required
                   min={formData.start_date}
                   value={formData.end_date}
                   onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
+                  className="w-full px-3 py-2 sm:py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
                 />
               </div>
             )}
           </div>
 
           <div>
-            <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Berlaku Untuk</label>
+            <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1">Berlaku Untuk</label>
             <select
               value={formData.applies_to}
               onChange={(e) => setFormData({ ...formData, applies_to: e.target.value })}
-              className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
+              className="w-full px-3 py-2 sm:py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
             >
               <option value="all">Semua (Siswa & Guru)</option>
               <option value="students">Siswa Saja</option>
@@ -461,21 +492,21 @@ export default function Holidays() {
             </select>
           </div>
           <div>
-            <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">Keterangan (Opsional)</label>
+            <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1">Keterangan (Opsional)</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               maxLength={500}
               rows={2}
-              className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400 resize-none"
+              className="w-full px-3 py-2 sm:py-2.5 min-h-[40px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400 resize-none"
             />
           </div>
 
-          <div className="flex gap-2 pt-4">
+          <div className="flex gap-2 pt-2 sm:pt-3">
             <button
               type="button"
               onClick={closeModal}
-              className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:bg-gray-200"
+              className="flex-1 py-2 sm:py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:bg-gray-200"
             >
               Batal
             </button>
@@ -483,7 +514,7 @@ export default function Holidays() {
               <button
                 type="button"
                 onClick={() => handleDelete(editingHoliday.id)}
-                className="flex-1 py-3 bg-red-100 text-red-700 font-bold rounded-xl border-2 border-red-200 hover:bg-red-200"
+                className="flex-1 py-2 sm:py-2.5 bg-red-100 text-red-700 font-bold rounded-xl border-2 border-red-200 hover:bg-red-200"
               >
                 Hapus
               </button>
@@ -491,7 +522,7 @@ export default function Holidays() {
             <button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="flex-[2] py-3 bg-primary-green text-gray-900 font-black rounded-xl border-2 border-gray-900 shadow-neo hover:clean-shadow-md active:translate-y-1 transition-all disabled:opacity-50"
+              className="flex-1 py-2 sm:py-2.5 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black rounded-xl border-2 border-gray-900 shadow-neo hover:translate-y-0.5 transition-all flex items-center justify-center gap-2 text-sm"
             >
               {createMutation.isPending || updateMutation.isPending ? "Menyimpan..." : "Simpan"}
             </button>

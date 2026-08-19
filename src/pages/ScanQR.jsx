@@ -30,7 +30,7 @@ export default function ScanQR() {
   // Fetch recent logs
   const { data: recentLogs } = useQuery({
     queryKey: ["recentLogs", effectiveLembaga],
-    queryFn: () => attendanceService.getRecentLogs(5, effectiveLembaga),
+    queryFn: () => attendanceService.getRecentLogs(100, effectiveLembaga),
     refetchInterval: 10000,
   });
 
@@ -171,127 +171,136 @@ export default function ScanQR() {
     await startScanning();
   };
 
-
   return (
-    <div className="flex flex-col items-center justify-center px-4 py-2 pb-28 md:pb-8 max-w-lg mx-auto">
-      {/* 1. Navigasi Mode (Toggle Tabs) di Atas Kamera */}
-      <div className="w-full max-w-sm bg-white/90 p-1.5 rounded-full border-3 border-gray-900 shadow-neo flex items-center mb-5 landscape:mb-2">
-        <button
-          onClick={() => handleSwitchTab("check_in")}
-          className={`flex-1 py-2.5 px-3 rounded-full font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all select-none ${
-            scanType === "check_in" && !showManualForm
-              ? "bg-[#9bd47a] text-gray-900 border-2 border-gray-900 shadow-sm"
-              : "bg-transparent text-gray-600 hover:bg-gray-100"
-          }`}
-        >
-          <span className="material-symbols-outlined text-lg">login</span>
-          <span>MASUK</span>
-        </button>
-        <button
-          onClick={() => handleSwitchTab("check_out")}
-          className={`flex-1 py-2.5 px-3 rounded-full font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all select-none ${
-            scanType === "check_out" && !showManualForm
-              ? "bg-[#9bd47a] text-gray-900 border-2 border-gray-900 shadow-sm"
-              : "bg-transparent text-gray-600 hover:bg-gray-100"
-          }`}
-        >
-          <span className="material-symbols-outlined text-lg">logout</span>
-          <span>PULANG</span>
-        </button>
+    <div className="w-full pb-28 md:pb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: Camera Viewfinder & Controls (Aligned flush with header left edge) */}
+        <div className="lg:col-span-5 xl:col-span-5 flex flex-col w-full">
+          {/* 1. Navigasi Mode (Toggle Tabs) di Atas Kamera */}
+          <div className="w-full bg-white border-2 md:border-3 border-gray-900 p-1.5 rounded-2xl md:rounded-3xl shadow-neo flex items-center mb-4">
+            <button
+              onClick={() => handleSwitchTab("check_in")}
+              className={`flex-1 py-2.5 px-3 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all select-none ${
+                scanType === "check_in" && !showManualForm
+                  ? "bg-[#9bd47a] text-gray-900 border-2 border-gray-900 shadow-sm"
+                  : "bg-transparent text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <span className="material-symbols-outlined text-lg">login</span>
+              <span>MASUK</span>
+            </button>
+            <button
+              onClick={() => handleSwitchTab("check_out")}
+              className={`flex-1 py-2.5 px-3 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all select-none ${
+                scanType === "check_out" && !showManualForm
+                  ? "bg-[#9bd47a] text-gray-900 border-2 border-gray-900 shadow-sm"
+                  : "bg-transparent text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <span className="material-symbols-outlined text-lg">logout</span>
+              <span>PULANG</span>
+            </button>
+          </div>
+
+          {/* 2. Area Kamera (Viewfinder) - Hidden when manual form active */}
+          {!showManualForm && (
+            <div className="relative w-full aspect-square bg-gray-900 rounded-2xl md:rounded-3xl border-2 md:border-3 border-gray-900 overflow-hidden shadow-neo">
+              {/* QR Reader Viewport */}
+              <div id="qr-reader" className="w-full h-full" />
+
+              {/* Visual Bracket Scanner Corners */}
+              <div className="absolute inset-6 pointer-events-none z-10 flex flex-col justify-between">
+                <div className="flex justify-between">
+                  <div className="w-9 h-9 border-t-4 border-l-4 border-white rounded-tl-xl"></div>
+                  <div className="w-9 h-9 border-t-4 border-r-4 border-white rounded-tr-xl"></div>
+                </div>
+                <div className="flex justify-between">
+                  <div className="w-9 h-9 border-b-4 border-l-4 border-white rounded-bl-xl"></div>
+                  <div className="w-9 h-9 border-b-4 border-r-4 border-white rounded-br-xl"></div>
+                </div>
+              </div>
+
+              {/* Animated Scanning Line */}
+              {scanning && (
+                <div className="animate-scan-line h-1 bg-[#4ade80] shadow-[0_0_15px_#4ade80] absolute w-full left-0 z-20 pointer-events-none"></div>
+              )}
+
+              {/* Placeholder when not scanning */}
+              {!scanning && !cameraError && (
+                <div className="absolute inset-0 bg-gray-900/90 flex flex-col items-center justify-center text-white z-10 p-4 text-center">
+                  <span className="material-symbols-outlined text-5xl mb-2 text-gray-400">
+                    videocam_off
+                  </span>
+                  <p className="font-bold text-sm text-gray-300">
+                    Kamera tidak aktif
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Manual Form - Input Izin/Sakit/Alpha */}
+          {showManualForm && (
+            <ManualAttendanceForm
+              manualFormData={manualFormData}
+              setManualFormData={setManualFormData}
+              teachersData={teachersData}
+              manualSubmitMutation={manualSubmitMutation}
+              handleManualSubmit={handleManualSubmit}
+            />
+          )}
+
+          {/* Camera Error Message (Minimalist 1-Line) */}
+          {cameraError && (
+            <div className="w-full mt-3 px-3.5 py-2.5 bg-red-100/90 border-2 border-gray-900 rounded-xl md:rounded-2xl shadow-neo-sm flex items-center justify-between text-red-600 text-xs font-bold gap-2">
+              <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
+                <span className="material-symbols-outlined text-base flex-shrink-0 text-red-600">
+                  error
+                </span>
+                <span className="truncate">{cameraError}</span>
+              </div>
+              <button
+                onClick={startScanning}
+                className="flex-shrink-0 px-2.5 py-1 bg-white hover:bg-red-50 text-gray-900 font-black border-1.5 border-gray-900 rounded-lg shadow-sm text-[11px] active:scale-95 transition-all"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          )}
+
+          {/* 3. Tombol 'Stop Scan' - Hidden when manual form active */}
+          {!showManualForm && (
+            <div className="w-full mt-4">
+              {scanning ? (
+                <button
+                  onClick={stopScanning}
+                  className="w-full bg-[#e5e7eb] hover:bg-gray-300 text-gray-900 font-extrabold py-3 px-6 border-2 md:border-3 border-gray-900 rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-base active:translate-y-0.5"
+                >
+                  <span className="material-symbols-outlined text-xl">
+                    visibility_off
+                  </span>
+                  <span>Stop Scan</span>
+                </button>
+              ) : (
+                <button
+                  onClick={startScanning}
+                  className="w-full bg-[#9bd47a] hover:bg-lime-400 text-gray-900 font-extrabold py-3 px-6 border-2 md:border-3 border-gray-900 rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-base active:translate-y-0.5"
+                >
+                  <span className="material-symbols-outlined text-xl">
+                    videocam
+                  </span>
+                  <span>Mulai Scan</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Riwayat Scan Hari Ini with 10-Item Pagination (Laptop/Desktop: 7 cols or 8 cols, Mobile/Tablet: stacked below) */}
+        <div className="lg:col-span-7 xl:col-span-7 w-full mt-6 lg:mt-0">
+          <RecentScanLogs recentLogs={recentLogs} />
+        </div>
       </div>
-
-      {/* 2. Area Kamera (Viewfinder) - Hidden when manual form active */}
-      {!showManualForm && (
-        <div className="relative w-full max-w-sm aspect-square bg-gray-900 rounded-3xl border-3 border-gray-900 overflow-hidden shadow-neo-lg">
-          {/* QR Reader Viewport */}
-          <div id="qr-reader" className="w-full h-full" />
-
-          {/* Visual Bracket Scanner Corners */}
-          <div className="absolute inset-6 pointer-events-none z-10 flex flex-col justify-between">
-            <div className="flex justify-between">
-              <div className="w-9 h-9 border-t-4 border-l-4 border-white rounded-tl-xl"></div>
-              <div className="w-9 h-9 border-t-4 border-r-4 border-white rounded-tr-xl"></div>
-            </div>
-            <div className="flex justify-between">
-              <div className="w-9 h-9 border-b-4 border-l-4 border-white rounded-bl-xl"></div>
-              <div className="w-9 h-9 border-b-4 border-r-4 border-white rounded-br-xl"></div>
-            </div>
-          </div>
-
-          {/* Animated Scanning Line */}
-          {scanning && (
-            <div className="animate-scan-line h-1 bg-[#4ade80] shadow-[0_0_15px_#4ade80] absolute w-full left-0 z-20 pointer-events-none"></div>
-          )}
-
-          {/* Placeholder when not scanning */}
-          {!scanning && !cameraError && (
-            <div className="absolute inset-0 bg-gray-900/90 flex flex-col items-center justify-center text-white z-10 p-4 text-center">
-              <span className="material-symbols-outlined text-5xl mb-2 text-gray-400">
-                videocam_off
-              </span>
-              <p className="font-bold text-sm text-gray-300">
-                Kamera tidak aktif
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Manual Form - Input Izin/Sakit/Alpha */}
-      {showManualForm && (
-        <ManualAttendanceForm
-          manualFormData={manualFormData}
-          setManualFormData={setManualFormData}
-          teachersData={teachersData}
-          manualSubmitMutation={manualSubmitMutation}
-          handleManualSubmit={handleManualSubmit}
-        />
-      )}
-
-      {/* Camera Error Message (Minimalist 1-Line) */}
-      {cameraError && (
-        <div className="w-full max-w-sm mt-3 px-3.5 py-2 bg-red-100/90 border-2 border-gray-900 rounded-xl shadow-neo-sm flex items-center justify-between text-red-600 text-xs font-bold gap-2">
-          <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
-            <span className="material-symbols-outlined text-base flex-shrink-0 text-red-600">
-              error
-            </span>
-            <span className="truncate">{cameraError}</span>
-          </div>
-          <button
-            onClick={startScanning}
-            className="flex-shrink-0 px-2.5 py-1 bg-white hover:bg-red-50 text-gray-900 font-black border-1.5 border-gray-900 rounded-lg shadow-sm text-[11px] active:scale-95 transition-all"
-          >
-            Coba Lagi
-          </button>
-        </div>
-      )}
-
-      {/* 3. Tombol 'Stop Scan' - Hidden when manual form active */}
-      {!showManualForm && (
-        <div className="w-full max-w-sm mt-5">
-          {scanning ? (
-            <button
-              onClick={stopScanning}
-              className="w-full bg-[#e5e7eb] hover:bg-gray-300 text-gray-900 font-extrabold py-3 px-6 border-3 border-gray-900 rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-base"
-            >
-              <span className="material-symbols-outlined text-xl">
-                visibility_off
-              </span>
-              <span>Stop Scan</span>
-            </button>
-          ) : (
-            <button
-              onClick={startScanning}
-              className="w-full bg-[#9bd47a] hover:bg-lime-400 text-gray-900 font-extrabold py-3 px-6 border-3 border-gray-900 rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-base"
-            >
-              <span className="material-symbols-outlined text-xl">
-                videocam
-              </span>
-              <span>Mulai Scan</span>
-            </button>
-          )}
-        </div>
-      )}
 
       {/* 4. Modal Dialog Sukses Absensi (Popup) */}
       <ScanResultModal
@@ -299,9 +308,6 @@ export default function ScanQR() {
         scanType={scanType}
         handleCloseModal={handleCloseModal}
       />
-
-      {/* Recent Logs Section */}
-      <RecentScanLogs recentLogs={recentLogs} />
     </div>
   );
 }

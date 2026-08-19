@@ -60,7 +60,7 @@ export default function GuruAttendance() {
   }, [data, search]);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
+    <div className="w-full md:max-w-none max-w-4xl mx-auto space-y-4">
       <div className="bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-3 md:p-4 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
         <div>
           <h1 className="text-lg md:text-xl font-black">Daftar Hadir Siswa</h1>

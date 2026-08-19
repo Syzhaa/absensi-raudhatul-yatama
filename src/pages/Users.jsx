@@ -157,7 +157,7 @@ export default function Users() {
     promoteMutation.isPending;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4">
+    <div className="w-full md:max-w-none max-w-6xl mx-auto space-y-4">
       {/* Header */}
       <div className="bg-white border-3 border-gray-900 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-neo">
         <div className="flex items-center gap-3">
@@ -409,7 +409,7 @@ export default function Users() {
           setEditUser(null);
           setShowModal(true);
         }}
-        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-neo-xl flex items-center justify-center z-40 active:translate-y-1 transition-transform"
+        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-neo flex items-center justify-center z-40 active:translate-y-1 transition-transform"
       >
         <span className="material-symbols-outlined text-3xl font-black">add</span>
       </button>

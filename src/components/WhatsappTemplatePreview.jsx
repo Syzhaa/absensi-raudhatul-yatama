@@ -3,6 +3,17 @@ import { useMutation } from "@tanstack/react-query";
 import { whatsappTemplateService } from "../services/whatsappTemplates";
 import Modal from "./Modal";
 
+const formatWhatsAppText = (text) => {
+  if (!text) return '-';
+  let html = text.replace(/\\n/g, '\n');
+  html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  html = html.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+  html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+  html = html.replace(/~(.*?)~/g, '<del>$1</del>');
+  html = html.replace(/\n/g, '<br />');
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+};
+
 export default function WhatsappTemplatePreview({ template, onClose }) {
   const [sampleData, setSampleData] = useState({
     name: "Ahmad Zaki",
@@ -86,10 +97,8 @@ export default function WhatsappTemplatePreview({ template, onClose }) {
       {preview && (
         <div className="bg-green-50 border-2 border-green-600 rounded-lg p-3">
           <div className="text-[10px] font-bold text-green-800 mb-1">Preview Hasil:</div>
-          <div className="bg-white rounded-lg p-3 border-2 border-gray-900">
-            <pre className="whitespace-pre-wrap text-xs text-gray-800">
-{preview}
-            </pre>
+          <div className="bg-white rounded-lg p-3 border-2 border-gray-900 text-xs text-gray-800">
+            {formatWhatsAppText(preview)}
           </div>
         </div>
       )}
@@ -122,15 +131,15 @@ export default function WhatsappTemplatePreview({ template, onClose }) {
         <div className="bg-gray-50 border-2 border-gray-900 rounded-lg p-2 space-y-2">
           <div>
             <div className="text-[10px] font-bold text-gray-600 mb-0.5">Salam:</div>
-            <pre className="whitespace-pre-wrap text-xs text-gray-800 bg-white p-2 rounded border border-gray-300">
-{template.opening}
-            </pre>
+            <div className="text-xs text-gray-800 bg-white p-2 rounded border border-gray-300">
+              {formatWhatsAppText(template.opening)}
+            </div>
           </div>
           <div>
             <div className="text-[10px] font-bold text-gray-600 mb-0.5">Penutup:</div>
-            <pre className="whitespace-pre-wrap text-xs text-gray-800 bg-white p-2 rounded border border-gray-300">
-{template.closing}
-            </pre>
+            <div className="text-xs text-gray-800 bg-white p-2 rounded border border-gray-300">
+              {formatWhatsAppText(template.closing)}
+            </div>
           </div>
         </div>
       </div>

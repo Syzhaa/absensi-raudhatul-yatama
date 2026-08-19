@@ -405,7 +405,7 @@ export default function Attendance() {
   useAttendanceSSE(selectedDate, queryClient);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4 landscape:space-y-2">
+    <div className="w-full md:max-w-none max-w-5xl mx-auto space-y-4 landscape:space-y-2">
       {/* Top Controls: Date & Search */}
       <div className="flex gap-2 w-full">
         <div className="relative w-[140px] sm:w-[160px] shrink-0">

@@ -16,8 +16,8 @@ const STATUS_OPTIONS = [
 export default function WhatsappTemplateForm({ template, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     status: template?.status || "hadir",
-    opening: template?.opening || "",
-    closing: template?.closing || "",
+    opening: template?.opening ? template.opening.replace(/\\n/g, '\n') : "",
+    closing: template?.closing ? template.closing.replace(/\\n/g, '\n') : "",
     weight: template?.weight || 1,
     is_active: template?.is_active ?? true,
   });
@@ -53,8 +53,8 @@ export default function WhatsappTemplateForm({ template, onClose, onSuccess }) {
 
   const handlePreview = () => {
     previewMutation.mutate({
-      opening: formData.opening,
-      closing: formData.closing,
+      opening: formData.opening.replace(/\n/g, '\\n'),
+      closing: formData.closing.replace(/\n/g, '\\n'),
       status: formData.status,
       name: "Ahmad Zaki",
       kelas: "XII",
@@ -76,7 +76,13 @@ export default function WhatsappTemplateForm({ template, onClose, onSuccess }) {
       return;
     }
 
-    mutation.mutate(formData);
+    const payload = {
+      ...formData,
+      opening: formData.opening.replace(/\n/g, '\\n'),
+      closing: formData.closing.replace(/\n/g, '\\n')
+    };
+
+    mutation.mutate(payload);
   };
 
   return (

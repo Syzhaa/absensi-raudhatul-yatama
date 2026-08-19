@@ -357,7 +357,7 @@ export default function Students() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 landscape:space-y-3">
+    <div className="w-full md:max-w-none max-w-5xl mx-auto space-y-6 landscape:space-y-3">
       {/* Action Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         {/* Search Bar */}
