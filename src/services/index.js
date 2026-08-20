@@ -2,11 +2,12 @@ import api from "./api";
 import { format } from "date-fns";
 
 export const authService = {
-  login: async (email, password, deviceId) => {
+  login: async (email, password, deviceId, turnstileToken = "") => {
     const response = await api.post("/auth/login", {
       email,
       password,
       device_id: deviceId,
+      cf_turnstile_token: turnstileToken,
     });
     return response.data;
   },

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { authService } from "../services";
 
 import { useAppStore } from "../store/useAppStore";
@@ -31,6 +32,8 @@ export default function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef(null);
 
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
   const setUserRole = useAppStore((state) => state.setUserRole);
@@ -47,10 +50,17 @@ export default function Login({ onLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!turnstileToken) {
+      setError("Verifikasi Turnstile gagal. Silakan coba lagi.");
+      if (turnstileRef.current) turnstileRef.current.reset();
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await authService.login(email, password, getDeviceId());
+      const response = await authService.login(email, password, getDeviceId(), turnstileToken);
       const token =
         response.data?.token || response.token || response.data?.data?.token;
       const lembaga =
@@ -77,6 +87,8 @@ export default function Login({ onLogin }) {
       setError(
         err.response?.data?.message || "Login gagal. Silakan coba lagi.",
       );
+      setTurnstileToken("");
+      if (turnstileRef.current) turnstileRef.current.reset();
     } finally {
       setLoading(false);
     }
@@ -214,6 +226,18 @@ export default function Login({ onLogin }) {
                     Ingat Saya
                   </label>
                 </div>
+              </div>
+
+              {/* Cloudflare Turnstile */}
+              <div className="flex justify-center">
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey="0x4AAAAAAEWtKdi7szdpuPB9"
+                  onSuccess={(token) => setTurnstileToken(token)}
+                  onError={() => { setTurnstileToken(""); }}
+                  onExpire={() => { setTurnstileToken(""); }}
+                  options={{ theme: "light", language: "id" }}
+                />
               </div>
 
               {/* Submit Button */}
