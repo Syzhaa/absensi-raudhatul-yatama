@@ -37,6 +37,7 @@ function SummaryCard({ label, value, color }) {
 
 export default function Report() {
   const userRole = useAppStore((s) => s.userRole);
+  const selectedKelas = useAppStore((s) => s.selectedKelas);
   const { effectiveLembaga } = useEffectiveLembaga();
 
   const today = format(new Date(), "yyyy-MM-dd");
@@ -45,7 +46,6 @@ export default function Report() {
   const [tab, setTab] = useState("siswa"); // siswa | guru | rekap
   const [dateFrom, setDateFrom] = useState(firstDay);
   const [dateTo, setDateTo] = useState(today);
-  const [kelasFilter, setKelasFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [lembagaFilter, setLembagaFilter] = useState("");
   const [search, setSearch] = useState("");
@@ -61,7 +61,7 @@ export default function Report() {
     date_to: dateTo,
     per_page: perPage,
     page,
-    ...(kelasFilter && { kelas: kelasFilter }),
+    ...(selectedKelas && { kelas: selectedKelas }),
     ...(statusFilter && { status: statusFilter }),
     ...((isSuperAdmin && lembagaFilter) && { lembaga: lembagaFilter }),
     ...(!isSuperAdmin && effectiveLembaga && { lembaga: effectiveLembaga }),
@@ -69,7 +69,7 @@ export default function Report() {
 
   // Fetch laporan siswa
   const { data: siswaData, isLoading: siswaLoading } = useQuery({
-    queryKey: ["report-siswa", tab, dateFrom, dateTo, kelasFilter, statusFilter, lembagaFilter, page],
+    queryKey: ["report-siswa", tab, dateFrom, dateTo, selectedKelas, statusFilter, lembagaFilter, page],
     queryFn: () => api.get("/attendance/report/students", { params: buildParams() }).then(r => r.data.data),
     enabled: tab === "siswa",
   });
@@ -91,11 +91,11 @@ export default function Report() {
 
   // Fetch rekap per siswa
   const { data: rekapData, isLoading: rekapLoading } = useQuery({
-    queryKey: ["report-rekap", tab, dateFrom, dateTo, kelasFilter, lembagaFilter],
+    queryKey: ["report-rekap", tab, dateFrom, dateTo, selectedKelas, lembagaFilter],
     queryFn: () => api.get("/attendance/report/student-summary", { params: {
       date_from: dateFrom,
       date_to: dateTo,
-      ...(kelasFilter && { kelas: kelasFilter }),
+      ...(selectedKelas && { kelas: selectedKelas }),
       ...((isSuperAdmin && lembagaFilter) && { lembaga: lembagaFilter }),
       ...(!isSuperAdmin && effectiveLembaga && { lembaga: effectiveLembaga }),
     }}).then(r => r.data.data),
@@ -403,19 +403,7 @@ export default function Report() {
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Nama</th>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">NIS</th>
-                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">
-                        <div className="flex items-center gap-1.5">
-                          <span>Kelas</span>
-                          <input
-                            type="text"
-                            placeholder="Filter..."
-                            value={kelasFilter}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => { setKelasFilter(e.target.value); setPage(1); }}
-                            className="w-16 px-1.5 py-0.5 text-xs font-normal text-gray-900 bg-white border border-gray-300 rounded focus:outline-none"
-                          />
-                        </div>
-                      </th>
+                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Kelas</th>
                       {isSuperAdmin && <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Lembaga</th>}
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Status</th>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Masuk</th>
@@ -492,19 +480,7 @@ export default function Report() {
                     <tr>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Nama</th>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">NIS / NISN</th>
-                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">
-                        <div className="flex items-center gap-1.5">
-                          <span>Kelas</span>
-                          <input
-                            type="text"
-                            placeholder="Filter..."
-                            value={kelasFilter}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={(e) => { setKelasFilter(e.target.value); setPage(1); }}
-                            className="w-16 px-1.5 py-0.5 text-xs font-normal text-gray-900 bg-white border border-gray-300 rounded focus:outline-none"
-                          />
-                        </div>
-                      </th>
+                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Kelas</th>
                       {isSuperAdmin && <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Lembaga</th>}
                       <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-green-300">Hadir</th>
                       <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-amber-300">Telat</th>
