@@ -81,9 +81,9 @@ export default function WhatsappApi() {
           <div className="p-4 bg-blue-50 border-3 border-gray-900 rounded-2xl mb-6">
             <h3 className="font-bold text-gray-900 mb-2">Informasi API</h3>
             <p className="text-sm text-gray-700">
-              Sistem ini menggunakan Putzy WhatsApp API. Silakan buat API Key Anda di{" "}
-              <a href="https://whatsapp.putzy.my.id" target="_blank" rel="noreferrer" className="text-blue-600 font-bold hover:underline">
-                whatsapp.putzy.my.id
+              Sistem ini menggunakan TappDigital WhatsApp API. Silakan buat API Key Anda di{" "}
+              <a href="https://wa.tappdigital.id" target="_blank" rel="noreferrer" className="text-blue-600 font-bold hover:underline">
+                wa.tappdigital.id
               </a>
               {" "}dan masukkan di bawah ini. Notifikasi absensi akan dikirim menggunakan format acak secara otomatis.
             </p>
@@ -120,7 +120,7 @@ export default function WhatsappApi() {
               onChange={(e) =>
                 setFormData({ ...formData, wa_api_key: e.target.value })
               }
-              placeholder="Masukkan API Key dari Putzy API..."
+              placeholder="Masukkan API Key dari TappDigital API..."
               className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:border-gray-900 focus:ring-0 transition-colors font-mono"
             />
           </div>
