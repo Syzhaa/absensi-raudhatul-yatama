@@ -8,6 +8,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+import { useKelasFormat } from "../hooks/useKelasFormat";
 const STATUS_LABELS = {
   hadir: "Hadir",
   terlambat: "Terlambat",
@@ -39,6 +40,7 @@ export default function Report() {
   const userRole = useAppStore((s) => s.userRole);
   const selectedKelas = useAppStore((s) => s.selectedKelas);
   const { effectiveLembaga } = useEffectiveLembaga();
+  const { formatKelas } = useKelasFormat();
 
   const today = format(new Date(), "yyyy-MM-dd");
   const firstDay = format(startOfMonth(new Date()), "yyyy-MM-dd");
@@ -178,7 +180,7 @@ export default function Report() {
       wsData = [
         ["Nama", "NIS", "NISN", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"],
         ...rekapRows.map(r => [
-          r.nama, r.nisn, r.nisn || "-", r.kelas, r.lembaga,
+          r.nama, r.nisn, r.nisn || "-", formatKelas(r.kelas), r.lembaga,
           r.hadir, r.terlambat, r.izin, r.sakit, r.alpha, r.libur, r.total_hadir,
         ]),
       ];
@@ -237,7 +239,7 @@ export default function Report() {
     } else {
       head = [["No", "Nama", "NIS", "NISN", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total"]];
       body = rekapRows.map((r, i) => [
-        i + 1, r.nama, r.nisn, r.nisn || "-", r.kelas, r.lembaga,
+        i + 1, r.nama, r.nisn, r.nisn || "-", formatKelas(r.kelas), r.lembaga,
         r.hadir, r.terlambat, r.izin, r.sakit, r.alpha, r.libur, r.total_hadir,
       ]);
     }
@@ -418,7 +420,7 @@ export default function Report() {
                         <td className="px-4 py-2.5 font-mono text-xs text-gray-600">{r.attendance_date}</td>
                         <td className="px-4 py-2.5 font-bold text-gray-900">{r.student?.nama || "-"}</td>
                         <td className="px-4 py-2.5 text-gray-600 text-xs">{r.student?.nisn || "-"}</td>
-                        <td className="px-4 py-2.5 font-bold text-gray-700">{r.student?.kelas || "-"}</td>
+                        <td className="px-4 py-2.5 font-bold text-gray-700">{formatKelas(r.student?.kelas) || "-"}</td>
                         {isSuperAdmin && <td className="px-4 py-2.5 text-gray-600 text-xs">{r.lembaga}</td>}
                         <td className="px-4 py-2.5">
                           <span className={`px-2 py-0.5 rounded-lg border text-xs font-black ${STATUS_COLORS[r.status] || "bg-gray-100 text-gray-700 border-gray-300"}`}>
@@ -501,7 +503,7 @@ export default function Report() {
                           <div>{r.nisn || "-"}</div>
                           {r.nisn && <div className="text-gray-400">{r.nisn}</div>}
                         </td>
-                        <td className="px-4 py-2.5 font-bold text-gray-700">{r.kelas || "-"}</td>
+                        <td className="px-4 py-2.5 font-bold text-gray-700">{formatKelas(r.kelas) || "-"}</td>
                         {isSuperAdmin && <td className="px-4 py-2.5 text-gray-600 text-xs">{r.lembaga}</td>}
                         <td className="px-4 py-2.5 text-center font-black text-green-600">{r.hadir}</td>
                         <td className="px-4 py-2.5 text-center font-black text-amber-600">{r.terlambat}</td>

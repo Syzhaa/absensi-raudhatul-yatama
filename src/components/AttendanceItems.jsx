@@ -1,12 +1,14 @@
 import { memo } from "react";
+import { useKelasFormat } from "../hooks/useKelasFormat";
 
 export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
   const isStudent = item.role === "student";
+  const { formatKelas } = useKelasFormat();
   const person = isStudent ? item.student || item : item.teacher || item;
   const isBelumAbsen = !item.status || item.status === "belum_absen";
 
   const subtitle = isStudent
-    ? `Kelas ${person?.kelas || "-"} • NISN: ${person?.nisn || "-"}`
+    ? `Kelas ${formatKelas(person?.kelas) || "-"} • NISN: ${person?.nisn || "-"}`
     : `${person?.nip ? "NIP: " + person.nip : "Guru / Staf"}`;
 
   const lembagaName = (item.lembaga || person?.lembaga || "MA").toUpperCase();
