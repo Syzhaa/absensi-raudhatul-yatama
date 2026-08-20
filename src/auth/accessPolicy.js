@@ -8,6 +8,7 @@ const adminMenu = [
   { path: "/users", label: "User", icon: "manage_accounts" },
   { path: "/whatsapp-api", label: "WA Notifier", icon: "forum" },
   { path: "/whatsapp-templates", label: "Template WA", icon: "sms" },
+  { path: "/report", label: "Laporan", icon: "assessment" },
   { path: "/profile", label: "Profil", icon: "account_circle" },
   { path: "/settings", label: "Setting", icon: "settings" },
 ];
@@ -16,6 +17,7 @@ const guruMenu = [
   { path: "/", label: "Home", icon: "home" },
   { path: "/scan", label: "Scan", icon: "qr_code_scanner" },
   { path: "/attendance", label: "Absen", icon: "fact_check" },
+  { path: "/report", label: "Laporan", icon: "assessment" },
   { path: "/profile", label: "Profil", icon: "account_circle" },
 ];
 
