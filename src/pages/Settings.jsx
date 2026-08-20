@@ -132,7 +132,7 @@ export default function Settings({ onLogout }) {
     enabled: !isLembagaLoading,
   });
 
-  const [formData, setFormData] = useState({
+    kelas_format: settingsData?.data?.kelas_format || "roman",
     attendance_open: settingsData?.data?.attendance_open || "06:00:00",
     attendance_limit: settingsData?.data?.attendance_limit || "07:30:00",
     late_after: settingsData?.data?.late_after || "07:30:00",
@@ -151,7 +151,7 @@ export default function Settings({ onLogout }) {
         late_after: currentSettings.late_after || "07:30:00",
         attendance_close: currentSettings.attendance_close || "08:00:00",
         timezone: currentSettings.timezone || "Asia/Makassar",
-      }));
+        kelas_format: currentSettings.kelas_format || "roman",
     }
   }, [settingsData?.data]);
 
@@ -323,6 +323,47 @@ export default function Settings({ onLogout }) {
               </select>
               <p className="text-[11px] text-gray-500 font-medium mt-1">
                 Zona waktu sekolah (Default: WITA)
+              </p>
+            </div>
+
+            {/* Toggle Format Kelas */}
+            <div className="md:col-span-2">
+              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
+                Format Tampilan Kelas
+              </label>
+              <div className="flex items-center gap-3 bg-gray-100 border-2 border-gray-200 rounded-xl p-3">
+                <span className="material-symbols-outlined text-gray-600">school</span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-sm text-gray-900">
+                        {formData.kelas_format === "roman" ? "Angka Romawi (X, XI, XII)" : "Angka Biasa (10, 11, 12)"}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Format penulisan tingkat kelas di seluruh sistem
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ 
+                        ...formData, 
+                        kelas_format: formData.kelas_format === "roman" ? "numeric" : "roman" 
+                      })}
+                      className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                        formData.kelas_format === "numeric" ? "bg-primary-green" : "bg-gray-300"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform ${
+                          formData.kelas_format === "numeric" ? "translate-x-7" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-500 font-medium mt-1">
+                Romawi: X, XI, XII • Biasa: 10, 11, 12
               </p>
             </div>
           </div>
