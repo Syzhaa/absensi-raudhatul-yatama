@@ -323,7 +323,7 @@ export default function Attendance() {
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           const nama = (item.student?.nama || item.teacher?.nama || "").toLowerCase();
-          const nis = (item.student?.nis || item.teacher?.nip || "").toLowerCase();
+          const nis = (item.student?.nisn || item.teacher?.nip || "").toLowerCase();
           if (!nama.includes(q) && !nis.includes(q)) return false;
         }
 

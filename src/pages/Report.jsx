@@ -111,7 +111,7 @@ export default function Report() {
     const q = search.toLowerCase();
     return rows.filter(r =>
       r.student?.nama?.toLowerCase().includes(q) ||
-      r.student?.nis?.toLowerCase().includes(q) ||
+      r.student?.nisn?.toLowerCase().includes(q) ||
       r.student?.kelas?.toLowerCase().includes(q)
     );
   }, [siswaData, search]);
@@ -132,7 +132,7 @@ export default function Report() {
     const q = search.toLowerCase();
     return rows.filter(r =>
       r.nama?.toLowerCase().includes(q) ||
-      r.nis?.toLowerCase().includes(q) ||
+      r.nisn?.toLowerCase().includes(q) ||
       r.kelas?.toLowerCase().includes(q)
     );
   }, [rekapData, search]);
@@ -151,7 +151,7 @@ export default function Report() {
         ...siswaRows.map(r => [
           r.attendance_date,
           r.student?.nama || "-",
-          r.student?.nis || "-",
+          r.student?.nisn || "-",
           r.student?.kelas || "-",
           r.lembaga,
           STATUS_LABELS[r.status] || r.status,
@@ -178,7 +178,7 @@ export default function Report() {
       wsData = [
         ["Nama", "NIS", "NISN", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"],
         ...rekapRows.map(r => [
-          r.nama, r.nis, r.nisn || "-", r.kelas, r.lembaga,
+          r.nama, r.nisn, r.nisn || "-", r.kelas, r.lembaga,
           r.hadir, r.terlambat, r.izin, r.sakit, r.alpha, r.libur, r.total_hadir,
         ]),
       ];
@@ -215,7 +215,7 @@ export default function Report() {
         i + 1,
         r.attendance_date,
         r.student?.nama || "-",
-        r.student?.nis || "-",
+        r.student?.nisn || "-",
         r.student?.kelas || "-",
         r.lembaga,
         STATUS_LABELS[r.status] || r.status,
@@ -237,7 +237,7 @@ export default function Report() {
     } else {
       head = [["No", "Nama", "NIS", "NISN", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total"]];
       body = rekapRows.map((r, i) => [
-        i + 1, r.nama, r.nis, r.nisn || "-", r.kelas, r.lembaga,
+        i + 1, r.nama, r.nisn, r.nisn || "-", r.kelas, r.lembaga,
         r.hadir, r.terlambat, r.izin, r.sakit, r.alpha, r.libur, r.total_hadir,
       ]);
     }
@@ -417,7 +417,7 @@ export default function Report() {
                       <tr key={r.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                         <td className="px-4 py-2.5 font-mono text-xs text-gray-600">{r.attendance_date}</td>
                         <td className="px-4 py-2.5 font-bold text-gray-900">{r.student?.nama || "-"}</td>
-                        <td className="px-4 py-2.5 text-gray-600 text-xs">{r.student?.nis || "-"}</td>
+                        <td className="px-4 py-2.5 text-gray-600 text-xs">{r.student?.nisn || "-"}</td>
                         <td className="px-4 py-2.5 font-bold text-gray-700">{r.student?.kelas || "-"}</td>
                         {isSuperAdmin && <td className="px-4 py-2.5 text-gray-600 text-xs">{r.lembaga}</td>}
                         <td className="px-4 py-2.5">
@@ -498,7 +498,7 @@ export default function Report() {
                       <tr key={r.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                         <td className="px-4 py-2.5 font-bold text-gray-900">{r.nama}</td>
                         <td className="px-4 py-2.5 text-gray-600 text-xs">
-                          <div>{r.nis || "-"}</div>
+                          <div>{r.nisn || "-"}</div>
                           {r.nisn && <div className="text-gray-400">{r.nisn}</div>}
                         </td>
                         <td className="px-4 py-2.5 font-bold text-gray-700">{r.kelas || "-"}</td>

@@ -9,8 +9,8 @@ export default function ScanResultModal({ result, scanType, handleCloseModal }) 
       ? result?.data?.student?.nama
       : result?.data?.teacher?.nama;
   const personNumber =
-    result?.data?.student?.nis ||
     result?.data?.student?.nisn ||
+    result?.data?.student?.nisnn ||
     result?.data?.teacher?.nip ||
     "-";
   const resultTime = isResultCheckIn

@@ -164,8 +164,8 @@ export default function AttendanceModal({
                   <p className="font-bold text-sm text-gray-900">
                     {student?.nama || student?.student?.nama || "Nama tidak tersedia"}
                   </p>
-                  {(student?.nis || student?.student?.nis) && (
-                    <p className="text-xs text-gray-500">NIS: {student.nis || student.student.nis}</p>
+                  {false && (
+                    <p className="text-xs text-gray-500">NISN: {student.nisn || student.student?.nisn}</p>
                   )}
                 </div>
               </div>
