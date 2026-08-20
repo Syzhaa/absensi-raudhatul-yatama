@@ -176,9 +176,9 @@ export default function Report() {
     } else {
       filename = `rekap-siswa-${dateFrom}-${dateTo}.xlsx`;
       wsData = [
-        ["Nama", "NIS", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"],
+        ["Nama", "NIS", "NISN", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"],
         ...rekapRows.map(r => [
-          r.nama, r.nis, r.kelas, r.lembaga,
+          r.nama, r.nis, r.nisn || "-", r.kelas, r.lembaga,
           r.hadir, r.terlambat, r.izin, r.sakit, r.alpha, r.libur, r.total_hadir,
         ]),
       ];
@@ -235,9 +235,9 @@ export default function Report() {
         r.check_out?.slice(0, 5) || "-",
       ]);
     } else {
-      head = [["No", "Nama", "NIS", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total"]];
+      head = [["No", "Nama", "NIS", "NISN", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total"]];
       body = rekapRows.map((r, i) => [
-        i + 1, r.nama, r.nis, r.kelas, r.lembaga,
+        i + 1, r.nama, r.nis, r.nisn || "-", r.kelas, r.lembaga,
         r.hadir, r.terlambat, r.izin, r.sakit, r.alpha, r.libur, r.total_hadir,
       ]);
     }
@@ -262,28 +262,22 @@ export default function Report() {
 
   return (
     <div className="w-full pb-28 md:pb-8 space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-gray-900">Laporan Absensi</h1>
-          <p className="text-sm text-gray-500 font-semibold mt-0.5">Filter, lihat, dan export data kehadiran</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={exportExcel}
-            className="flex items-center gap-1.5 px-3 py-2 bg-green-500 hover:bg-green-600 text-white font-bold text-xs border-2 border-gray-900 rounded-xl shadow-neo-sm transition-all active:scale-95"
-          >
-            <span className="material-symbols-outlined text-base">table_view</span>
-            Excel
-          </button>
-          <button
-            onClick={exportPdf}
-            className="flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white font-bold text-xs border-2 border-gray-900 rounded-xl shadow-neo-sm transition-all active:scale-95"
-          >
-            <span className="material-symbols-outlined text-base">picture_as_pdf</span>
-            PDF
-          </button>
-        </div>
+      {/* Export Buttons */}
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={exportExcel}
+          className="flex items-center gap-1.5 px-3 py-2 bg-green-500 hover:bg-green-600 text-white font-bold text-xs border-2 border-gray-900 rounded-xl shadow-neo-sm transition-all active:scale-95"
+        >
+          <span className="material-symbols-outlined text-base">table_view</span>
+          Excel
+        </button>
+        <button
+          onClick={exportPdf}
+          className="flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white font-bold text-xs border-2 border-gray-900 rounded-xl shadow-neo-sm transition-all active:scale-95"
+        >
+          <span className="material-symbols-outlined text-base">picture_as_pdf</span>
+          PDF
+        </button>
       </div>
 
       {/* Tab */}
@@ -344,20 +338,6 @@ export default function Report() {
                   <option key={k} value={k}>{v}</option>
                 ))}
               </select>
-            </div>
-          )}
-
-          {/* Kelas (siswa only) */}
-          {(tab === "siswa" || tab === "rekap") && (
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-black text-gray-700 uppercase tracking-wide">Kelas</label>
-              <input
-                type="text"
-                placeholder="X, XI, XII..."
-                value={kelasFilter}
-                onChange={(e) => { setKelasFilter(e.target.value); setPage(1); }}
-                className="input text-sm py-2"
-              />
             </div>
           )}
 
@@ -423,7 +403,19 @@ export default function Report() {
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Nama</th>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">NIS</th>
-                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Kelas</th>
+                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">
+                        <div className="flex items-center gap-1.5">
+                          <span>Kelas</span>
+                          <input
+                            type="text"
+                            placeholder="Filter..."
+                            value={kelasFilter}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => { setKelasFilter(e.target.value); setPage(1); }}
+                            className="w-16 px-1.5 py-0.5 text-xs font-normal text-gray-900 bg-white border border-gray-300 rounded focus:outline-none"
+                          />
+                        </div>
+                      </th>
                       {isSuperAdmin && <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Lembaga</th>}
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Status</th>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Masuk</th>
@@ -499,8 +491,20 @@ export default function Report() {
                   <thead className="bg-gray-900 text-white">
                     <tr>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Nama</th>
-                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">NIS</th>
-                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Kelas</th>
+                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">NIS / NISN</th>
+                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">
+                        <div className="flex items-center gap-1.5">
+                          <span>Kelas</span>
+                          <input
+                            type="text"
+                            placeholder="Filter..."
+                            value={kelasFilter}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => { setKelasFilter(e.target.value); setPage(1); }}
+                            className="w-16 px-1.5 py-0.5 text-xs font-normal text-gray-900 bg-white border border-gray-300 rounded focus:outline-none"
+                          />
+                        </div>
+                      </th>
                       {isSuperAdmin && <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Lembaga</th>}
                       <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-green-300">Hadir</th>
                       <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-amber-300">Telat</th>
@@ -517,7 +521,10 @@ export default function Report() {
                     ) : rekapRows.map((r, i) => (
                       <tr key={r.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                         <td className="px-4 py-2.5 font-bold text-gray-900">{r.nama}</td>
-                        <td className="px-4 py-2.5 text-gray-600 text-xs">{r.nis || "-"}</td>
+                        <td className="px-4 py-2.5 text-gray-600 text-xs">
+                          <div>{r.nis || "-"}</div>
+                          {r.nisn && <div className="text-gray-400">{r.nisn}</div>}
+                        </td>
                         <td className="px-4 py-2.5 font-bold text-gray-700">{r.kelas || "-"}</td>
                         {isSuperAdmin && <td className="px-4 py-2.5 text-gray-600 text-xs">{r.lembaga}</td>}
                         <td className="px-4 py-2.5 text-center font-black text-green-600">{r.hadir}</td>
