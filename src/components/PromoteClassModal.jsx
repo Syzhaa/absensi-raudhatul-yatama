@@ -1,3 +1,5 @@
+import { useKelasFormat } from "../hooks/useKelasFormat";
+
 export default function PromoteClassModal({
   selectedCount,
   targetKelas,
@@ -7,6 +9,7 @@ export default function PromoteClassModal({
   onSubmit,
   isPending,
 }) {
+  const { formatKelas } = useKelasFormat();
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div
@@ -48,7 +51,7 @@ export default function PromoteClassModal({
             <option value="">-- Pilih Kelas Tujuan --</option>
             {kelasData?.data?.map((kelas) => (
               <option key={kelas.id} value={kelas.nama}>
-                {kelas.nama}
+                {formatKelas(kelas.nama)}
               </option>
             ))}
           </select>

@@ -147,6 +147,7 @@ export const AbsentStudentItem = memo(function AbsentStudentItem({
   student,
   onAddManual,
 }) {
+  const { formatKelas } = useKelasFormat();
   return (
     <div className="bg-amber-50/30 border-2 border-amber-300 rounded-xl p-3 flex items-center justify-between gap-3 hover:bg-amber-100/60 transition-colors">
       <div className="flex-1 min-w-0">
@@ -154,7 +155,7 @@ export const AbsentStudentItem = memo(function AbsentStudentItem({
           {student.nama}
         </h4>
         <p className="text-xs text-gray-500">
-          Kelas {student.kelas} • NISN: {student.nisn || "-"}
+          Kelas {formatKelas(student.kelas) || "-"} • NISN: {student.nisn || "-"}
         </p>
       </div>
       <button

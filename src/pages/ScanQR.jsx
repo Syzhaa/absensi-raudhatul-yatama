@@ -105,7 +105,6 @@ export default function ScanQR() {
         status: data.status,
         note: data.note,
         date: format(new Date(), "yyyy-MM-dd"),
-        is_test: useAppStore.getState().isTestMode,
       });
     },
     onSuccess: () => {
@@ -184,9 +183,9 @@ export default function ScanQR() {
 
   return (
     <div className="w-full pb-28 md:pb-8">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Camera Viewfinder & Controls (Aligned flush with header left edge) */}
-        <div className="lg:col-span-5 xl:col-span-5 flex flex-col w-full">
+      <div className="flex flex-col gap-6 items-start w-full">
+        {/* Top Section: Camera Viewfinder & Controls */}
+        <div className="flex flex-col w-full">
           {/* 1. Navigasi Mode (Toggle Tabs) di Atas Kamera */}
           <div className="w-full bg-white border-2 md:border-3 border-gray-900 p-1.5 rounded-2xl md:rounded-3xl shadow-neo flex items-center mb-4">
             <button
@@ -215,7 +214,7 @@ export default function ScanQR() {
 
           {/* 2. Area Kamera (Viewfinder) - Hidden when manual form active */}
           {!showManualForm && (
-            <div className="relative w-full aspect-square bg-gray-900 rounded-2xl md:rounded-3xl border-2 md:border-3 border-gray-900 overflow-hidden shadow-neo">
+            <div className="relative w-full aspect-[4/3] md:aspect-video lg:aspect-[21/9] xl:aspect-[21/9] bg-gray-900 rounded-2xl md:rounded-3xl border-2 md:border-3 border-gray-900 overflow-hidden shadow-neo">
               {/* QR Reader Viewport */}
               <div id="qr-reader" className="w-full h-full" />
 
@@ -307,8 +306,8 @@ export default function ScanQR() {
           )}
         </div>
 
-        {/* Right Column: Riwayat Scan Hari Ini with 10-Item Pagination (Laptop/Desktop: 7 cols or 8 cols, Mobile/Tablet: stacked below) */}
-        <div className="lg:col-span-7 xl:col-span-7 w-full mt-6 lg:mt-0">
+        {/* Bottom Section: Riwayat Scan Hari Ini */}
+        <div className="w-full mt-2 lg:mt-4">
           <RecentScanLogs recentLogs={recentLogs} />
         </div>
       </div>

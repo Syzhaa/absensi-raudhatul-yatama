@@ -21,7 +21,7 @@ export function useKelasFormat() {
       return response.data;
     },
     enabled: !isLembagaLoading,
-    staleTime: 5 * 60 * 1000, // Cache 5 menit
+    staleTime: 30 * 1000,
   });
 
   // Default to roman if not set

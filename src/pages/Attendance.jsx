@@ -9,6 +9,8 @@ import { AttendanceItem } from "../components/AttendanceItems";
 import ConfirmModal from "../components/ConfirmModal";
 import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
 import { getAutoHoliday } from "../utils/holidays";
+import { getKelasNumericVal, sortKelasList } from "../utils/kelasHelper";
+import { useKelasFormat } from "../hooks/useKelasFormat";
 import { format } from "date-fns";
 
 export default function Attendance() {
@@ -165,7 +167,7 @@ export default function Attendance() {
     const uniqueKelas = [
       ...new Set(students.map((s) => s.kelas).filter(Boolean)),
     ];
-    return uniqueKelas.sort();
+    return sortKelasList(uniqueKelas);
   }, [masterStudents]);
 
   // Combine Master Roster + Attendance Logs into complete status map
@@ -339,9 +341,9 @@ export default function Attendance() {
 
         // If both are Belum Absen: sort by kelas then by nama
         if (aBelum && bBelum) {
-          const kelasA = a.student?.kelas || "99";
-          const kelasB = b.student?.kelas || "99";
-          if (kelasA !== kelasB) return kelasA.localeCompare(kelasB, undefined, { numeric: true });
+          const valA = getKelasNumericVal(a.student?.kelas);
+          const valB = getKelasNumericVal(b.student?.kelas);
+          if (valA !== valB) return valA - valB;
           
           const namaA = a.student?.nama || a.teacher?.nama || "";
           const namaB = b.student?.nama || b.teacher?.nama || "";

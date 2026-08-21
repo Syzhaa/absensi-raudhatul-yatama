@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
 import { authService } from "../services";
-import { LogoutModal, ClearDataModal, ClearSuccessModal, SettingsSuccessModal, ClearAllAttendanceModal } from "../components/SettingsModals";
+import { LogoutModal, ClearSuccessModal, SettingsSuccessModal, ClearAllAttendanceModal } from "../components/SettingsModals";
 
 import { useAppStore } from "../store/useAppStore";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
@@ -71,11 +71,9 @@ const settingsService = {
 export default function Settings({ onLogout }) {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showClearDataModal, setShowClearDataModal] = useState(false);
   const [showClearAllModal, setShowClearAllModal] = useState(false);
   const [showSuccessClearModal, setShowSuccessClearModal] = useState(false);
   const [showSettingsSuccessModal, setShowSettingsSuccessModal] = useState(false);
-  const [isClearingTestLogs, setIsClearingTestLogs] = useState(false);
   const [isClearingAll, setIsClearingAll] = useState(false);
   const queryClient = useQueryClient();
 
@@ -103,20 +101,6 @@ export default function Settings({ onLogout }) {
       alert("Gagal menghapus data absen: " + (err.response?.data?.message || "Error"));
     } finally {
       setIsClearingAll(false);
-    }
-  };
-
-  const handleClearTestData = async () => {
-    setIsClearingTestLogs(true);
-    try {
-      await api.delete("/attendance/logs/test");
-    } catch (err) {
-      console.warn("Backend endpoint clear test response:", err);
-    } finally {
-      setIsClearingTestLogs(false);
-      setShowClearDataModal(false);
-      setShowSuccessClearModal(true);
-      queryClient.invalidateQueries();
     }
   };
 
@@ -154,7 +138,10 @@ export default function Settings({ onLogout }) {
   const updateMutation = useMutation({
     mutationFn: (data) => settingsService.updateLembaga(effectiveLembaga, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(["settings"]);
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      queryClient.invalidateQueries({ queryKey: ["students_for_kelas"] });
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       setShowSettingsSuccessModal(true);
     },
     onError: (error) => {
@@ -188,7 +175,7 @@ export default function Settings({ onLogout }) {
               Pengaturan Absensi
             </h1>
             <p className="font-medium text-xs md:text-sm text-gray-500 mt-0.5 landscape:hidden">
-              Konfigurasi jam operasional & mode testing
+              Konfigurasi jam operasional sistem
             </p>
           </div>
         </div>
@@ -218,16 +205,6 @@ export default function Settings({ onLogout }) {
                 delete_forever
               </span>
               <span>🗑️ Hapus Semua Data Absensi</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowClearDataModal(true)}
-              className="mt-3 w-full md:w-auto py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-black text-xs md:text-sm rounded-xl border-2 border-gray-900 shadow-neo transition-all flex items-center justify-center gap-2 active:translate-y-0.5"
-            >
-              <span className="material-symbols-outlined text-base">
-                cleaning_services
-              </span>
-              <span>🧹 Hapus Semua Data Test</span>
             </button>
           </div>
         </div>
@@ -311,57 +288,85 @@ export default function Settings({ onLogout }) {
               description="Absensi tidak menerima scan (Contoh: 14:00)"
             />
 
-            <div className="md:col-span-2">
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
-                Timezone *
-              </label>
-              <select
-                value={formData.timezone}
-                onChange={(e) =>
-                  setFormData({ ...formData, timezone: e.target.value })
-                }
-                className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all cursor-pointer"
-                required
-              >
-                <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
-                <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
-                <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
-              </select>
-              <p className="text-[11px] text-gray-500 font-medium mt-1">
-                Zona waktu sekolah (Default: WITA)
+            <div className="md:col-span-2 grid grid-cols-1 gap-4">
+              <div>
+                <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
+                  Timezone *
+                </label>
+                <select
+                  value={formData.timezone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, timezone: e.target.value })
+                  }
+                  className="w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all cursor-pointer"
+                  required
+                >
+                  <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
+                  <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
+                  <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
+                </select>
+                <p className="text-[11px] text-gray-500 font-medium mt-1">
+                  Zona waktu sekolah (Default: WITA)
+                </p>
+              </div>
 
-            {/* Toggle Format Kelas */}
-            <div className="md:col-span-2">
-              <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
-                Format Tampilan Kelas
-              </label>
-              <div className="flex items-center gap-3 bg-gray-100 border-2 border-gray-200 rounded-xl p-3">
-                <span className="material-symbols-outlined text-gray-600">school</span>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-sm text-gray-900">
-                        {formData.kelas_format === "roman" ? "Angka Romawi (X, XI, XII)" : "Angka Biasa (10, 11, 12)"}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Format penulisan tingkat kelas di seluruh sistem
-                      </p>
+              {/* Toggle Format Kelas */}
+              <div className="md:col-span-2">
+                <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
+                  Format Tampilan Kelas
+                </label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-gray-100 border-2 border-gray-200 rounded-xl p-3">
+                  <span className="material-symbols-outlined text-gray-600 text-2xl hidden sm:block">school</span>
+                  <div className="flex-1 w-full">
+                    <p className="text-xs text-gray-500 mb-2 font-medium">
+                      Pilih format penulisan tingkat kelas:
+                    </p>
+                    <div className="flex bg-gray-200 p-1.5 rounded-xl border-2 border-gray-900 w-full gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            kelas_format: "roman",
+                          }))
+                        }
+                        className={`flex-1 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                          formData.kelas_format === "roman"
+                            ? "bg-primary-green text-gray-900 shadow-neo border-2 border-gray-900"
+                            : "bg-white/50 text-gray-600 hover:text-gray-900 hover:bg-white border-2 border-transparent"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-base">
+                          {formData.kelas_format === "roman" ? "check_circle" : "radio_button_unchecked"}
+                        </span>
+                        Romawi (VII, VIII, IX...)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            kelas_format: "numeric",
+                          }))
+                        }
+                        className={`flex-1 py-2.5 px-3 rounded-lg text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-1.5 ${
+                          formData.kelas_format === "numeric"
+                            ? "bg-primary-green text-gray-900 shadow-neo border-2 border-gray-900"
+                            : "bg-white/50 text-gray-600 hover:text-gray-900 hover:bg-white border-2 border-transparent"
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-base">
+                          {formData.kelas_format === "numeric" ? "check_circle" : "radio_button_unchecked"}
+                        </span>
+                        Angka Biasa (7, 8, 9...)
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, kelas_format: formData.kelas_format === "roman" ? "numeric" : "roman" })}
-                      className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${formData.kelas_format === "numeric" ? "bg-primary-green" : "bg-gray-300"}`}
-                    >
-                      <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition-transform ${formData.kelas_format === "numeric" ? "translate-x-7" : "translate-x-1"}`} />
-                    </button>
                   </div>
                 </div>
+                <p className="text-[11px] text-gray-500 font-medium mt-1">
+                  Romawi: VII, VIII, IX, X, XI, XII • Biasa: 7, 8, 9, 10, 11, 12
+                </p>
               </div>
-              <p className="text-[11px] text-gray-500 font-medium mt-1">
-                Romawi: X, XI, XII • Biasa: 10, 11, 12
-              </p>
-            </div>
-              </p>
             </div>
           </div>
         </div>
@@ -494,16 +499,7 @@ export default function Settings({ onLogout }) {
         />
       )}
 
-      {/* 3. Clear Test Data Confirmation Modal */}
-      {showClearDataModal && (
-        <ClearDataModal
-          isClearing={isClearingTestLogs}
-          onCancel={() => setShowClearDataModal(false)}
-          onConfirm={handleClearTestData}
-        />
-      )}
-
-      {/* 4. Clear Test Data Success Modal */}
+      {/* 4. Clear Success Modal */}
       {showSuccessClearModal && (
         <ClearSuccessModal onClose={() => setShowSuccessClearModal(false)} />
       )}

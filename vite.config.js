@@ -7,6 +7,7 @@ export default defineConfig({
     postcss: './postcss.config.mjs',
   },
   server: {
+    port: 8083,
     host: true, // Allow external access
     allowedHosts: [
       'absen.sylink.my.id',

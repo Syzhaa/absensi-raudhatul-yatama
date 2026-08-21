@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useKelasFormat } from "../hooks/useKelasFormat";
 import Modal from "./Modal";
 import { getPhotoUrl } from "../services/api";
 import { useAppStore } from "../store/useAppStore";
@@ -16,6 +17,7 @@ export default function StudentForm({
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(editingStudent?.foto || null);
   const userRole = useAppStore((state) => state.userRole);
+  const { formatKelas } = useKelasFormat();
 
   useEffect(() => {
     if (isOpen) {
@@ -217,7 +219,7 @@ export default function StudentForm({
             <option value="">-- Pilih Kelas --</option>
             {kelasData?.data?.map((kelas) => (
               <option key={kelas.id} value={kelas.nama}>
-                {kelas.nama}
+                {formatKelas(kelas.nama)}
               </option>
             ))}
           </select>

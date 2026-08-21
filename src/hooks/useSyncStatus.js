@@ -6,7 +6,7 @@ import api from "../services/api";
  * Multi-device sync hook.
  * Polls backend setiap 30s untuk:
  * - Detect logout di device lain (token revoked)
- * - Sync test_mode status dari settings
+ * - Sync settings updates
  * - Broadcast changes ke semua open tabs
  */
 export function useSyncStatus(onSettingsChange) {
@@ -14,7 +14,7 @@ export function useSyncStatus(onSettingsChange) {
   const pollIntervalRef = useRef(null);
 
   /**
-   * Sync HANYA untuk state setelah login (test_mode settings, dll).
+   * Sync HANYA untuk state setelah login.
    * Login/logout TIDAK disync — tiap device mandiri.
    */
   const syncStatus = useCallback(async () => {
@@ -22,7 +22,7 @@ export function useSyncStatus(onSettingsChange) {
       const token = localStorage.getItem("auth_token");
       if (!token) return;
 
-      // Fetch current settings untuk detect test_mode changes
+      // Fetch current settings untuk detect changes
       const settingsResponse = await api.get("/attendance/settings");
       const newSettings = settingsResponse.data?.data || [];
 
@@ -32,7 +32,7 @@ export function useSyncStatus(onSettingsChange) {
       );
       localStorage.setItem("attendance_settings", JSON.stringify(newSettings));
 
-      // Detect test_mode changes
+      // Detect settings changes
       if (JSON.stringify(oldSettings) !== JSON.stringify(newSettings)) {
         queryClient.invalidateQueries(["settings"]);
         if (onSettingsChange) onSettingsChange(newSettings);

@@ -7,6 +7,7 @@ import api from '../services/api';
 import { settingsService } from '../services';
 import { useEffectiveLembaga } from '../hooks/useEffectiveLembaga';
 import { useKelasFormat } from '../hooks/useKelasFormat';
+import { sortKelasList } from '../utils/kelasHelper';
 import { menuForRole } from '../auth/accessPolicy';
 import ConfirmModal from './ConfirmModal';
 
@@ -36,11 +37,12 @@ function HeaderSelectors() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const kelasList = [...new Set(
+  const rawKelasList = [...new Set(
     (userRole === 'guru' ? studentData?.data?.data || [] : studentData?.data || [])
       .map(s => s.kelas)
       .filter(Boolean)
-  )].sort();
+  )];
+  const kelasList = sortKelasList(rawKelasList);
 
   const isSuperAdmin = userData?.data?.role === 'super_admin';
   const role = userData?.data?.role;
@@ -90,7 +92,6 @@ function HeaderSelectors() {
 export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const isTestMode = useAppStore((state) => state.isTestMode);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const userRole = useAppStore((state) => state.userRole);
@@ -98,26 +99,8 @@ export default function Layout({ children }) {
   const selectedKelas = useAppStore((state) => state.selectedKelas);
   const setUserRole = useAppStore((state) => state.setUserRole);
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
-  const setTestMode = useAppStore((state) => state.setTestMode);
   const { effectiveLembaga } = useEffectiveLembaga();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-
-  // Sync test_mode globally based on effectiveLembaga
-  useQuery({
-    queryKey: ['global_settings', effectiveLembaga],
-    queryFn: async () => {
-      try {
-        const params = effectiveLembaga ? { lembaga: effectiveLembaga } : {};
-        const res = await api.get('/attendance/settings/my', { params });
-        const backendTestMode = !!res.data?.data?.test_mode;
-        setTestMode(backendTestMode);
-        return res.data;
-      } catch (err) {
-        return null;
-      }
-    },
-    staleTime: 0,
-  });
 
   const allMenuItems = menuForRole(userRole);
   const menuItems = allMenuItems.filter(item => !['/settings', '/profile'].includes(item.path));
@@ -138,13 +121,6 @@ export default function Layout({ children }) {
 
   return (
     <div className="min-h-screen">
-      {isTestMode && (
-        <div className="bg-amber-400 text-amber-950 border-b-2 border-gray-900 px-4 py-2 landscape:py-0.5 text-xs md:text-sm landscape:text-[10px] font-black flex items-center justify-center gap-2 shadow-sm text-center sticky top-0 z-50 animate-pulse">
-          <span className="material-symbols-outlined text-base md:text-lg landscape:text-xs text-amber-950 flex-shrink-0">warning</span>
-          <span className="landscape:hidden">⚠️ MODE TESTING AKTIF — Data Simulasi</span>
-          <span className="hidden landscape:inline">⚠️ MODE TESTING AKTIF</span>
-        </div>
-      )}
       <div className="flex flex-col md:flex-row min-h-screen">
         {/* Mobile Off-canvas Sidebar */}
         {isSidebarOpen && (

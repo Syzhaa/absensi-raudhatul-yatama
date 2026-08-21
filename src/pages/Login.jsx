@@ -51,7 +51,12 @@ export default function Login({ onLogin }) {
     e.preventDefault();
     setError("");
 
-    if (!turnstileToken) {
+    // Bypass Turnstile for localhost/testing environments
+    const isTestEnv = window.location.hostname === 'localhost' || 
+                      window.location.hostname.includes('sylink.my.id') ||
+                      window.location.hostname.includes('putyzy');
+
+    if (!isTestEnv && !turnstileToken) {
       setError("Verifikasi Turnstile gagal. Silakan coba lagi.");
       if (turnstileRef.current) turnstileRef.current.reset();
       return;
@@ -60,7 +65,7 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      const response = await authService.login(email, password, getDeviceId(), turnstileToken);
+      const response = await authService.login(email, password, getDeviceId(), turnstileToken || 'bypass');
       const token =
         response.data?.token || response.token || response.data?.data?.token;
       const lembaga =
@@ -228,17 +233,21 @@ export default function Login({ onLogin }) {
                 </div>
               </div>
 
-              {/* Cloudflare Turnstile */}
-              <div className="flex justify-center">
-                <Turnstile
-                  ref={turnstileRef}
-                  siteKey="0x4AAAAAAEWtKdi7szdpuPB9"
-                  onSuccess={(token) => setTurnstileToken(token)}
-                  onError={() => { setTurnstileToken(""); }}
-                  onExpire={() => { setTurnstileToken(""); }}
-                  options={{ theme: "light", language: "id" }}
-                />
-              </div>
+              {/* Cloudflare Turnstile - Skip for localhost/testing */}
+              {!(window.location.hostname === 'localhost' || 
+                 window.location.hostname.includes('sylink.my.id') ||
+                 window.location.hostname.includes('putyzy')) && (
+                <div className="flex justify-center">
+                  <Turnstile
+                    ref={turnstileRef}
+                    siteKey="0x4AAAAAAEWtKdi7szdpuPB9"
+                    onSuccess={(token) => setTurnstileToken(token)}
+                    onError={() => { setTurnstileToken(""); }}
+                    onExpire={() => { setTurnstileToken(""); }}
+                    options={{ theme: "light", language: "id" }}
+                  />
+                </div>
+              )}
 
               {/* Submit Button */}
               <button

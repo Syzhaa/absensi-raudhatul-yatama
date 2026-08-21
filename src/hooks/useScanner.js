@@ -29,7 +29,14 @@ export function useScanner({
           html5QrCodeRef.current = new Html5Qrcode("qr-reader");
           await html5QrCodeRef.current.start(
             { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1.0 },
+            { 
+              fps: 10,
+              qrbox: (viewfinderWidth, viewfinderHeight) => {
+                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                const qrboxSize = Math.floor(minEdge * 0.8);
+                return { width: qrboxSize, height: qrboxSize };
+              }
+            },
             async (decodedText) => {
               if (
                 scanMutation.isPending ||

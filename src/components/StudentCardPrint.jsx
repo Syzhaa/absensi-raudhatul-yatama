@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
+import { getKelasNumericVal } from "../utils/kelasHelper";
 
 export default function StudentCardPrint({ students = [], onClose, type = "student" }) {
   const cardRef = useRef(null);
@@ -129,7 +130,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     const currentYear = new Date().getFullYear();
     // Simplified logic: If they are class 10/7 it's +3 years, 11/8 +2, 12/9 +1.
     // If not standard, fallback to "Selama Menjadi Siswa"
-    const k = parseInt(kelas);
+    const k = getKelasNumericVal(kelas);
     if ([7, 10].includes(k)) return currentYear + 3;
     if ([8, 11].includes(k)) return currentYear + 2;
     if ([9, 12].includes(k)) return currentYear + 1;
