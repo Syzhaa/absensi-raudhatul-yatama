@@ -1,5 +1,6 @@
 import { Html5Qrcode } from "html5-qrcode";
 import { saveOfflineScan } from "../services/db";
+import { playSuccessSound, playErrorSound } from "../utils/scanAudio";
 
 export function useScanner({
   html5QrCodeRef,
@@ -74,6 +75,9 @@ export function useScanner({
                   scanType: scanTypeRef.current,
                   data: { type: "offline" },
                 });
+                
+                // Play success sound for offline save
+                playSuccessSound();
 
                 // Auto-clear result after 2.5 seconds to ready for next scan visually
                 setTimeout(() => {

@@ -8,6 +8,7 @@ import { useScanner } from "../hooks/useScanner";
 import ScanResultModal from "../components/ScanResultModal";
 import ManualAttendanceForm from "../components/ManualAttendanceForm";
 import RecentScanLogs from "../components/RecentScanLogs";
+import { playSuccessSound, playErrorSound, playCheckoutSound } from "../utils/scanAudio";
 
 export default function ScanQR() {
   const [scanning, setScanning] = useState(false);
@@ -63,6 +64,13 @@ export default function ScanQR() {
         data: data.data,
         scanType: activeScanType,
       });
+      
+      // Play audio feedback
+      if (activeScanType === 'check_out') {
+        playCheckoutSound(); // Double beep untuk pulang
+      } else {
+        playSuccessSound(); // Single beep untuk masuk
+      }
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
       queryClient.invalidateQueries({ queryKey: ["recentLogs"] });
       queryClient.invalidateQueries({ queryKey: ["attendance_students"] });
@@ -79,6 +87,9 @@ export default function ScanQR() {
         success: false,
         message: error.response?.data?.message || "Scan gagal",
       });
+      
+      // Play error sound
+      playErrorSound();
 
       // Auto-clear result after 2.5 seconds to ready for next scan visually
       setTimeout(() => {
