@@ -183,16 +183,16 @@ export default function ScanQR() {
 
   return (
     <div className="w-full pb-28 md:pb-8">
-      <div className="flex flex-col gap-6 items-start w-full">
-        {/* Top Section: Camera Viewfinder & Controls */}
-        <div className="flex flex-col w-full">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 lg:gap-6 items-start w-full">
+        {/* Kolom Kiri: Kamera Scanner & Controls */}
+        <div className="md:col-span-6 lg:col-span-7 flex flex-col w-full md:sticky md:top-4">
           {/* 1. Navigasi Mode (Toggle Tabs) di Atas Kamera */}
-          <div className="w-full bg-white border-2 md:border-3 border-gray-900 p-1.5 rounded-2xl md:rounded-3xl shadow-neo flex items-center mb-4">
+          <div className="w-full bg-white border-2 md:border-3 border-gray-900 p-1.5 rounded-2xl md:rounded-3xl shadow-neo flex items-center mb-3.5">
             <button
               onClick={() => handleSwitchTab("check_in")}
-              className={`flex-1 py-2.5 px-3 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all select-none ${
+              className={`flex-1 py-2.5 px-3 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all select-none cursor-pointer ${
                 scanType === "check_in" && !showManualForm
-                  ? "bg-[#9bd47a] text-gray-900 border-2 border-gray-900 shadow-sm"
+                  ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-sm"
                   : "bg-transparent text-gray-600 hover:bg-gray-100"
               }`}
             >
@@ -201,9 +201,9 @@ export default function ScanQR() {
             </button>
             <button
               onClick={() => handleSwitchTab("check_out")}
-              className={`flex-1 py-2.5 px-3 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all select-none ${
+              className={`flex-1 py-2.5 px-3 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all select-none cursor-pointer ${
                 scanType === "check_out" && !showManualForm
-                  ? "bg-[#9bd47a] text-gray-900 border-2 border-gray-900 shadow-sm"
+                  ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-sm"
                   : "bg-transparent text-gray-600 hover:bg-gray-100"
               }`}
             >
@@ -214,19 +214,19 @@ export default function ScanQR() {
 
           {/* 2. Area Kamera (Viewfinder) - Hidden when manual form active */}
           {!showManualForm && (
-            <div className="relative w-full aspect-[4/3] md:aspect-video lg:aspect-[21/9] xl:aspect-[21/9] bg-gray-900 rounded-2xl md:rounded-3xl border-2 md:border-3 border-gray-900 overflow-hidden shadow-neo">
+            <div className="relative w-full aspect-[4/3] md:aspect-[4/3] lg:aspect-[16/10] bg-gray-950 rounded-2xl md:rounded-3xl border-2 md:border-3 border-gray-900 overflow-hidden shadow-neo">
               {/* QR Reader Viewport */}
               <div id="qr-reader" className="w-full h-full" />
 
               {/* Visual Bracket Scanner Corners */}
-              <div className="absolute inset-6 pointer-events-none z-10 flex flex-col justify-between">
+              <div className="absolute inset-5 sm:inset-6 pointer-events-none z-10 flex flex-col justify-between">
                 <div className="flex justify-between">
-                  <div className="w-9 h-9 border-t-4 border-l-4 border-white rounded-tl-xl"></div>
-                  <div className="w-9 h-9 border-t-4 border-r-4 border-white rounded-tr-xl"></div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-t-4 border-l-4 border-white rounded-tl-xl"></div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-t-4 border-r-4 border-white rounded-tr-xl"></div>
                 </div>
                 <div className="flex justify-between">
-                  <div className="w-9 h-9 border-b-4 border-l-4 border-white rounded-bl-xl"></div>
-                  <div className="w-9 h-9 border-b-4 border-r-4 border-white rounded-br-xl"></div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-b-4 border-l-4 border-white rounded-bl-xl"></div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-b-4 border-r-4 border-white rounded-br-xl"></div>
                 </div>
               </div>
 
@@ -278,13 +278,13 @@ export default function ScanQR() {
             </div>
           )}
 
-          {/* 3. Tombol 'Stop Scan' - Hidden when manual form active */}
+          {/* 3. Tombol 'Mulai / Stop Scan' - Hidden when manual form active */}
           {!showManualForm && (
-            <div className="w-full mt-4">
+            <div className="w-full mt-3.5">
               {scanning ? (
                 <button
                   onClick={stopScanning}
-                  className="w-full bg-[#e5e7eb] hover:bg-gray-300 text-gray-900 font-extrabold py-3 px-6 border-2 md:border-3 border-gray-900 rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-base active:translate-y-0.5"
+                  className="w-full bg-[#e5e7eb] hover:bg-gray-300 text-gray-900 font-black py-3 px-6 border-2 md:border-3 border-gray-900 rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:translate-y-0.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-xl">
                     visibility_off
@@ -294,7 +294,7 @@ export default function ScanQR() {
               ) : (
                 <button
                   onClick={startScanning}
-                  className="w-full bg-[#9bd47a] hover:bg-lime-400 text-gray-900 font-extrabold py-3 px-6 border-2 md:border-3 border-gray-900 rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-base active:translate-y-0.5"
+                  className="w-full bg-primary-green hover:bg-lime-400 text-gray-900 font-black py-3 px-6 border-2 md:border-3 border-gray-900 rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:translate-y-0.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-xl">
                     videocam
@@ -306,8 +306,8 @@ export default function ScanQR() {
           )}
         </div>
 
-        {/* Bottom Section: Riwayat Scan Hari Ini */}
-        <div className="w-full mt-2 lg:mt-4">
+        {/* Kolom Kanan: Riwayat Scan Hari Ini */}
+        <div className="md:col-span-6 lg:col-span-5 flex flex-col w-full">
           <RecentScanLogs recentLogs={recentLogs} />
         </div>
       </div>
