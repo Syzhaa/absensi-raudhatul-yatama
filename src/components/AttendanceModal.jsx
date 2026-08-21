@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useKelasFormat } from "../hooks/useKelasFormat";
 import { useQueryClient } from "@tanstack/react-query";
 import { logsService } from "../services";
 
@@ -48,6 +49,7 @@ export default function AttendanceModal({
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
+  const { formatKelas } = useKelasFormat();
 
   useEffect(() => {
     if (isOpen) {
@@ -140,7 +142,7 @@ export default function AttendanceModal({
             </h2>
             <p className="text-xs md:text-sm text-gray-500 mt-0.5">
               {student?.nama || student?.student?.nama || "Siswa"} -{" "}
-              {student?.kelas || student?.student?.kelas ? `Kelas ${student.kelas || student.student.kelas}` : ""}
+              {student?.kelas || student?.student?.kelas ? `Kelas ${formatKelas(student.kelas || student.student.kelas)}` : ""}
             </p>
           </div>
           <button

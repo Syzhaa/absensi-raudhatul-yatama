@@ -1,4 +1,5 @@
 import { getPhotoUrl } from "../services/api";
+import { useKelasFormat } from "../hooks/useKelasFormat";
 
 const getFallbackAvatar = () => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="200" height="200"><rect width="100%" height="100%" fill="#e5e7eb"/><path fill="#9ca3af" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
@@ -17,6 +18,7 @@ export default function StudentCard({
   activeDropdown,
   setActiveDropdown,
 }) {
+  const { formatKelas } = useKelasFormat();
   const dropdownOpen = activeDropdown === student.id;
   const closeDropdown = () => setActiveDropdown(null);
   const menuItemClass =
@@ -70,7 +72,7 @@ export default function StudentCard({
             <div className="flex flex-wrap items-center gap-1.5">
               {/* Kelas Badge */}
               <span className="px-2 py-0.5 text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-300 rounded-md">
-                {student.kelas || "Tanpa Kelas"}
+                {formatKelas(student.kelas) || "Tanpa Kelas"}
               </span>
 
               {/* Lembaga Badge */}

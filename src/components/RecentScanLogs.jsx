@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
+import { useKelasFormat } from "../hooks/useKelasFormat";
 
 export default function RecentScanLogs({ recentLogs }) {
   const [currentPage, setCurrentPage] = useState(1);
+  const { formatKelas } = useKelasFormat();
   const itemsPerPage = 10;
 
   const logs = recentLogs?.data || [];
@@ -125,7 +127,7 @@ export default function RecentScanLogs({ recentLogs }) {
                       <span>{log.student ? "Siswa" : "Guru"}</span>
                       <span>•</span>
                       <span className="text-gray-700 font-bold">
-                        {log.student?.kelas ? `Kelas ${log.student.kelas}` : log.teacher?.mata_pelajaran || log.teacher?.mapel || "-"}
+                        {log.student?.kelas ? `Kelas ${formatKelas(log.student.kelas)}` : log.teacher?.mata_pelajaran || log.teacher?.mapel || "-"}
                       </span>
                     </p>
                   </div>

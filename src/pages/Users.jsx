@@ -5,9 +5,11 @@ import { useAppStore } from "../store/useAppStore";
 import UserModal from "../components/UserModal";
 import PromoteModal from "../components/PromoteModal";
 import ConfirmModal from "../components/ConfirmModal";
+import { useKelasFormat } from "../hooks/useKelasFormat";
 
 export default function Users() {
   const [showModal, setShowModal] = useState(false);
+  const { formatKelas } = useKelasFormat();
   const [showPromoteModal, setShowPromoteModal] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -325,7 +327,7 @@ export default function Users() {
                         class
                       </span>
                       <span className="text-xs font-bold text-gray-700">
-                        Kelas: {user.kelas}
+                        Kelas: {formatKelas(user.kelas)}
                       </span>
                     </div>
                   )}

@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { settingsService } from '../services';
 import { useEffectiveLembaga } from '../hooks/useEffectiveLembaga';
+import { useKelasFormat } from '../hooks/useKelasFormat';
 import { menuForRole } from '../auth/accessPolicy';
 import ConfirmModal from './ConfirmModal';
 
@@ -13,6 +14,7 @@ function HeaderSelectors() {
   const superAdminLembaga = useAppStore((state) => state.superAdminLembaga);
   const setSuperAdminLembaga = useAppStore((state) => state.setSuperAdminLembaga);
   const selectedKelas = useAppStore((state) => state.selectedKelas);
+  const { formatKelas } = useKelasFormat();
   const setSelectedKelas = useAppStore((state) => state.setSelectedKelas);
   const { effectiveLembaga } = useEffectiveLembaga();
   const userRole = useAppStore((state) => state.userRole);
@@ -78,7 +80,7 @@ function HeaderSelectors() {
       >
         <option value="">Semua Kelas</option>
         {kelasList.map((kls) => (
-          <option key={kls} value={kls}>Kelas {kls}</option>
+          <option key={kls} value={kls}>Kelas {formatKelas(kls)}</option>
         ))}
       </select>
     </div>
