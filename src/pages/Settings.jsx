@@ -71,7 +71,6 @@ const settingsService = {
 export default function Settings({ onLogout }) {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showTestModeModal, setShowTestModeModal] = useState(false);
   const [showClearDataModal, setShowClearDataModal] = useState(false);
   const [showClearAllModal, setShowClearAllModal] = useState(false);
   const [showSuccessClearModal, setShowSuccessClearModal] = useState(false);
@@ -90,11 +89,6 @@ export default function Settings({ onLogout }) {
       setShowLogoutModal(false);
       if (onLogout) onLogout();
     }
-  };
-
-  const confirmToggleTestMode = () => {
-    // Test mode removed - this function is deprecated
-    setShowTestModeModal(false);
   };
 
   const handleClearAllAttendance = async () => {
@@ -224,6 +218,16 @@ export default function Settings({ onLogout }) {
                 delete_forever
               </span>
               <span>🗑️ Hapus Semua Data Absensi</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowClearDataModal(true)}
+              className="mt-3 w-full md:w-auto py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-black text-xs md:text-sm rounded-xl border-2 border-gray-900 shadow-neo transition-all flex items-center justify-center gap-2 active:translate-y-0.5"
+            >
+              <span className="material-symbols-outlined text-base">
+                cleaning_services
+              </span>
+              <span>🧹 Hapus Semua Data Test</span>
             </button>
           </div>
         </div>
