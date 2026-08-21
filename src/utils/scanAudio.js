@@ -1,107 +1,146 @@
 /**
  * Audio feedback untuk scan QR absensi
- * Generate beep sounds menggunakan Web Audio API
+ * Menghasilkan suara beep nyaring dan jernih menggunakan Web Audio API
  */
 
 let audioContext = null;
 
-// Initialize AudioContext (lazy loading)
+// Initialize AudioContext (lazy loading with auto-resume)
 function getAudioContext() {
   if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      audioContext = new AudioCtx();
+    }
+  }
+  if (audioContext && audioContext.state === "suspended") {
+    audioContext.resume().catch(() => {});
   }
   return audioContext;
 }
 
 /**
- * Play success beep (tone tinggi)
+ * Play success beep (Suara scan berhasil - nyaring, punchy, mirip scanner POS kasir modern)
  */
 export function playSuccessSound() {
   try {
     const ctx = getAudioContext();
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    // Tone tinggi: 800Hz, 150ms
-    oscillator.frequency.value = 800;
-    oscillator.type = 'sine';
-    
-    // Envelope (fade in/out smooth)
-    gainNode.gain.setValueAtTime(0, ctx.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
-    gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
-    
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + 0.15);
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    // Frekuensi tinggi & jernih: 1400Hz naik cepat ke 1760Hz (A6)
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(1400, now);
+    osc.frequency.exponentialRampToValueAtTime(1760, now + 0.04);
+
+    // Volume nyaring (gain 0.85) dengan decay cepat & tegas
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.85, now + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+    osc.start(now);
+    osc.stop(now + 0.18);
   } catch (err) {
-    console.warn('Audio not supported:', err);
+    console.warn("Audio error:", err);
   }
 }
 
 /**
- * Play error beep (tone rendah, lebih panjang)
+ * Play error beep (Suara scan gagal - nada buzzer tegas & terdengar jelas)
  */
 export function playErrorSound() {
   try {
     const ctx = getAudioContext();
-    const oscillator = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    // Tone rendah: 300Hz, 250ms
-    oscillator.frequency.value = 300;
-    oscillator.type = 'square';
-    
-    // Envelope
-    gainNode.gain.setValueAtTime(0, ctx.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.03);
-    gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
-    
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + 0.25);
-  } catch (err) {
-    console.warn('Audio not supported:', err);
-  }
-}
+    if (!ctx) return;
 
-/**
- * Play double beep untuk check-out (pulang)
- */
-export function playCheckoutSound() {
-  try {
-    const ctx = getAudioContext();
-    
-    // Beep 1
+    const now = ctx.currentTime;
+
+    // Beep Error 1 (rendah)
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.connect(gain1);
     gain1.connect(ctx.destination);
-    osc1.frequency.value = 600;
-    osc1.type = 'sine';
-    gain1.gain.setValueAtTime(0, ctx.currentTime);
-    gain1.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.02);
-    gain1.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
-    osc1.start(ctx.currentTime);
-    osc1.stop(ctx.currentTime + 0.1);
-    
-    // Beep 2 (delay 120ms)
+
+    osc1.type = "sawtooth";
+    osc1.frequency.setValueAtTime(260, now);
+    osc1.frequency.linearRampToValueAtTime(200, now + 0.12);
+
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(0.8, now + 0.02);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    osc1.start(now);
+    osc1.stop(now + 0.12);
+
+    // Beep Error 2 (lebih rendah)
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.connect(gain2);
     gain2.connect(ctx.destination);
-    osc2.frequency.value = 800;
-    osc2.type = 'sine';
-    gain2.gain.setValueAtTime(0, ctx.currentTime + 0.12);
-    gain2.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.14);
-    gain2.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
-    osc2.start(ctx.currentTime + 0.12);
-    osc2.stop(ctx.currentTime + 0.25);
+
+    osc2.type = "sawtooth";
+    osc2.frequency.setValueAtTime(220, now + 0.14);
+    osc2.frequency.linearRampToValueAtTime(160, now + 0.28);
+
+    gain2.gain.setValueAtTime(0, now + 0.14);
+    gain2.gain.linearRampToValueAtTime(0.8, now + 0.16);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+    osc2.start(now + 0.14);
+    osc2.stop(now + 0.28);
   } catch (err) {
-    console.warn('Audio not supported:', err);
+    console.warn("Audio error:", err);
+  }
+}
+
+/**
+ * Play double chime untuk check-out / pulang (Dua nada tinggi harmonis & nyaring)
+ */
+export function playCheckoutSound() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+
+    // Nada 1: 1046Hz (C6)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+
+    osc1.type = "triangle";
+    osc1.frequency.setValueAtTime(1046, now);
+
+    gain1.gain.setValueAtTime(0, now);
+    gain1.gain.linearRampToValueAtTime(0.85, now + 0.015);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    osc1.start(now);
+    osc1.stop(now + 0.12);
+
+    // Nada 2: 1568Hz (G6 - lebih tinggi & ceria)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+
+    osc2.type = "triangle";
+    osc2.frequency.setValueAtTime(1568, now + 0.1);
+
+    gain2.gain.setValueAtTime(0, now + 0.1);
+    gain2.gain.linearRampToValueAtTime(0.85, now + 0.115);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+
+    osc2.start(now + 0.1);
+    osc2.stop(now + 0.26);
+  } catch (err) {
+    console.warn("Audio error:", err);
   }
 }
