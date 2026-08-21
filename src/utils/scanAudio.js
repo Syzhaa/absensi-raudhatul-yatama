@@ -20,127 +20,162 @@ function getAudioContext() {
 }
 
 /**
- * Play success beep (Suara scan berhasil - nyaring, punchy, mirip scanner POS kasir modern)
+ * Suara Manusia (Text-to-Speech Bahasa Indonesia)
  */
-export function playSuccessSound() {
+export function speakVoice(text) {
   try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "id-ID";
+      utterance.rate = 1.1; // Cepat, responsif & natural
+      utterance.pitch = 1.05;
+      utterance.volume = 1.0;
 
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+      const voices = window.speechSynthesis.getVoices();
+      const idVoice = voices.find(
+        (v) => v.lang.toLowerCase().includes("id") || v.lang.toLowerCase().includes("indonesia")
+      );
+      if (idVoice) {
+        utterance.voice = idVoice;
+      }
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    // Frekuensi tinggi & jernih: 1400Hz naik cepat ke 1760Hz (A6)
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(1400, now);
-    osc.frequency.exponentialRampToValueAtTime(1760, now + 0.04);
-
-    // Volume nyaring (gain 0.85) dengan decay cepat & tegas
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.85, now + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-
-    osc.start(now);
-    osc.stop(now + 0.18);
+      window.speechSynthesis.speak(utterance);
+    }
   } catch (err) {
-    console.warn("Audio error:", err);
+    console.warn("SpeechSynthesis error:", err);
   }
 }
 
 /**
- * Play error beep (Suara scan gagal - nada buzzer tegas & terdengar jelas)
+ * Play success beep + Suara "Absen berhasil"
  */
-export function playErrorSound() {
+export function playSuccessSound(customText = "Absen berhasil") {
   try {
     const ctx = getAudioContext();
-    if (!ctx) return;
+    if (ctx) {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-    const now = ctx.currentTime;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-    // Beep Error 1 (rendah)
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(1400, now);
+      osc.frequency.exponentialRampToValueAtTime(1760, now + 0.04);
 
-    osc1.type = "sawtooth";
-    osc1.frequency.setValueAtTime(260, now);
-    osc1.frequency.linearRampToValueAtTime(200, now + 0.12);
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.85, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
-    gain1.gain.setValueAtTime(0, now);
-    gain1.gain.linearRampToValueAtTime(0.8, now + 0.02);
-    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-
-    osc1.start(now);
-    osc1.stop(now + 0.12);
-
-    // Beep Error 2 (lebih rendah)
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-
-    osc2.type = "sawtooth";
-    osc2.frequency.setValueAtTime(220, now + 0.14);
-    osc2.frequency.linearRampToValueAtTime(160, now + 0.28);
-
-    gain2.gain.setValueAtTime(0, now + 0.14);
-    gain2.gain.linearRampToValueAtTime(0.8, now + 0.16);
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-
-    osc2.start(now + 0.14);
-    osc2.stop(now + 0.28);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    }
   } catch (err) {
     console.warn("Audio error:", err);
   }
+
+  // Ucapkan suara "Absen berhasil"
+  speakVoice(customText);
 }
 
 /**
- * Play double chime untuk check-out / pulang (Dua nada tinggi harmonis & nyaring)
+ * Play error beep + Suara "Absen gagal"
  */
-export function playCheckoutSound() {
+export function playErrorSound(customText = "Absen gagal") {
   try {
     const ctx = getAudioContext();
-    if (!ctx) return;
+    if (ctx) {
+      const now = ctx.currentTime;
 
-    const now = ctx.currentTime;
+      // Beep Error 1 (rendah)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
 
-    // Nada 1: 1046Hz (C6)
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
+      osc1.type = "sawtooth";
+      osc1.frequency.setValueAtTime(260, now);
+      osc1.frequency.linearRampToValueAtTime(200, now + 0.12);
 
-    osc1.type = "triangle";
-    osc1.frequency.setValueAtTime(1046, now);
+      gain1.gain.setValueAtTime(0, now);
+      gain1.gain.linearRampToValueAtTime(0.8, now + 0.02);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
 
-    gain1.gain.setValueAtTime(0, now);
-    gain1.gain.linearRampToValueAtTime(0.85, now + 0.015);
-    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      osc1.start(now);
+      osc1.stop(now + 0.12);
 
-    osc1.start(now);
-    osc1.stop(now + 0.12);
+      // Beep Error 2 (lebih rendah)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
 
-    // Nada 2: 1568Hz (G6 - lebih tinggi & ceria)
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
+      osc2.type = "sawtooth";
+      osc2.frequency.setValueAtTime(220, now + 0.14);
+      osc2.frequency.linearRampToValueAtTime(160, now + 0.28);
 
-    osc2.type = "triangle";
-    osc2.frequency.setValueAtTime(1568, now + 0.1);
+      gain2.gain.setValueAtTime(0, now + 0.14);
+      gain2.gain.linearRampToValueAtTime(0.8, now + 0.16);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
 
-    gain2.gain.setValueAtTime(0, now + 0.1);
-    gain2.gain.linearRampToValueAtTime(0.85, now + 0.115);
-    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
-
-    osc2.start(now + 0.1);
-    osc2.stop(now + 0.26);
+      osc2.start(now + 0.14);
+      osc2.stop(now + 0.28);
+    }
   } catch (err) {
     console.warn("Audio error:", err);
   }
+
+  // Ucapkan suara "Absen gagal"
+  speakVoice(customText);
+}
+
+/**
+ * Play double chime + Suara "Absen berhasil"
+ */
+export function playCheckoutSound(customText = "Absen berhasil") {
+  try {
+    const ctx = getAudioContext();
+    if (ctx) {
+      const now = ctx.currentTime;
+
+      // Nada 1: 1046Hz (C6)
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+
+      osc1.type = "triangle";
+      osc1.frequency.setValueAtTime(1046, now);
+
+      gain1.gain.setValueAtTime(0, now);
+      gain1.gain.linearRampToValueAtTime(0.85, now + 0.015);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+      osc1.start(now);
+      osc1.stop(now + 0.12);
+
+      // Nada 2: 1568Hz (G6 - lebih tinggi & ceria)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+
+      osc2.type = "triangle";
+      osc2.frequency.setValueAtTime(1568, now + 0.1);
+
+      gain2.gain.setValueAtTime(0, now + 0.1);
+      gain2.gain.linearRampToValueAtTime(0.85, now + 0.115);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+
+      osc2.start(now + 0.1);
+      osc2.stop(now + 0.26);
+    }
+  } catch (err) {
+    console.warn("Audio error:", err);
+  }
+
+  // Ucapkan suara "Absen berhasil"
+  speakVoice(customText);
 }
