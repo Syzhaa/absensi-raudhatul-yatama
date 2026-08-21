@@ -264,76 +264,81 @@ export default function Report() {
 
   return (
     <div className="w-full pb-28 md:pb-8 space-y-5">
-      {/* Export Buttons */}
-      <div className="flex justify-end gap-2">
-        <button
-          onClick={exportExcel}
-          className="flex items-center gap-1.5 px-3 py-2 bg-green-500 hover:bg-green-600 text-white font-bold text-xs border-2 border-gray-900 rounded-xl shadow-neo-sm transition-all active:scale-95"
-        >
-          <span className="material-symbols-outlined text-base">table_view</span>
-          Excel
-        </button>
-        <button
-          onClick={exportPdf}
-          className="flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white font-bold text-xs border-2 border-gray-900 rounded-xl shadow-neo-sm transition-all active:scale-95"
-        >
-          <span className="material-symbols-outlined text-base">picture_as_pdf</span>
-          PDF
-        </button>
+      {/* Action & Tab Header Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Tab Buttons */}
+        {!isGuru ? (
+          <div className="inline-flex bg-white border-2 md:border-3 border-gray-900 rounded-xl p-1 shadow-neo overflow-x-auto">
+            {["siswa", "guru", "rekap"].map((t) => (
+              <button
+                key={t}
+                onClick={() => { setTab(t); setPage(1); setSearch(""); }}
+                className={`px-3.5 sm:px-4 py-2 rounded-lg font-black text-xs md:text-sm capitalize transition-all whitespace-nowrap ${
+                  tab === t
+                    ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-2 border-transparent"
+                }`}
+              >
+                {t === "rekap" ? "Rekap Siswa" : `Log ${t.charAt(0).toUpperCase() + t.slice(1)}`}
+              </button>
+            ))}
+          </div>
+        ) : <div />}
+
+        {/* Export Buttons */}
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <button
+            onClick={exportExcel}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs md:text-sm border-2 md:border-3 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all cursor-pointer"
+            title="Export Excel"
+          >
+            <span className="material-symbols-outlined text-base md:text-lg">table_view</span>
+            <span>Excel</span>
+          </button>
+          <button
+            onClick={exportPdf}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs md:text-sm border-2 md:border-3 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all cursor-pointer"
+            title="Export PDF"
+          >
+            <span className="material-symbols-outlined text-base md:text-lg">picture_as_pdf</span>
+            <span>PDF</span>
+          </button>
+        </div>
       </div>
 
-      {/* Tab */}
-      {!isGuru && (
-        <div className="flex gap-2 bg-gray-100 border-2 border-gray-900 rounded-xl p-1 w-fit">
-          {["siswa", "guru", "rekap"].map((t) => (
-            <button
-              key={t}
-              onClick={() => { setTab(t); setPage(1); setSearch(""); }}
-              className={`px-4 py-2 rounded-lg font-black text-sm capitalize transition-all ${
-                tab === t
-                  ? "bg-[#9bd47a] text-gray-900 border-2 border-gray-900 shadow-sm"
-                  : "text-gray-600 hover:bg-white"
-              }`}
-            >
-              {t === "rekap" ? "Rekap Siswa" : `Log ${t.charAt(0).toUpperCase() + t.slice(1)}`}
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* Filters */}
-      <div className="bg-white border-2 border-gray-900 rounded-xl p-4 shadow-neo-sm">
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 shadow-neo">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {/* Date From */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-black text-gray-700 uppercase tracking-wide">Dari</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-black text-gray-700 uppercase tracking-wide">Dari Tanggal</label>
             <input
               type="date"
               value={dateFrom}
               onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
-              className="input text-sm py-2"
+              className="w-full px-3 py-2 bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-xs md:text-sm text-gray-900 focus:bg-white focus:outline-none shadow-sm"
             />
           </div>
 
           {/* Date To */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-black text-gray-700 uppercase tracking-wide">Sampai</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-black text-gray-700 uppercase tracking-wide">Sampai Tanggal</label>
             <input
               type="date"
               value={dateTo}
               onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
-              className="input text-sm py-2"
+              className="w-full px-3 py-2 bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-xs md:text-sm text-gray-900 focus:bg-white focus:outline-none shadow-sm"
             />
           </div>
 
           {/* Status */}
           {tab !== "rekap" && (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               <label className="text-xs font-black text-gray-700 uppercase tracking-wide">Status</label>
               <select
                 value={statusFilter}
                 onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                className="input text-sm py-2"
+                className="w-full px-3 py-2 bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-xs md:text-sm text-gray-900 focus:bg-white focus:outline-none shadow-sm cursor-pointer"
               >
                 <option value="">Semua Status</option>
                 {Object.entries(STATUS_LABELS).map(([k, v]) => (
@@ -345,14 +350,14 @@ export default function Report() {
 
           {/* Lembaga (super admin only) */}
           {isSuperAdmin && (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               <label className="text-xs font-black text-gray-700 uppercase tracking-wide">Lembaga</label>
               <select
                 value={lembagaFilter}
                 onChange={(e) => { setLembagaFilter(e.target.value); setPage(1); }}
-                className="input text-sm py-2"
+                className="w-full px-3 py-2 bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-xs md:text-sm text-gray-900 focus:bg-white focus:outline-none shadow-sm cursor-pointer"
               >
-                <option value="">Semua</option>
+                <option value="">Semua Lembaga</option>
                 <option value="MA">MA</option>
                 <option value="MTs">MTs</option>
               </select>
@@ -360,16 +365,16 @@ export default function Report() {
           )}
 
           {/* Search */}
-          <div className="flex flex-col gap-1 col-span-2 md:col-span-1">
-            <label className="text-xs font-black text-gray-700 uppercase tracking-wide">Cari</label>
+          <div className="flex flex-col gap-1.5 col-span-2 md:col-span-2">
+            <label className="text-xs font-black text-gray-700 uppercase tracking-wide">Cari Data</label>
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-base">search</span>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">search</span>
               <input
                 type="text"
-                placeholder="Nama / NIS..."
+                placeholder="Cari nama atau NISN..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="input text-sm py-2 pl-8 w-full"
+                className="w-full pl-9 pr-3 py-2 bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-xs md:text-sm text-gray-900 focus:bg-white focus:outline-none shadow-sm"
               />
             </div>
           </div>
