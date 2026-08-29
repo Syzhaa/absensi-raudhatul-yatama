@@ -44,9 +44,10 @@ export default function TeacherCard({
 
           <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-gray-900 overflow-hidden bg-gray-100 flex items-center justify-center">
             {teacher.foto ? (
-              <img 
-                src={getPhotoUrl(teacher.foto)} 
-                alt={teacher.nama} 
+              <img
+                loading="lazy"
+                src={teacher.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(teacher.nama)}&background=random`}
+                alt={teacher.nama}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   e.target.onerror = null;

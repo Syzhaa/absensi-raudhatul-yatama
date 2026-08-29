@@ -44,9 +44,10 @@ export default function StudentCard({
 
           <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-gray-900 overflow-hidden bg-gray-100 flex items-center justify-center">
             {student.foto ? (
-              <img 
-                src={getPhotoUrl(student.foto)} 
-                alt={student.nama} 
+              <img
+                loading="lazy"
+                src={student.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.nama)}&background=random`}
+                alt={student.nama}
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   e.target.onerror = null;
