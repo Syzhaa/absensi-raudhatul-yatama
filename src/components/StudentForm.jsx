@@ -197,8 +197,8 @@ export default function StudentForm({
         </div>
 
         <div>
-          <label className={labelClass}>Tanggal Lahir</label>
-          <input type="date" {...field("tanggal_lahir")} className={baseClass} />
+          <label htmlFor="tanggal_lahir_input" className={labelClass}>Tanggal Lahir</label>
+          <input id="tanggal_lahir_input" type="date" {...field("tanggal_lahir")} className={baseClass} />
         </div>
 
         <div>

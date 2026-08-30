@@ -66,7 +66,7 @@ export default function GuruAttendance() {
           <h1 className="text-lg md:text-xl font-black">Daftar Hadir Siswa</h1>
           <p className="text-[10px] md:text-xs text-gray-500 uppercase font-bold">{effectiveLembaga} • {selectedKelas ? `Kelas ${selectedKelas}` : "Semua Kelas"}</p>
         </div>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="px-3 py-1.5 md:py-2 border-2 border-gray-900 rounded-xl font-bold text-sm" />
+        <input aria-label="Pilih tanggal absensi" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="px-3 py-1.5 md:py-2 border-2 border-gray-900 rounded-xl font-bold text-sm" />
       </div>
       
       {activeHoliday && (

@@ -180,12 +180,22 @@ export default function Login({ onLogin }) {
 
               {/* Password Input */}
               <div className="space-y-2">
-                <label
-                  className="block font-bold text-gray-800 text-xs md:text-sm uppercase tracking-wider"
-                  htmlFor="password"
-                >
-                  PASSWORD
-                </label>
+                <div className="flex items-center justify-between">
+                  <label
+                    className="block font-bold text-gray-800 text-xs md:text-sm uppercase tracking-wider"
+                    htmlFor="password"
+                  >
+                    PASSWORD
+                  </label>
+                  <a
+                    href="https://raudhatulyatama.sch.id/student/forgot-password"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-bold text-gray-600 hover:text-black underline"
+                  >
+                    Lupa Password?
+                  </a>
+                </div>
                 <div className="relative w-full">
                   <i className="fa-solid fa-lock absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm"></i>
                   <input

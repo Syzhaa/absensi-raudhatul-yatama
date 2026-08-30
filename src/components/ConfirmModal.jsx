@@ -29,6 +29,7 @@ export default function ConfirmModal({
       {type !== "alert" && (
         <button
           onClick={onClose}
+          aria-label="Batal"
           className="flex-1 sm:flex-none px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl border-2 border-transparent hover:border-gray-300 transition-all"
         >
           {cancelText}

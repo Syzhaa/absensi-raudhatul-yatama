@@ -15,28 +15,59 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     };
   }, []);
 
+  // Intersection Observer for Lazy QR Code Generation
   useEffect(() => {
-    const generateQRs = async () => {
-      const newQrCodes = {};
-      for (const student of students) {
-        if (student?.uuid) {
-          try {
-            newQrCodes[student.id] = await QRCode.toDataURL(student.uuid, {
-              width: 300,
-              margin: 1,
-              color: { dark: "#000000", light: "#ffffff" },
-            });
-          } catch (error) {
-            console.error("Failed to generate QR for", student.id, error);
-          }
-        }
+    if (!students || students.length === 0) return;
+
+    const generateQR = async (id, uuid) => {
+      if (!uuid || qrCodes[id]) return;
+      try {
+        const qr = await QRCode.toDataURL(uuid, {
+          width: 300,
+          margin: 1,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+        setQrCodes((prev) => ({ ...prev, [id]: qr }));
+      } catch (err) {
+        console.error("Failed generating QR for", id, err);
       }
-      setQrCodes(newQrCodes);
     };
 
-    if (students.length > 0) {
-      generateQRs();
-    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.dataset.id;
+            const uuid = entry.target.dataset.uuid;
+            if (id && uuid) {
+              generateQR(id, uuid);
+              observer.unobserve(entry.target);
+            }
+          }
+        });
+      },
+      { root: cardRef.current, rootMargin: "400px" } // trigger well before scrolling into view
+    );
+
+    const checkAndObserve = () => {
+      const cards = cardRef.current?.querySelectorAll(".student-card-print");
+      if (cards && cards.length > 0) {
+        cards.forEach((card) => observer.observe(card));
+      } else {
+        // If not rendered yet, try again in a bit
+        setTimeout(checkAndObserve, 100);
+      }
+    };
+    
+    checkAndObserve();
+
+    return () => {
+      const cards = cardRef.current?.querySelectorAll(".student-card-print");
+      if (cards) {
+        cards.forEach((card) => observer.unobserve(card));
+      }
+      observer.disconnect();
+    };
   }, [students]);
 
   const [isDownloading, setIsDownloading] = useState(false);
@@ -540,7 +571,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               : rawValidUntil;
 
             return (
-              <div key={person.id} className="id-card-wrapper">
+              <div key={person.id} data-id={person.id} data-uuid={person.uuid} className="student-card-print id-card-wrapper">
                 {/* FRONT SIDE */}
                 <div className="id-card">
                   <div className="card-header">
