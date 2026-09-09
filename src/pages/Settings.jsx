@@ -184,7 +184,7 @@ export default function Settings() {
 
   const updateMutation = useMutation({
     mutationFn: (data) =>
-      api.post(
+      api.put(
         "/attendance/settings",
         effectiveLembaga ? { ...data, lembaga: effectiveLembaga } : data
       ),
