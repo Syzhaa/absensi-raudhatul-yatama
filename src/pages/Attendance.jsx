@@ -409,31 +409,111 @@ export default function Attendance() {
   useAttendanceSSE(selectedDate, queryClient);
 
   return (
-    <div className="w-full md:max-w-none max-w-5xl mx-auto space-y-4 landscape:space-y-2">
-      {/* Top Controls: Date & Search */}
-      <div className="flex gap-2 w-full">
-        <div className="relative w-[140px] sm:w-[160px] shrink-0">
-          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-700 pointer-events-none text-lg z-10">
-            calendar_month
-          </span>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full pl-9 pr-2 py-2 bg-white border-2 md:border-3 border-gray-900 rounded-xl font-bold text-xs md:text-sm text-gray-900 shadow-neo hover:border-emerald-600 focus:outline-none transition-all cursor-pointer"
-          />
+    <div className="w-full md:max-w-none max-w-5xl mx-auto space-y-4 animate-fade-in">
+      {/* Top Header Card: Title, Date, Search, Filters */}
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-4 shadow-neo space-y-3">
+        {/* Row 1: Title & Date Selector */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-100 border-2 border-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-2xl text-emerald-900 font-bold">fact_check</span>
+            </div>
+            <div>
+              <h1 className="font-black text-base sm:text-xl text-gray-900 tracking-tight leading-tight">
+                Presensi & Roster
+              </h1>
+              <p className="text-[11px] sm:text-xs text-gray-500 font-medium">
+                Pantau kehadiran siswa & guru • {effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:w-44">
+              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none text-base">
+                calendar_today
+              </span>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full pl-8 pr-2 py-1.5 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl font-bold text-xs text-gray-900 focus:outline-none transition-all cursor-pointer"
+              />
+            </div>
+            <span className="px-2.5 py-1 text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl whitespace-nowrap">
+              Total: {filteredRecords.length}
+            </span>
+          </div>
         </div>
-        <div className="relative flex-1">
-          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-lg pointer-events-none">
-            search
-          </span>
-          <input
-            type="text"
-            placeholder="Cari nama..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-white border-2 md:border-3 border-gray-900 rounded-xl font-bold text-xs md:text-sm text-gray-900 shadow-neo focus:outline-none transition-all"
-          />
+
+        {/* Row 2: Search Bar & Filters */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-gray-100">
+          {/* Role Tabs */}
+          <div className="inline-flex p-1 bg-gray-100 border border-gray-300 rounded-xl gap-1 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setRoleFilter("all")}
+              className={`flex-1 sm:flex-initial py-1 px-3 rounded-lg text-xs font-black transition-all ${
+                roleFilter === "all"
+                  ? "bg-primary-green text-gray-900 shadow-sm border border-gray-900"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Semua
+            </button>
+            <button
+              type="button"
+              onClick={() => setRoleFilter("student")}
+              className={`flex-1 sm:flex-initial py-1 px-3 rounded-lg text-xs font-black transition-all ${
+                roleFilter === "student"
+                  ? "bg-primary-green text-gray-900 shadow-sm border border-gray-900"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Siswa
+            </button>
+            <button
+              type="button"
+              onClick={() => setRoleFilter("teacher")}
+              className={`flex-1 sm:flex-initial py-1 px-3 rounded-lg text-xs font-black transition-all ${
+                roleFilter === "teacher"
+                  ? "bg-primary-green text-gray-900 shadow-sm border border-gray-900"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Guru
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+            {/* Search Input */}
+            <div className="relative flex-1 sm:w-56">
+              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">
+                search
+              </span>
+              <input
+                type="text"
+                placeholder="Cari nama..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl text-xs font-medium focus:outline-none transition-all"
+              />
+            </div>
+
+            {/* Status Select */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-gray-50 border-2 border-gray-300 focus:border-gray-900 rounded-xl py-1.5 px-2.5 font-bold text-xs text-gray-800 focus:outline-none cursor-pointer"
+            >
+              <option value="all">Semua Status</option>
+              <option value="belum_absen">Belum Absen</option>
+              <option value="masuk">Sudah Masuk</option>
+              <option value="pulang">Sudah Pulang</option>
+              <option value="manual">Izin / Sakit / Alpha</option>
+              <option value="libur">Libur</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -458,77 +538,6 @@ export default function Attendance() {
           </div>
         </div>
       )}
-
-      {/* Role Tabs & Filters Row */}
-      <div className="flex flex-col sm:flex-row justify-between gap-3 items-stretch sm:items-center">
-        {/* Role Toggle Tabs */}
-        <div className="grid grid-cols-3 p-1 bg-white border-2 md:border-3 border-gray-900 rounded-xl shadow-neo gap-1 w-full sm:w-64 shrink-0">
-          <button
-            type="button"
-            onClick={() => setRoleFilter("all")}
-            className={`py-1.5 px-2 rounded-lg text-xs font-black transition-all text-center select-none flex items-center justify-center gap-1 ${
-              roleFilter === "all"
-                ? "bg-emerald-400 text-gray-950 shadow-neo border-2 border-gray-900"
-                : "text-gray-700 hover:text-gray-950 hover:bg-gray-200"
-            }`}
-          >
-            Semua
-          </button>
-          <button
-            type="button"
-            onClick={() => setRoleFilter("student")}
-            className={`py-1.5 px-2 rounded-lg text-xs font-black transition-all text-center select-none flex items-center justify-center gap-1 ${
-              roleFilter === "student"
-                ? "bg-emerald-400 text-gray-950 shadow-neo border-2 border-gray-900"
-                : "text-gray-700 hover:text-gray-950 hover:bg-gray-200"
-            }`}
-          >
-            Siswa
-          </button>
-          <button
-            type="button"
-            onClick={() => setRoleFilter("teacher")}
-            className={`py-1.5 px-2 rounded-lg text-xs font-black transition-all text-center select-none flex items-center justify-center gap-1 ${
-              roleFilter === "teacher"
-                ? "bg-emerald-400 text-gray-950 shadow-neo border-2 border-gray-900"
-                : "text-gray-700 hover:text-gray-950 hover:bg-gray-200"
-            }`}
-          >
-            Guru
-          </button>
-        </div>
-
-        {/* Status Filter & Stats */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <select 
-             value={statusFilter}
-             onChange={(e) => setStatusFilter(e.target.value)}
-             className="w-[140px] sm:w-[160px] shrink-0 bg-white border-2 md:border-3 border-gray-900 rounded-xl py-1.5 px-2 font-bold text-[10px] sm:text-xs shadow-neo focus:outline-none cursor-pointer"
-           >
-              <option value="all">Semua Status</option>
-              <option value="belum_absen">Belum Absen</option>
-              <option value="masuk">Sudah Masuk</option>
-              <option value="pulang">Sudah Pulang</option>
-              <option value="manual">Izin / Sakit / Alpha</option>
-              <option value="libur">Libur</option>
-           </select>
-           
-           <div className="flex flex-row flex-1 sm:flex-initial justify-end gap-1.5 overflow-hidden">
-             <span className="px-2 py-1 text-[9px] sm:text-[10px] font-black bg-emerald-100 text-emerald-900 border-2 border-gray-900 rounded-full text-center shadow-sm whitespace-nowrap">
-                Total: {filteredRecords.length}
-             </span>
-             {stats.liburCount > 0 ? (
-               <span className="px-2 py-1 text-[9px] sm:text-[10px] font-black bg-teal-200 text-teal-950 border-2 border-gray-900 rounded-full text-center shadow-sm whitespace-nowrap">
-                  Libur: {stats.liburCount}
-               </span>
-             ) : stats.belumAbsen > 0 ? (
-               <span className="px-2 py-1 text-[9px] sm:text-[10px] font-black bg-amber-200 text-amber-950 border-2 border-gray-900 rounded-full text-center animate-pulse shadow-sm whitespace-nowrap">
-                  Belum: {stats.belumAbsen}
-               </span>
-             ) : null}
-           </div>
-        </div>
-      </div>
 
       {/* Attendance Records: Responsive View (Card in Mobile, Table in Desktop) */}
       <div className="pb-24 md:pb-12">
