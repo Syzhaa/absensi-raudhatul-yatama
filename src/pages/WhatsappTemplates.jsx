@@ -5,29 +5,24 @@ import WhatsappTemplateForm from "../components/WhatsappTemplateForm";
 import WhatsappTemplatePreview from "../components/WhatsappTemplatePreview";
 
 const STATUS_OPTIONS = [
-  { value: "", label: "Semua Status" },
-  { value: "hadir", label: "Hadir", color: "bg-green-100 text-green-800" },
-  { value: "terlambat", label: "Terlambat", color: "bg-yellow-100 text-yellow-800" },
-  { value: "izin", label: "Izin", color: "bg-blue-100 text-blue-800" },
-  { value: "sakit", label: "Sakit", color: "bg-purple-100 text-purple-800" },
-  { value: "alpha", label: "Alpha", color: "bg-red-100 text-red-800" },
-  { value: "libur", label: "Libur", color: "bg-gray-100 text-gray-800" },
-  { value: "pulang", label: "Pulang", color: "bg-teal-100 text-teal-800" },
+  { value: "", label: "Semua Status", dot: "bg-gray-400" },
+  { value: "hadir", label: "Hadir", dot: "bg-emerald-500", badge: "bg-emerald-100 text-emerald-800 border-emerald-300" },
+  { value: "terlambat", label: "Terlambat", dot: "bg-amber-500", badge: "bg-amber-100 text-amber-800 border-amber-300" },
+  { value: "izin", label: "Izin", dot: "bg-blue-500", badge: "bg-blue-100 text-blue-800 border-blue-300" },
+  { value: "sakit", label: "Sakit", dot: "bg-purple-500", badge: "bg-purple-100 text-purple-800 border-purple-300" },
+  { value: "alpha", label: "Alpha", dot: "bg-red-500", badge: "bg-red-100 text-red-800 border-red-300" },
+  { value: "libur", label: "Libur", dot: "bg-gray-500", badge: "bg-gray-100 text-gray-800 border-gray-300" },
+  { value: "pulang", label: "Pulang", dot: "bg-teal-500", badge: "bg-teal-100 text-teal-800 border-teal-300" },
 ];
 
 const formatWhatsAppText = (text) => {
-  if (!text) return '-';
-  // Replace literal \n with actual newlines
-  let html = text.replace(/\\n/g, '\n');
-  // Escape HTML to prevent XSS
-  html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  // Apply WhatsApp formatting
-  html = html.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
-  html = html.replace(/_(.*?)_/g, '<em>$1</em>');
-  html = html.replace(/~(.*?)~/g, '<del>$1</del>');
-  // Convert newlines to br
-  html = html.replace(/\n/g, '<br />');
-  
+  if (!text) return "-";
+  let html = text.replace(/\\n/g, "\n");
+  html = html.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  html = html.replace(/\*(.*?)\*/g, "<strong>$1</strong>");
+  html = html.replace(/_(.*?)_/g, "<em>$1</em>");
+  html = html.replace(/~(.*?)~/g, "<del>$1</del>");
+  html = html.replace(/\n/g, "<br />");
   return <div dangerouslySetInnerHTML={{ __html: html }} />;
 };
 
@@ -42,7 +37,6 @@ export default function WhatsappTemplates() {
   const [showPreview, setShowPreview] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
-  // Fetch templates
   const { data, isLoading } = useQuery({
     queryKey: ["whatsapp-templates", page, perPage, statusFilter, activeFilter, search],
     queryFn: () =>
@@ -55,13 +49,11 @@ export default function WhatsappTemplates() {
       }),
   });
 
-  // Fetch stats
   const { data: stats } = useQuery({
     queryKey: ["whatsapp-templates-stats"],
     queryFn: () => whatsappTemplateService.getStats(),
   });
 
-  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: (id) => whatsappTemplateService.delete(id),
     onSuccess: () => {
@@ -70,7 +62,6 @@ export default function WhatsappTemplates() {
     },
   });
 
-  // Toggle mutation
   const toggleMutation = useMutation({
     mutationFn: (id) => whatsappTemplateService.toggle(id),
     onSuccess: () => {
@@ -104,89 +95,100 @@ export default function WhatsappTemplates() {
     setShowPreview(true);
   };
 
-  const getStatusBadge = (status) => {
-    const option = STATUS_OPTIONS.find((opt) => opt.value === status);
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-bold ${option?.color || "bg-gray-100"}`}>
-        {option?.label || status}
-      </span>
-    );
+  const getStatusConfig = (status) => {
+    return STATUS_OPTIONS.find((opt) => opt.value === status) || {
+      badge: "bg-gray-100 text-gray-800 border-gray-300",
+      dot: "bg-gray-400",
+      label: status,
+    };
   };
 
-  // Debug: log data structure removed
-  
   const templates = data?.data?.data || [];
   const pagination = data?.data || {};
 
   return (
-    <div className="min-h-screen p-4 md:p-6">
-      {/* Header - Desktop Only Button */}
-      <div className="max-w-7xl mx-auto mb-4">
-        <div className="flex items-center justify-end">
-          <button
-            onClick={handleCreate}
-            className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green text-gray-900 font-black border-2 md:border-3 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all text-sm"
-          >
-            <span className="material-symbols-outlined text-lg">add</span>
-            Tambah Template
-          </button>
+    <div className="w-full max-w-xl md:max-w-none px-3 sm:px-6 py-3 sm:py-6 space-y-4 animate-fade-in">
+      {/* Top Header Card */}
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-4 shadow-neo flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3.5">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-primary-green border-2 border-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-2xl text-gray-900">chat_bubble</span>
+          </div>
+          <div>
+            <h1 className="font-black text-base sm:text-xl text-gray-900 tracking-tight leading-tight">
+              Template Notifikasi WhatsApp
+            </h1>
+            <p className="text-[11px] sm:text-xs text-gray-500 font-medium">
+              Kustomisasi format kalimat pembuka & penutup pesan otomatis absensi
+            </p>
+          </div>
         </div>
+
+        <button
+          onClick={handleCreate}
+          className="hidden sm:flex items-center justify-center gap-1.5 px-4 py-2 sm:py-2.5 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0"
+        >
+          <span className="material-symbols-outlined text-base">add</span>
+          <span>Tambah Template</span>
+        </button>
       </div>
 
-      {/* Stats Cards - Compact */}
+      {/* Stats Summary Bar - Neo Minimal */}
       {stats?.data && (
-        <div className="max-w-7xl mx-auto mb-4 grid grid-cols-4 md:grid-cols-7 gap-2">
-          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
-            <div className="text-gray-500 text-[10px] font-bold mb-0.5">Total</div>
-            <div className="text-xl font-black text-gray-900">{stats.data.total}</div>
+        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
+            <div className="text-[10px] font-black uppercase text-gray-500">Total</div>
+            <div className="text-base sm:text-xl font-black text-gray-900">{stats.data.total || 0}</div>
           </div>
-          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
-            <div className="text-green-600 text-[10px] font-bold mb-0.5">Aktif</div>
-            <div className="text-xl font-black text-green-700">{stats.data.active}</div>
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
+            <div className="text-[10px] font-black uppercase text-emerald-600">Aktif</div>
+            <div className="text-base sm:text-xl font-black text-emerald-700">{stats.data.active || 0}</div>
           </div>
-          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
-            <div className="text-red-600 text-[10px] font-bold mb-0.5">Nonaktif</div>
-            <div className="text-xl font-black text-red-700">{stats.data.inactive}</div>
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
+            <div className="text-[10px] font-black uppercase text-blue-600">Hadir</div>
+            <div className="text-base sm:text-xl font-black text-blue-700">{stats.data.by_status?.hadir || 0}</div>
           </div>
-          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
-            <div className="text-blue-600 text-[10px] font-bold mb-0.5">Hadir</div>
-            <div className="text-xl font-black text-blue-700">{stats.data.by_status?.hadir || 0}</div>
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
+            <div className="text-[10px] font-black uppercase text-amber-600">Telat</div>
+            <div className="text-base sm:text-xl font-black text-amber-700">{stats.data.by_status?.terlambat || 0}</div>
           </div>
-          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
-            <div className="text-yellow-600 text-[10px] font-bold mb-0.5">Telat</div>
-            <div className="text-xl font-black text-yellow-700">{stats.data.by_status?.terlambat || 0}</div>
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
+            <div className="text-[10px] font-black uppercase text-purple-600">Izin/Skt</div>
+            <div className="text-base sm:text-xl font-black text-purple-700">
+              {(stats.data.by_status?.izin || 0) + (stats.data.by_status?.sakit || 0)}
+            </div>
           </div>
-          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
-            <div className="text-purple-600 text-[10px] font-bold mb-0.5">Izin</div>
-            <div className="text-xl font-black text-purple-700">{stats.data.by_status?.izin || 0}</div>
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
+            <div className="text-[10px] font-black uppercase text-red-600">Alpha</div>
+            <div className="text-base sm:text-xl font-black text-red-700">{stats.data.by_status?.alpha || 0}</div>
           </div>
-          <div className="bg-white border-2 border-gray-900 rounded-lg p-2 shadow-[2px_2px_0px_#111827]">
-            <div className="text-teal-600 text-[10px] font-bold mb-0.5">Pulang</div>
-            <div className="text-xl font-black text-teal-700">{stats.data.by_status?.pulang || 0}</div>
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
+            <div className="text-[10px] font-black uppercase text-teal-600">Pulang</div>
+            <div className="text-base sm:text-xl font-black text-teal-700">{stats.data.by_status?.pulang || 0}</div>
           </div>
         </div>
       )}
 
-      {/* Search & Filters */}
-      <div className="max-w-7xl mx-auto mb-4">
-        <div className="relative mb-3">
+      {/* Filter & Search Bar */}
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3 sm:p-4 shadow-neo flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
+        <div className="relative flex-1">
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari template..."
-            className="w-full pl-9 pr-3 py-2 border-2 md:border-3 border-gray-900 rounded-xl text-xs md:text-sm font-bold shadow-neo focus:ring-0 focus:outline-none"
+            placeholder="Cari kata di pembuka / penutup..."
+            className="w-full pl-9 pr-3 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl text-xs sm:text-sm font-medium focus:outline-none transition-all"
           />
-          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-lg">
+          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-lg">
             search
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="flex items-center gap-2">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border-2 border-gray-900 rounded-lg text-xs font-bold shadow-[2px_2px_0px_#111827] focus:outline-none"
+            className="flex-1 sm:flex-none px-3 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-bold text-gray-800 focus:outline-none"
           >
             {STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -194,117 +196,141 @@ export default function WhatsappTemplates() {
               </option>
             ))}
           </select>
+
           <select
             value={activeFilter}
             onChange={(e) => setActiveFilter(e.target.value)}
-            className="px-3 py-2 border-2 border-gray-900 rounded-lg text-xs font-bold shadow-[2px_2px_0px_#111827] focus:outline-none"
+            className="flex-1 sm:flex-none px-3 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-bold text-gray-800 focus:outline-none"
           >
             <option value="">Semua Status</option>
-            <option value="1">Aktif</option>
+            <option value="1">Aktif Saja</option>
             <option value="0">Nonaktif</option>
           </select>
         </div>
       </div>
 
-      {/* Templates List */}
-      <div className="max-w-7xl mx-auto space-y-3">
+      {/* Template Grid List (Desktop 2-Col, Mobile 1-Col) */}
+      <div className="space-y-3">
         {isLoading ? (
-          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
-            Loading...
+          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-500 shadow-neo">
+            <div className="inline-block w-8 h-8 border-3 border-gray-900 border-t-transparent rounded-full animate-spin mb-2"></div>
+            <div>Memuat daftar template...</div>
           </div>
         ) : templates.length === 0 ? (
-          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
-            Tidak ada template ditemukan.
+          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-500 shadow-neo">
+            Tidak ada template yang cocok dengan pencarian / filter.
           </div>
         ) : (
-          templates.map((template) => (
-            <div
-              key={template.id}
-              className="bg-white border-2 md:border-3 border-gray-900 rounded-xl shadow-[2px_2px_0px_#111827] hover:shadow-[4px_4px_0px_#111827] transition-all p-4"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  {/* Status Badge & Active Status in one line */}
-                  <div className="flex items-center gap-2 mb-2">
-                    {getStatusBadge(template.status)}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {templates.map((template) => {
+              const cfg = getStatusConfig(template.status);
+              return (
+                <div
+                  key={template.id}
+                  className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-4 shadow-neo flex flex-col justify-between gap-3 transition-all hover:translate-x-0.5 hover:-translate-y-0.5"
+                >
+                  <div className="space-y-2.5">
+                    {/* Header Item */}
+                    <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border ${cfg.badge}`}>
+                          {cfg.label || template.status}
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-400">
+                          Weight: {template.weight || 1}
+                        </span>
+                      </div>
+
+                      {/* Active Status Badge Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggle(template)}
+                        title="Klik untuk ubah status aktif/nonaktif"
+                        className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border transition-transform active:scale-95 ${
+                          template.is_active
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-400"
+                            : "bg-gray-100 text-gray-500 border-gray-300"
+                        }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full ${template.is_active ? "bg-emerald-600 animate-pulse" : "bg-gray-400"}`}></span>
+                        <span>{template.is_active ? "Aktif" : "Nonaktif"}</span>
+                      </button>
+                    </div>
+
+                    {/* Opening Content */}
+                    <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-200">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-gray-500 mb-1 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs text-emerald-600">waving_hand</span>
+                        <span>Pembuka:</span>
+                      </div>
+                      <div className="text-xs text-gray-800 leading-relaxed font-medium">
+                        {formatWhatsAppText(template.opening)}
+                      </div>
+                    </div>
+
+                    {/* Closing Content */}
+                    <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-200">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-gray-500 mb-1 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs text-blue-600">handshake</span>
+                        <span>Penutup:</span>
+                      </div>
+                      <div className="text-xs text-gray-800 leading-relaxed font-medium">
+                        {formatWhatsAppText(template.closing)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions Bottom Bar */}
+                  <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-gray-100">
                     <button
-                      onClick={() => handleToggle(template)}
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        template.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                      }`}
+                      onClick={() => handlePreview(template)}
+                      className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-xs rounded-lg border border-blue-300 flex items-center gap-1 transition-colors"
+                      title="Lihat Format Utuh"
                     >
-                      {template.is_active ? "Aktif" : "Nonaktif"}
+                      <span className="material-symbols-outlined text-sm">visibility</span>
+                      <span>Preview</span>
                     </button>
-                    <span className="text-[10px] font-bold text-gray-500">
-                      W:{template.weight}
-                    </span>
-                  </div>
-
-                  {/* Opening Preview */}
-                  <div className="mb-2">
-                    <div className="text-[10px] font-bold text-gray-500 mb-0.5">Salam:</div>
-                    <div className="text-xs text-gray-700">
-                      {formatWhatsAppText(template.opening)}
-                    </div>
-                  </div>
-
-                  {/* Closing Preview */}
-                  <div>
-                    <div className="text-[10px] font-bold text-gray-500 mb-0.5">Penutup:</div>
-                    <div className="text-xs text-gray-700">
-                      {formatWhatsAppText(template.closing)}
-                    </div>
+                    <button
+                      onClick={() => handleEdit(template)}
+                      className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs rounded-lg border border-amber-300 flex items-center gap-1 transition-colors"
+                      title="Ubah Kalimat"
+                    >
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => handleDelete(template)}
+                      className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg border border-red-300 flex items-center justify-center transition-colors"
+                      title="Hapus Template"
+                    >
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
                   </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex flex-col gap-1.5">
-                  <button
-                    onClick={() => handlePreview(template)}
-                    className="p-1.5 hover:bg-blue-100 rounded-lg transition-colors"
-                    title="Preview"
-                  >
-                    <span className="material-symbols-outlined text-blue-600 text-lg">visibility</span>
-                  </button>
-                  <button
-                    onClick={() => handleEdit(template)}
-                    className="p-1.5 hover:bg-yellow-100 rounded-lg transition-colors"
-                    title="Edit"
-                  >
-                    <span className="material-symbols-outlined text-yellow-600 text-lg">edit</span>
-                  </button>
-                  <button
-                    onClick={() => handleDelete(template)}
-                    className="p-1.5 hover:bg-red-100 rounded-lg transition-colors"
-                    title="Hapus"
-                  >
-                    <span className="material-symbols-outlined text-red-600 text-lg">delete</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
+              );
+            })}
+          </div>
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Pagination Bar */}
       {pagination.last_page > 1 && (
-        <div className="max-w-7xl mx-auto mt-4 flex items-center justify-between px-1">
-          <div className="text-[10px] md:text-xs font-bold text-gray-600">
-            {pagination.from}-{pagination.to} dari {pagination.total}
+        <div className="bg-white border-2 border-gray-900 rounded-2xl p-3 shadow-neo flex items-center justify-between gap-2">
+          <div className="text-[11px] sm:text-xs font-bold text-gray-600">
+            Halaman {pagination.current_page} dari {pagination.last_page} ({pagination.total} template)
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setPage(page - 1)}
               disabled={page === 1}
-              className="px-3 py-1.5 border-2 border-gray-900 rounded-lg text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors shadow-[2px_2px_0px_#111827]"
+              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border-2 border-gray-900 rounded-lg text-xs font-black disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               Prev
             </button>
             <button
               onClick={() => setPage(page + 1)}
               disabled={page === pagination.last_page}
-              className="px-3 py-1.5 border-2 border-gray-900 rounded-lg text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors shadow-[2px_2px_0px_#111827]"
+              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border-2 border-gray-900 rounded-lg text-xs font-black disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
               Next
             </button>
@@ -312,12 +338,13 @@ export default function WhatsappTemplates() {
         </div>
       )}
 
-      {/* Mobile FAB */}
+      {/* Mobile Floating Add Button */}
       <button
         onClick={handleCreate}
-        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-[2px_2px_0px_#111827] flex items-center justify-center z-40 active:translate-y-1 transition-transform"
+        className="sm:hidden fixed bottom-24 right-4 w-12 h-12 bg-primary-green text-gray-900 rounded-full border-2 border-gray-900 shadow-neo flex items-center justify-center z-40 active:translate-y-0.5 transition-all"
+        title="Tambah Template"
       >
-        <span className="material-symbols-outlined text-2xl">add</span>
+        <span className="material-symbols-outlined text-2xl font-black">add</span>
       </button>
 
       {/* Form Modal */}
