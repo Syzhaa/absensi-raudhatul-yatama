@@ -104,7 +104,7 @@ export default function WhatsappApi() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-3 sm:px-4 py-3 sm:py-6 space-y-4 animate-fade-in">
+    <div className="w-full max-w-xl md:max-w-none px-3 sm:px-6 py-3 sm:py-6 space-y-4 animate-fade-in">
       {/* Header Compact */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-4 shadow-neo flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 sm:gap-3.5">
