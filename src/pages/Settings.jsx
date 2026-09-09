@@ -139,7 +139,14 @@ export default function Settings() {
     }
   };
 
-  const [activeTab, setActiveTab] = useState("jam"); // 'jam' | 'format' | 'system'
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem("settings_active_tab") || "jam";
+  });
+
+  const handleTabChange = (tabName) => {
+    setActiveTab(tabName);
+    localStorage.setItem("settings_active_tab", tabName);
+  };
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showClearAllModal, setShowClearAllModal] = useState(false);
   const [isClearingAll, setIsClearingAll] = useState(false);
@@ -257,7 +264,7 @@ export default function Settings() {
         <div className="flex items-center bg-gray-100 p-1 border-2 border-gray-900 rounded-xl gap-1">
           <button
             type="button"
-            onClick={() => setActiveTab("jam")}
+            onClick={() => handleTabChange("jam")}
             className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
               activeTab === "jam"
                 ? "bg-primary-green text-gray-900 border border-gray-900 shadow-sm"
@@ -269,7 +276,7 @@ export default function Settings() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("format")}
+            onClick={() => handleTabChange("format")}
             className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
               activeTab === "format"
                 ? "bg-primary-green text-gray-900 border border-gray-900 shadow-sm"
@@ -281,7 +288,7 @@ export default function Settings() {
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab("system")}
+            onClick={() => handleTabChange("system")}
             className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
               activeTab === "system"
                 ? "bg-primary-green text-gray-900 border border-gray-900 shadow-sm"

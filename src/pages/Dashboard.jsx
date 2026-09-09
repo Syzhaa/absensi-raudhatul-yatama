@@ -11,7 +11,7 @@ import { StatCardSkeleton, SkeletonBox } from "../components/Skeleton";
 
 export default function Dashboard() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
-  const { enableTeacherAttendance } = useAttendanceSettings();
+  const { enableTeacherAttendance: settingsEnableTeacher } = useAttendanceSettings();
   const selectedKelas = useAppStore((state) => state.selectedKelas);
   const queryClient = useQueryClient();
 
@@ -22,6 +22,11 @@ export default function Dashboard() {
     queryFn: () => attendanceService.getDashboard(effectiveLembaga, selectedKelas, today),
     enabled: !isLembagaLoading,
   });
+
+  const stats = data?.data || data || {};
+  const enableTeacherAttendance = stats.enable_teacher_attendance !== undefined
+    ? Boolean(Number(stats.enable_teacher_attendance))
+    : settingsEnableTeacher;
 
   const { data: holidaysData } = useQuery({
     queryKey: ["holidays", effectiveLembaga],
@@ -35,8 +40,6 @@ export default function Dashboard() {
     },
     enabled: !isLembagaLoading,
   });
-
-  const stats = data?.data || {};
 
   const activeHoliday = useMemo(() => {
     const list = Array.isArray(holidaysData) ? holidaysData : [];

@@ -455,8 +455,8 @@ export default function Attendance() {
 
         {/* Row 2: Search Bar & Filters */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-gray-100">
-          {/* Role Tabs */}
-          {enableTeacherAttendance ? (
+          {/* Role Tabs - Hanya tampil jika absensi guru diaktifkan */}
+          {enableTeacherAttendance && (
             <div className="inline-flex p-1 bg-gray-100 border border-gray-300 rounded-xl gap-1 w-full sm:w-auto">
               <button
                 type="button"
@@ -492,14 +492,9 @@ export default function Attendance() {
                 Guru
               </button>
             </div>
-          ) : (
-            <div className="inline-flex py-1 px-3 bg-gray-100 border border-gray-300 rounded-xl text-xs font-black text-gray-700 items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm text-emerald-600">school</span>
-              <span>Presensi Siswa</span>
-            </div>
           )}
 
-          <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+          <div className={`flex items-center gap-2 flex-1 ${enableTeacherAttendance ? "sm:flex-initial" : "w-full"}`}>
             {/* Search Input */}
             <div className="relative flex-1 sm:w-56">
               <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-base pointer-events-none">

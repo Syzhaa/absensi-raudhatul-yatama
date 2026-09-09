@@ -17,8 +17,8 @@ export function useAttendanceSettings() {
   });
 
   const enableTeacherAttendance =
-    query.data?.enable_teacher_attendance !== undefined
-      ? Boolean(query.data.enable_teacher_attendance)
+    query.data?.enable_teacher_attendance !== undefined && query.data?.enable_teacher_attendance !== null
+      ? Boolean(Number(query.data.enable_teacher_attendance))
       : true;
 
   return {
