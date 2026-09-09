@@ -547,7 +547,7 @@ export default function Teachers() {
             <div className="hidden md:block bg-white border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs md:text-sm">
-                  <thead className="bg-gray-900 text-white uppercase text-[11px] font-black tracking-wider border-b-2 border-gray-900 select-none">
+                  <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 uppercase text-[11px] font-black tracking-wider select-none">
                     <tr>
                       <th className="py-3 px-4 w-10 text-center">
                         <input

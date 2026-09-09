@@ -399,7 +399,7 @@ export default function Report() {
         {isLoading ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-900 text-white">
+              <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800">
                 <tr>
                   <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Kolom 1</th>
                   <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Kolom 2</th>
@@ -423,7 +423,7 @@ export default function Report() {
             {tab === "siswa" && (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-900 text-white">
+                  <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
                     <tr>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Nama</th>
@@ -463,10 +463,10 @@ export default function Report() {
             {tab === "guru" && (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-900 text-white">
+                  <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
                     <tr>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>
-                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Nama</th>
+                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Nama Guru</th>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">NIP</th>
                       {isSuperAdmin && <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Lembaga</th>}
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Status</th>
@@ -501,18 +501,18 @@ export default function Report() {
             {tab === "rekap" && (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-900 text-white">
+                  <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
                     <tr>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Nama</th>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">NIS / NISN</th>
                       <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Kelas</th>
                       {isSuperAdmin && <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Lembaga</th>}
-                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-green-300">Hadir</th>
-                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-amber-300">Telat</th>
-                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-blue-300">Izin</th>
-                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-orange-300">Sakit</th>
-                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-red-300">Alpha</th>
-                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-gray-300">Libur</th>
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-green-700">Hadir</th>
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-amber-700">Telat</th>
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-blue-700">Izin</th>
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-orange-700">Sakit</th>
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-red-700">Alpha</th>
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-gray-700">Libur</th>
                       <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide">Total</th>
                     </tr>
                   </thead>

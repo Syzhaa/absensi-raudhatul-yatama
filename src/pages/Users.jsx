@@ -6,7 +6,7 @@ import UserModal from "../components/UserModal";
 import PromoteModal from "../components/PromoteModal";
 import ConfirmModal from "../components/ConfirmModal";
 import { useKelasFormat } from "../hooks/useKelasFormat";
-import { CardSkeleton } from "../components/Skeleton";
+import { CardSkeleton, TableRowSkeleton } from "../components/Skeleton";
 
 export default function Users() {
   const [showModal, setShowModal] = useState(false);

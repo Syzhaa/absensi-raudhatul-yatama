@@ -116,6 +116,7 @@ export default function Settings({ onLogout }) {
     attendance_limit: settingsData?.data?.attendance_limit || "07:30:00",
     late_after: settingsData?.data?.late_after || "07:30:00",
     attendance_close: settingsData?.data?.attendance_close || "08:00:00",
+    auto_alpha_time: settingsData?.data?.auto_alpha_time || "12:00:00",
     timezone: settingsData?.data?.timezone || "Asia/Makassar",
     kelas_format: settingsData?.data?.kelas_format || "roman",
   });
@@ -130,6 +131,7 @@ export default function Settings({ onLogout }) {
         attendance_limit: currentSettings.attendance_limit || "07:30:00",
         late_after: currentSettings.late_after || "07:30:00",
         attendance_close: currentSettings.attendance_close || "08:00:00",
+        auto_alpha_time: currentSettings.auto_alpha_time || "12:00:00",
         kelas_format: currentSettings.kelas_format || "roman",
         timezone: currentSettings.timezone || "Asia/Makassar",
       }));
@@ -291,6 +293,18 @@ export default function Settings({ onLogout }) {
               description="Absensi tidak menerima scan (Contoh: 14:00)"
             />
 
+            <TimeInput
+              label="Jam Otomatis Alpha"
+              value={formData.auto_alpha_time}
+              onChange={(val) =>
+                setFormData({
+                  ...formData,
+                  auto_alpha_time: val ? val + ":00" : "",
+                })
+              }
+              description="Siswa belum absen otomatis jadi Alpha di laporan (Contoh: 12:00)"
+            />
+
             <div className="md:col-span-2 grid grid-cols-1 gap-4">
               <div>
                 <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
@@ -379,7 +393,7 @@ export default function Settings({ onLogout }) {
           <h3 className="font-black text-xs md:text-sm text-gray-800 uppercase tracking-wider pl-1">
             Preview Pengaturan Jam
           </h3>
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-5 md:gap-4">
             <div className="bg-white border-2 border-gray-900 rounded-2xl p-3.5 text-center shadow-neo">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                 Jam Buka
@@ -410,6 +424,15 @@ export default function Settings({ onLogout }) {
               </span>
               <div className="font-black text-xl md:text-2xl text-gray-900 mt-1">
                 {formData.attendance_close?.slice(0, 5)}
+              </div>
+            </div>
+
+            <div className="bg-white border-2 border-gray-900 rounded-2xl p-3.5 text-center shadow-neo">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Auto Alpha
+              </span>
+              <div className="font-black text-xl md:text-2xl text-red-600 mt-1">
+                {formData.auto_alpha_time?.slice(0, 5)}
               </div>
             </div>
           </div>
