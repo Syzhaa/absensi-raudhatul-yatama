@@ -194,7 +194,13 @@ export default function Settings() {
       setTimeout(() => setShowSuccessToast(false), 3000);
     },
     onError: (error) => {
-      alert("Gagal menyimpan: " + (error.response?.data?.message || "Error"));
+      const resData = error.response?.data;
+      let errorMsg = resData?.message || "Error";
+      if (resData?.errors) {
+        const errorDetails = Object.values(resData.errors).flat().join(" | ");
+        errorMsg += ": " + errorDetails;
+      }
+      alert("Gagal menyimpan: " + errorMsg);
     },
   });
 
