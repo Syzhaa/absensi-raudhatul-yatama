@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import DOMPurify from "dompurify";
 import { useMutation } from "@tanstack/react-query";
 import { whatsappTemplateService } from "../services/whatsappTemplates";
 import Modal from "./Modal";
@@ -11,7 +12,7 @@ const formatWhatsAppText = (text) => {
   html = html.replace(/_(.*?)_/g, '<em>$1</em>');
   html = html.replace(/~(.*?)~/g, '<del>$1</del>');
   html = html.replace(/\n/g, '<br />');
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  return <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />;
 };
 
 export default function WhatsappTemplatePreview({ template, onClose }) {
