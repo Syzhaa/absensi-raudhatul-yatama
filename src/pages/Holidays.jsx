@@ -345,7 +345,7 @@ export default function Holidays() {
       </div>
 
       {/* Calendar Area */}
-      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-5 shadow-neo flex-1" style={{ minHeight: "75vh" }}>
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-5 shadow-neo flex flex-col h-[75vh] min-h-[600px]">
         {isLoading ? (
           <div className="w-full h-full p-4 space-y-4">
             <div className="flex justify-between items-center">
@@ -362,49 +362,52 @@ export default function Holidays() {
             </div>
           </div>
         ) : (
-          <Calendar
-            localizer={localizer}
-            events={events}
-            components={{
-              toolbar: CustomToolbar
-            }}
-            startAccessor="start"
-            endAccessor="end"
-            culture="id"
-            selectable
-            onSelectSlot={handleSelectSlot}
-            onSelectEvent={handleSelectEvent}
-            messages={{
-              next: "Maju",
-              previous: "Mundur",
-              today: "Hari Ini",
-              month: "Bulan",
-              week: "Minggu",
-              day: "Hari",
-              agenda: "Agenda",
-              noEventsInRange: "Tidak ada libur di rentang waktu ini.",
-            }}
-            eventPropGetter={(event) => {
-              let bg = "bg-red-600";
-              let text = "text-white";
-              let border = "border-red-800";
-              
-              if (event.resource.applies_to === "students") {
-                bg = "bg-rose-500";
-              } else if (event.resource.applies_to === "teachers") {
-                bg = "bg-red-500";
-              }
-
-              return {
-                className: `${bg} ${text} border-2 ${border} font-bold rounded-lg px-1 md:px-2 py-0.5 shadow-sm text-[9px] md:text-xs leading-tight truncate`,
-                style: {
-                  borderRadius: "6px",
-                  color: "#ffffff",
-                  border: "2px solid #991b1b"
+          <div className="flex-1 w-full h-full min-h-[500px]">
+            <Calendar
+              localizer={localizer}
+              events={events}
+              components={{
+                toolbar: CustomToolbar
+              }}
+              style={{ height: "100%", minHeight: "500px" }}
+              startAccessor="start"
+              endAccessor="end"
+              culture="id"
+              selectable
+              onSelectSlot={handleSelectSlot}
+              onSelectEvent={handleSelectEvent}
+              messages={{
+                next: "Maju",
+                previous: "Mundur",
+                today: "Hari Ini",
+                month: "Bulan",
+                week: "Minggu",
+                day: "Hari",
+                agenda: "Agenda",
+                noEventsInRange: "Tidak ada libur di rentang waktu ini.",
+              }}
+              eventPropGetter={(event) => {
+                let bg = "bg-red-600";
+                let text = "text-white";
+                let border = "border-red-800";
+                
+                if (event.resource.applies_to === "students") {
+                  bg = "bg-rose-500";
+                } else if (event.resource.applies_to === "teachers") {
+                  bg = "bg-red-500";
                 }
-              };
-            }}
-          />
+
+                return {
+                  className: `${bg} ${text} border-2 ${border} font-bold rounded-lg px-1 md:px-2 py-0.5 shadow-sm text-[9px] md:text-xs leading-tight truncate`,
+                  style: {
+                    borderRadius: "6px",
+                    color: "#ffffff",
+                    border: "2px solid #991b1b"
+                  }
+                };
+              }}
+            />
+          </div>
         )}
       </div>
 
