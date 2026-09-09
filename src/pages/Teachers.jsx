@@ -10,7 +10,7 @@ import StudentCardPrint from "../components/StudentCardPrint";
 import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import { CardSkeleton } from "../components/Skeleton";
+import { CardSkeleton, TableRowSkeleton } from "../components/Skeleton";
 export default function Teachers() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const [confirmModal, setConfirmModal] = useState({
@@ -486,38 +486,162 @@ export default function Teachers() {
         </div>
       </div>
 
-      {/* Cards List Container */}
-      <div className="space-y-3">
+      {/* Teachers Records: Responsive View (Card in Mobile, Table in Desktop) */}
+      <div className="pb-4">
         {isLoading ? (
-          <div className="space-y-3">
-            <CardSkeleton />
-            <CardSkeleton />
-            <CardSkeleton />
-            <CardSkeleton />
+          <div>
+            <div className="md:hidden space-y-3">
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
+            <div className="hidden md:block bg-white border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-gray-900 text-white text-xs uppercase tracking-wider font-black">
+                  <tr>
+                    <th className="p-3.5">Nama Guru</th>
+                    <th className="p-3.5">NIP</th>
+                    <th className="p-3.5">Mata Pelajaran / Jabatan</th>
+                    <th className="p-3.5">No. WhatsApp</th>
+                    <th className="p-3.5 text-center">Status</th>
+                    <th className="p-3.5 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <TableRowSkeleton cols={6} />
+                  <TableRowSkeleton cols={6} />
+                  <TableRowSkeleton cols={6} />
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : teachers.length === 0 ? (
           <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
             Belum ada data guru
           </div>
         ) : (
-          paginatedTeachers.map((teacher) => (
-            <TeacherCard
-              key={teacher.id}
-              teacher={teacher}
-              isSelected={selectedTeachers.includes(teacher.id)}
-              onSelect={handleSelectTeacher}
-              onActivateAccess={handleActivateAccess}
-              onViewAccess={handleViewAccess}
-              onDownloadQR={handleDownloadSingleQR}
-              onShowCard={(t) => openCardModal([t])}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              isActivatePending={activateAccessMutation.isPending}
-              isDeletePending={deleteMutation.isPending}
-              activeDropdown={activeDropdown}
-              setActiveDropdown={setActiveDropdown}
-            />
-          ))
+          <>
+            {/* Mobile View: Cards */}
+            <div className="md:hidden space-y-3">
+              {paginatedTeachers.map((teacher) => (
+                <TeacherCard
+                  key={teacher.id}
+                  teacher={teacher}
+                  isSelected={selectedTeachers.includes(teacher.id)}
+                  onSelect={handleSelectTeacher}
+                  onActivateAccess={handleActivateAccess}
+                  onViewAccess={handleViewAccess}
+                  onDownloadQR={handleDownloadSingleQR}
+                  onShowCard={(t) => openCardModal([t])}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  isActivatePending={activateAccessMutation.isPending}
+                  isDeletePending={deleteMutation.isPending}
+                  activeDropdown={activeDropdown}
+                  setActiveDropdown={setActiveDropdown}
+                />
+              ))}
+            </div>
+
+            {/* Desktop View: Modern Compact Table */}
+            <div className="hidden md:block bg-white border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs md:text-sm">
+                  <thead className="bg-gray-900 text-white uppercase text-[11px] font-black tracking-wider border-b-2 border-gray-900 select-none">
+                    <tr>
+                      <th className="py-3 px-4 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedTeachers.length === paginatedTeachers.length && paginatedTeachers.length > 0}
+                          onChange={handleSelectAll}
+                          className="w-4 h-4 rounded border-2 border-gray-900 accent-emerald-500 cursor-pointer"
+                        />
+                      </th>
+                      <th className="py-3 px-4">Nama Lengkap</th>
+                      <th className="py-3 px-4">NIP</th>
+                      <th className="py-3 px-4">Mata Pelajaran</th>
+                      <th className="py-3 px-4">Jabatan</th>
+                      <th className="py-3 px-4">No. HP</th>
+                      <th className="py-3 px-4 text-center">Status</th>
+                      <th className="py-3 px-4 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y-2 divide-gray-200 font-medium">
+                    {paginatedTeachers.map((teacher) => {
+                      const isSelected = selectedTeachers.includes(teacher.id);
+                      return (
+                        <tr
+                          key={teacher.id}
+                          className={`hover:bg-gray-50/80 transition-colors ${isSelected ? "bg-emerald-50/50" : ""}`}
+                        >
+                          <td className="py-2.5 px-4 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleSelectTeacher(teacher.id)}
+                              className="w-4 h-4 rounded border-2 border-gray-900 accent-emerald-500 cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-2.5 px-4 font-black text-gray-900">
+                            {teacher.nama}
+                          </td>
+                          <td className="py-2.5 px-4 font-mono text-xs text-gray-600 font-bold">
+                            {teacher.nip || "-"}
+                          </td>
+                          <td className="py-2.5 px-4 text-gray-800">
+                            {teacher.mata_pelajaran || "-"}
+                          </td>
+                          <td className="py-2.5 px-4 text-gray-700">
+                            {teacher.jabatan || "-"}
+                          </td>
+                          <td className="py-2.5 px-4 font-mono text-xs text-gray-600">
+                            {teacher.nomor_hp || "-"}
+                          </td>
+                          <td className="py-2.5 px-4 text-center">
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${teacher.status === "aktif" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}`}>
+                              {teacher.status || "Aktif"}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => openCardModal([teacher])}
+                                className="p-1 hover:bg-blue-50 text-blue-700 rounded border border-gray-300 transition-colors"
+                                title="Cetak Kartu"
+                              >
+                                <span className="material-symbols-outlined text-sm">badge</span>
+                              </button>
+                              <button
+                                onClick={() => handleDownloadSingleQR(teacher)}
+                                className="p-1 hover:bg-emerald-50 text-emerald-700 rounded border border-gray-300 transition-colors"
+                                title="Unduh QR"
+                              >
+                                <span className="material-symbols-outlined text-sm">qr_code</span>
+                              </button>
+                              <button
+                                onClick={() => handleEdit(teacher)}
+                                className="p-1 hover:bg-amber-50 text-amber-700 rounded border border-gray-300 transition-colors"
+                                title="Edit"
+                              >
+                                <span className="material-symbols-outlined text-sm">edit</span>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(teacher)}
+                                className="p-1 hover:bg-red-50 text-red-700 rounded border border-gray-300 transition-colors"
+                                title="Hapus"
+                              >
+                                <span className="material-symbols-outlined text-sm">delete</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

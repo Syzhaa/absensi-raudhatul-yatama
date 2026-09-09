@@ -11,7 +11,7 @@ import Modal from "../components/Modal";
 import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import { CardSkeleton } from "../components/Skeleton";
+import { CardSkeleton, TableRowSkeleton } from "../components/Skeleton";
 export default function Students() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const selectedKelas = useAppStore((state) => state.selectedKelas);
@@ -454,35 +454,161 @@ export default function Students() {
         </div>
       </div>
 
-      {/* Cards List Container */}
-      <div className="space-y-3">
+      {/* Students Records: Responsive View (Card in Mobile, Table in Desktop) */}
+      <div className="pb-4">
         {isLoading ? (
-          <div className="space-y-3">
-            <CardSkeleton />
-            <CardSkeleton />
-            <CardSkeleton />
-            <CardSkeleton />
+          <div>
+            <div className="md:hidden space-y-3">
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
+            <div className="hidden md:block bg-white border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-gray-900 text-white text-xs uppercase tracking-wider font-black">
+                  <tr>
+                    <th className="p-3.5">Nama & NISN</th>
+                    <th className="p-3.5">Kelas</th>
+                    <th className="p-3.5">L/P</th>
+                    <th className="p-3.5">No. HP Ortu</th>
+                    <th className="p-3.5 text-center">Status</th>
+                    <th className="p-3.5 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <TableRowSkeleton cols={6} />
+                  <TableRowSkeleton cols={6} />
+                  <TableRowSkeleton cols={6} />
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : students.length === 0 ? (
           <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
             Belum ada data siswa
           </div>
         ) : (
-          paginatedStudents.map((student) => (
-            <StudentCard
-              key={student.id}
-              student={student}
-              isSelected={selectedStudents.includes(student.id)}
-              onSelect={handleSelectStudent}
-              onDownloadQR={handleDownloadSingleQR}
-              onShowCard={(s) => openCardModal([s])}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              isDeletePending={deleteMutation.isPending}
-              activeDropdown={activeDropdown}
-              setActiveDropdown={setActiveDropdown}
-            />
-          ))
+          <>
+            {/* Mobile View: Cards */}
+            <div className="md:hidden space-y-3">
+              {paginatedStudents.map((student) => (
+                <StudentCard
+                  key={student.id}
+                  student={student}
+                  isSelected={selectedStudents.includes(student.id)}
+                  onSelect={handleSelectStudent}
+                  onDownloadQR={handleDownloadSingleQR}
+                  onShowCard={(s) => openCardModal([s])}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  isDeletePending={deleteMutation.isPending}
+                  activeDropdown={activeDropdown}
+                  setActiveDropdown={setActiveDropdown}
+                />
+              ))}
+            </div>
+
+            {/* Desktop View: Modern Compact Table */}
+            <div className="hidden md:block bg-white border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs md:text-sm">
+                  <thead className="bg-gray-900 text-white uppercase text-[11px] font-black tracking-wider border-b-2 border-gray-900 select-none">
+                    <tr>
+                      <th className="py-3 px-4 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedStudents.length === paginatedStudents.length && paginatedStudents.length > 0}
+                          onChange={handleSelectAll}
+                          className="w-4 h-4 rounded border-2 border-gray-900 accent-emerald-500 cursor-pointer"
+                        />
+                      </th>
+                      <th className="py-3 px-4">Nama Lengkap</th>
+                      <th className="py-3 px-4">NISN</th>
+                      <th className="py-3 px-4">Kelas</th>
+                      <th className="py-3 px-3 text-center">L/P</th>
+                      <th className="py-3 px-4">No. HP Ortu</th>
+                      <th className="py-3 px-4 text-center">Status</th>
+                      <th className="py-3 px-4 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y-2 divide-gray-200 font-medium">
+                    {paginatedStudents.map((student) => {
+                      const isSelected = selectedStudents.includes(student.id);
+                      return (
+                        <tr
+                          key={student.id}
+                          className={`hover:bg-gray-50/80 transition-colors ${isSelected ? "bg-emerald-50/50" : ""}`}
+                        >
+                          <td className="py-2.5 px-4 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleSelectStudent(student.id)}
+                              className="w-4 h-4 rounded border-2 border-gray-900 accent-emerald-500 cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-2.5 px-4 font-black text-gray-900">
+                            {student.nama}
+                          </td>
+                          <td className="py-2.5 px-4 font-mono text-xs text-gray-600 font-bold">
+                            {student.nisn || "-"}
+                          </td>
+                          <td className="py-2.5 px-4 font-bold text-gray-800">
+                            Kelas {student.kelas || "-"}
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-bold">
+                            <span className={`inline-block px-1.5 py-0.5 text-[10px] rounded border ${student.jenis_kelamin === "L" ? "bg-blue-50 text-blue-800 border-blue-200" : "bg-pink-50 text-pink-800 border-pink-200"}`}>
+                              {student.jenis_kelamin || "-"}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 font-mono text-xs text-gray-600">
+                            {student.nomor_hp_orangtua || "-"}
+                          </td>
+                          <td className="py-2.5 px-4 text-center">
+                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${student.status === "aktif" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}`}>
+                              {student.status || "Aktif"}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => openCardModal([student])}
+                                className="p-1 hover:bg-blue-50 text-blue-700 rounded border border-gray-300 transition-colors"
+                                title="Cetak Kartu"
+                              >
+                                <span className="material-symbols-outlined text-sm">badge</span>
+                              </button>
+                              <button
+                                onClick={() => handleDownloadSingleQR(student)}
+                                className="p-1 hover:bg-emerald-50 text-emerald-700 rounded border border-gray-300 transition-colors"
+                                title="Unduh QR"
+                              >
+                                <span className="material-symbols-outlined text-sm">qr_code</span>
+                              </button>
+                              <button
+                                onClick={() => handleEdit(student)}
+                                className="p-1 hover:bg-amber-50 text-amber-700 rounded border border-gray-300 transition-colors"
+                                title="Edit"
+                              >
+                                <span className="material-symbols-outlined text-sm">edit</span>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(student)}
+                                className="p-1 hover:bg-red-50 text-red-700 rounded border border-gray-300 transition-colors"
+                                title="Hapus"
+                              >
+                                <span className="material-symbols-outlined text-sm">delete</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

@@ -7,7 +7,7 @@ import { useAppStore } from "../store/useAppStore";
 import AttendanceModal from "../components/AttendanceModal";
 import { AttendanceItem } from "../components/AttendanceItems";
 import ConfirmModal from "../components/ConfirmModal";
-import { CardSkeleton } from "../components/Skeleton";
+import { CardSkeleton, TableRowSkeleton } from "../components/Skeleton";
 import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
 import { getAutoHoliday } from "../utils/holidays";
 import { getKelasNumericVal, sortKelasList } from "../utils/kelasHelper";
@@ -529,14 +529,38 @@ export default function Attendance() {
         </div>
       </div>
 
-      {/* Attendance Records List */}
-      <div className="space-y-3 pb-24 md:pb-12">
+      {/* Attendance Records: Responsive View (Card in Mobile, Table in Desktop) */}
+      <div className="pb-24 md:pb-12">
         {isLoading ? (
-          <div className="space-y-3">
-            <CardSkeleton />
-            <CardSkeleton />
-            <CardSkeleton />
-            <CardSkeleton />
+          <div>
+            {/* Mobile Skeleton */}
+            <div className="md:hidden space-y-3">
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
+            {/* Desktop Table Skeleton */}
+            <div className="hidden md:block bg-white border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-gray-900 text-white text-xs uppercase tracking-wider font-black">
+                  <tr>
+                    <th className="p-3.5">Nama & NISN/NIP</th>
+                    <th className="p-3.5">Peran & Lembaga</th>
+                    <th className="p-3.5">Jam Masuk</th>
+                    <th className="p-3.5">Jam Pulang</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <TableRowSkeleton cols={6} />
+                  <TableRowSkeleton cols={6} />
+                  <TableRowSkeleton cols={6} />
+                  <TableRowSkeleton cols={6} />
+                  <TableRowSkeleton cols={6} />
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : filteredRecords.length === 0 ? (
           <div className="bg-white border-2 border-gray-900 rounded-2xl p-8 md:p-12 text-center shadow-neo flex flex-col items-center justify-center">
@@ -554,13 +578,156 @@ export default function Attendance() {
             </p>
           </div>
         ) : (
-          paginatedRecords.map((item) => (
-            <AttendanceItem
-              key={item.id}
-              item={item}
-              onEdit={handleEditAttendance}
-            />
-          ))
+          <>
+            {/* Mobile View: Cards */}
+            <div className="md:hidden space-y-3">
+              {paginatedRecords.map((item) => (
+                <AttendanceItem
+                  key={item.id}
+                  item={item}
+                  onEdit={handleEditAttendance}
+                />
+              ))}
+            </div>
+
+            {/* Desktop View: Modern Compact Table */}
+            <div className="hidden md:block bg-white border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs md:text-sm">
+                  <thead className="bg-gray-900 text-white uppercase text-[11px] font-black tracking-wider border-b-2 border-gray-900 select-none">
+                    <tr>
+                      <th className="py-3 px-4">Nama Lengkap</th>
+                      <th className="py-3 px-4">Kelas / NIP</th>
+                      <th className="py-3 px-3 text-center">Peran</th>
+                      <th className="py-3 px-4 text-center">Jam Masuk</th>
+                      <th className="py-3 px-4 text-center">Jam Pulang</th>
+                      <th className="py-3 px-4 text-center">Status</th>
+                      <th className="py-3 px-4 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y-2 divide-gray-200 font-medium">
+                    {paginatedRecords.map((item) => {
+                      const isStudent = item.role === "student";
+                      const person = isStudent ? item.student || item : item.teacher || item;
+                      const isBelumAbsen = !item.status || item.status === "belum_absen";
+
+                      return (
+                        <tr
+                          key={item.id}
+                          className="hover:bg-gray-50/80 transition-colors group"
+                        >
+                          <td className="py-2.5 px-4 font-black text-gray-900">
+                            <div className="flex items-center gap-2">
+                              <span>{person?.nama || "Tanpa Nama"}</span>
+                              {person?.nisn && (
+                                <span className="text-[11px] font-mono text-gray-400 font-normal">
+                                  ({person.nisn})
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="py-2.5 px-4 text-gray-700">
+                            {isStudent ? (
+                              <span className="font-bold">
+                                Kelas {formatKelas(person?.kelas) || "-"}
+                              </span>
+                            ) : (
+                              <span className="font-mono text-xs text-gray-600">
+                                {person?.nip ? `NIP: ${person.nip}` : "Guru/Staf"}
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-2.5 px-3 text-center">
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase border ${
+                                isStudent
+                                  ? "bg-blue-100 text-blue-800 border-blue-300"
+                                  : "bg-purple-100 text-purple-800 border-purple-300"
+                              }`}
+                            >
+                              {isStudent ? "Siswa" : "Guru"}
+                            </span>
+                          </td>
+
+                          <td className="py-2.5 px-4 text-center">
+                            {item.check_in ? (
+                              <span className="inline-flex items-center gap-1 font-mono font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">
+                                <span className="material-symbols-outlined text-xs">login</span>
+                                {item.check_in}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 font-mono text-xs">-</span>
+                            )}
+                          </td>
+
+                          <td className="py-2.5 px-4 text-center">
+                            {item.check_out ? (
+                              <span className="inline-flex items-center gap-1 font-mono font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-300">
+                                <span className="material-symbols-outlined text-xs">logout</span>
+                                {item.check_out}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 font-mono text-xs">-</span>
+                            )}
+                          </td>
+
+                          <td className="py-2.5 px-4 text-center">
+                            <span
+                              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border-2 border-gray-900 ${
+                                isBelumAbsen
+                                  ? "bg-amber-200 text-amber-950 animate-pulse"
+                                  : item.status === "hadir"
+                                  ? "bg-primary-green text-gray-900"
+                                  : item.status === "terlambat"
+                                  ? "bg-amber-300 text-gray-900"
+                                  : item.status === "izin"
+                                  ? "bg-purple-200 text-purple-900"
+                                  : item.status === "sakit"
+                                  ? "bg-blue-200 text-blue-900"
+                                  : item.status === "alpha"
+                                  ? "bg-red-200 text-red-900"
+                                  : item.status === "libur"
+                                  ? "bg-teal-300 text-teal-950"
+                                  : "bg-gray-200 text-gray-900"
+                              }`}
+                            >
+                              {isBelumAbsen ? "Belum" : item.status}
+                            </span>
+                          </td>
+
+                          <td className="py-2.5 px-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {isBelumAbsen && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditAttendance(item)}
+                                  className="px-2 py-1 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs font-black rounded border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1"
+                                  title="Tandai Hadir"
+                                >
+                                  <span className="material-symbols-outlined text-xs">check</span>
+                                  <span>Hadir</span>
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleEditAttendance(item)}
+                                className="p-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded border border-gray-900 transition-colors"
+                                title="Edit Presensi"
+                              >
+                                <span className="material-symbols-outlined text-sm">edit_note</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
         )}
       </div>
 
