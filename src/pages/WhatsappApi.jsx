@@ -44,6 +44,44 @@ export default function WhatsappApi() {
     },
   });
 
+  const [testPhoneNumber, setTestPhoneNumber] = useState("");
+  const [testResult, setTestResult] = useState(null);
+
+  const testMutation = useMutation({
+    mutationFn: async ({ wa_api_key, phone_number }) => {
+      const response = await api.post(`/attendance/whatsapp-settings/test`, {
+        wa_api_key,
+        phone_number: phone_number || undefined,
+      });
+      return response.data;
+    },
+    onSuccess: (res) => {
+      setTestResult({
+        success: true,
+        message: res.message || "Koneksi API WhatsApp Berhasil! Status Terhubung.",
+      });
+    },
+    onError: (err) => {
+      setTestResult({
+        success: false,
+        message: err.response?.data?.message || "Gagal menghubungi WhatsApp Gateway. Cek kembali API Key Anda.",
+      });
+    },
+  });
+
+  const handleTestConnection = (e) => {
+    e.preventDefault();
+    if (!formData.wa_api_key.trim()) {
+      alert("Masukkan API Key terlebih dahulu untuk melakukan pengujian.");
+      return;
+    }
+    setTestResult(null);
+    testMutation.mutate({
+      wa_api_key: formData.wa_api_key.trim(),
+      phone_number: testPhoneNumber.trim(),
+    });
+  };
+
   const handleSave = (e) => {
     e.preventDefault();
     saveMutation.mutate(formData);
@@ -140,6 +178,74 @@ export default function WhatsappApi() {
             </button>
           </div>
         </form>
+
+        {/* Section Uji Coba Koneksi */}
+        <div className="mt-8 pt-6 border-t-3 border-gray-200">
+          <div className="mb-4">
+            <h3 className="font-black text-lg text-gray-900 flex items-center gap-2">
+              <span className="material-symbols-outlined text-blue-600">wifi_tethering</span>
+              Uji Koneksi & Kirim Pesan Tes
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600 font-medium">
+              Pastikan nomor target atau bot gateway aktif. Anda dapat menguji apakah API Key valid dan bisa terhubung ke server gateway WhatsApp.
+            </p>
+          </div>
+
+          <div className="space-y-4 bg-gray-50 p-4 sm:p-5 rounded-2xl border-2 border-gray-200">
+            <div>
+              <label className="block text-xs font-bold uppercase text-gray-700 mb-1">
+                Nomor WhatsApp Tujuan (Opsional)
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  placeholder="Contoh: 08123456789 atau 628123456789"
+                  value={testPhoneNumber}
+                  onChange={(e) => setTestPhoneNumber(e.target.value)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border-2 border-gray-300 focus:border-gray-900 focus:ring-0 font-mono text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={handleTestConnection}
+                  disabled={testMutation.isPending}
+                  className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white font-bold text-sm rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {testMutation.isPending ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>Menguji...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-base">send</span>
+                      <span>Uji Koneksi Sekarang</span>
+                    </>
+                  )}
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">
+                Jika dikosongkan, sistem akan menguji autentikasi API Key ke gateway default.
+              </p>
+            </div>
+
+            {testResult && (
+              <div
+                className={`p-4 rounded-xl border-2 flex items-start gap-3 transition-all ${
+                  testResult.success
+                    ? "bg-green-50 border-green-500 text-green-900"
+                    : "bg-red-50 border-red-500 text-red-900"
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl flex-shrink-0 mt-0.5">
+                  {testResult.success ? "check_circle" : "error"}
+                </span>
+                <div className="text-xs sm:text-sm font-semibold leading-relaxed">
+                  {testResult.message}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
