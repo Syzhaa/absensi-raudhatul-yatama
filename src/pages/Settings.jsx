@@ -161,6 +161,7 @@ export default function Settings() {
     late_after: "07:30:00",
     attendance_close: "08:00:00",
     auto_alpha_time: "12:00:00",
+    enable_teacher_attendance: true,
     timezone: "Asia/Makassar",
     kelas_format: "roman",
   });
@@ -174,6 +175,7 @@ export default function Settings() {
         late_after: s.late_after || s.jam_batas_masuk || "07:30:00",
         attendance_close: s.attendance_close || "08:00:00",
         auto_alpha_time: s.auto_alpha_time || s.jam_auto_alpha || "12:00:00",
+        enable_teacher_attendance: s.enable_teacher_attendance !== undefined ? Boolean(s.enable_teacher_attendance) : true,
         timezone: s.timezone || "Asia/Makassar",
         kelas_format: s.kelas_format || "roman",
       });
@@ -472,47 +474,89 @@ export default function Settings() {
 
       {/* TAB 3: Sistem & Keamanan */}
       {activeTab === "system" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Danger: Reset Data Absensi */}
-          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-5 shadow-neo flex flex-col justify-between gap-4">
-            <div>
-              <div className="w-10 h-10 bg-red-100 border-2 border-gray-900 rounded-xl flex items-center justify-center text-red-600 mb-3">
-                <span className="material-symbols-outlined text-xl font-bold">delete_forever</span>
+        <div className="space-y-4">
+          {/* Toggle On/Off Absensi Guru */}
+          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-5 shadow-neo">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-indigo-100 border-2 border-gray-900 rounded-xl flex items-center justify-center text-indigo-700 flex-shrink-0">
+                  <span className="material-symbols-outlined text-xl font-bold">badge</span>
+                </div>
+                <div>
+                  <h3 className="font-black text-sm md:text-base text-gray-900">
+                    Modul Presensi Guru
+                  </h3>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5 leading-relaxed">
+                    Jika dinonaktifkan (OFF), menu guru, rekap absensi guru di dashboard, tab laporan guru, dan pilihan filter guru akan disembunyikan sepenuhnya sehingga sistem hanya menjalankan presensi siswa.
+                  </p>
+                </div>
               </div>
-              <h3 className="font-black text-sm md:text-base text-gray-900">Hapus Semua Data Absensi</h3>
-              <p className="text-xs text-gray-500 font-medium mt-1 leading-relaxed">
-                Kosongkan seluruh riwayat rekaman presensi siswa & guru di lembaga ini secara permanen dari basis data.
-              </p>
+
+              <div className="flex items-center gap-3 self-end sm:self-center">
+                <span className={`text-xs font-black uppercase px-2.5 py-1 rounded-md border ${formData.enable_teacher_attendance ? "bg-emerald-100 text-emerald-900 border-emerald-400" : "bg-gray-100 text-gray-600 border-gray-300"}`}>
+                  {formData.enable_teacher_attendance ? "AKTIF (ON)" : "NONAKTIF (OFF)"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newVal = !formData.enable_teacher_attendance;
+                    const updated = { ...formData, enable_teacher_attendance: newVal };
+                    setFormData(updated);
+                    updateMutation.mutate(updated);
+                  }}
+                  disabled={updateMutation.isPending}
+                  className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-gray-900 transition-colors duration-200 ease-in-out focus:outline-none ${formData.enable_teacher_attendance ? "bg-primary-green" : "bg-gray-300"}`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white border-2 border-gray-900 shadow-sm transition duration-200 ease-in-out mt-0.5 ${formData.enable_teacher_attendance ? "translate-x-6" : "translate-x-0.5"}`}
+                  />
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowClearAllModal(true)}
-              className="py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-black text-xs rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 flex items-center justify-center gap-1.5"
-            >
-              <span className="material-symbols-outlined text-base">delete</span>
-              <span>Kosongkan Seluruh Absensi</span>
-            </button>
           </div>
 
-          {/* Logout Sesi */}
-          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-5 shadow-neo flex flex-col justify-between gap-4">
-            <div>
-              <div className="w-10 h-10 bg-gray-100 border-2 border-gray-900 rounded-xl flex items-center justify-center text-gray-700 mb-3">
-                <span className="material-symbols-outlined text-xl font-bold">logout</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Danger: Reset Data Absensi */}
+            <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-5 shadow-neo flex flex-col justify-between gap-4">
+              <div>
+                <div className="w-10 h-10 bg-red-100 border-2 border-gray-900 rounded-xl flex items-center justify-center text-red-600 mb-3">
+                  <span className="material-symbols-outlined text-xl font-bold">delete_forever</span>
+                </div>
+                <h3 className="font-black text-sm md:text-base text-gray-900">Hapus Semua Data Absensi</h3>
+                <p className="text-xs text-gray-500 font-medium mt-1 leading-relaxed">
+                  Kosongkan seluruh riwayat rekaman presensi siswa & guru di lembaga ini secara permanen dari basis data.
+                </p>
               </div>
-              <h3 className="font-black text-sm md:text-base text-gray-900">Keluar Sesi Akun</h3>
-              <p className="text-xs text-gray-500 font-medium mt-1 leading-relaxed">
-                Akhiri sesi login di perangkat ini dengan aman untuk mencegah akses tidak sah.
-              </p>
+              <button
+                type="button"
+                onClick={() => setShowClearAllModal(true)}
+                className="py-2.5 px-4 bg-red-500 hover:bg-red-600 text-white font-black text-xs rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 flex items-center justify-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-base">delete</span>
+                <span>Kosongkan Seluruh Absensi</span>
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowLogoutModal(true)}
-              className="py-2.5 px-4 bg-gray-800 hover:bg-gray-900 text-white font-black text-xs rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 flex items-center justify-center gap-1.5"
-            >
-              <span className="material-symbols-outlined text-base">logout</span>
-              <span>Logout Akun</span>
-            </button>
+
+            {/* Logout Sesi */}
+            <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-5 shadow-neo flex flex-col justify-between gap-4">
+              <div>
+                <div className="w-10 h-10 bg-gray-100 border-2 border-gray-900 rounded-xl flex items-center justify-center text-gray-700 mb-3">
+                  <span className="material-symbols-outlined text-xl font-bold">logout</span>
+                </div>
+                <h3 className="font-black text-sm md:text-base text-gray-900">Keluar Sesi Akun</h3>
+                <p className="text-xs text-gray-500 font-medium mt-1 leading-relaxed">
+                  Akhiri sesi login di perangkat ini dengan aman untuk mencegah akses tidak sah.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(true)}
+                className="py-2.5 px-4 bg-gray-800 hover:bg-gray-900 text-white font-black text-xs rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 flex items-center justify-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-base">logout</span>
+                <span>Logout Akun</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

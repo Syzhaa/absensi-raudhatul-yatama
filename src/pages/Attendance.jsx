@@ -12,6 +12,7 @@ import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
 import { getAutoHoliday } from "../utils/holidays";
 import { getKelasNumericVal, sortKelasList } from "../utils/kelasHelper";
 import { useKelasFormat } from "../hooks/useKelasFormat";
+import { useAttendanceSettings } from "../hooks/useAttendanceSettings";
 import { format } from "date-fns";
 
 export default function Attendance() {
@@ -47,6 +48,7 @@ export default function Attendance() {
   const queryClient = useQueryClient();
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const { formatKelas } = useKelasFormat();
+  const { enableTeacherAttendance } = useAttendanceSettings();
 
   // Sync kelasFilter dengan selectedKelas dari header global
   const selectedKelas = useAppStore((state) => state.selectedKelas);
@@ -265,6 +267,9 @@ export default function Attendance() {
     let liburCount = 0;
 
     fullRoster.forEach((item) => {
+      // Abaikan guru jika absensi guru dinonaktifkan
+      if (!enableTeacherAttendance && item.role === "teacher") return;
+
       // Filter by role & kelas for stats
       if (roleFilter !== "all" && item.role !== roleFilter) return;
       if (
@@ -293,11 +298,13 @@ export default function Attendance() {
     });
 
     return { total, belumAbsen, hadir, pulang, izinSakitAlpha, liburCount };
-  }, [fullRoster, roleFilter, kelasFilter]);
+  }, [fullRoster, roleFilter, kelasFilter, enableTeacherAttendance]);
 
   const filteredRecords = useMemo(() => {
     return fullRoster
       .filter((item) => {
+        if (!enableTeacherAttendance && item.role === "teacher") return false;
+
         // Role filter
         if (roleFilter !== "all" && item.role !== roleFilter) return false;
 
@@ -449,41 +456,48 @@ export default function Attendance() {
         {/* Row 2: Search Bar & Filters */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-gray-100">
           {/* Role Tabs */}
-          <div className="inline-flex p-1 bg-gray-100 border border-gray-300 rounded-xl gap-1 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setRoleFilter("all")}
-              className={`flex-1 sm:flex-initial py-1 px-3 rounded-lg text-xs font-black transition-all ${
-                roleFilter === "all"
-                  ? "bg-primary-green text-gray-900 shadow-sm border border-gray-900"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Semua
-            </button>
-            <button
-              type="button"
-              onClick={() => setRoleFilter("student")}
-              className={`flex-1 sm:flex-initial py-1 px-3 rounded-lg text-xs font-black transition-all ${
-                roleFilter === "student"
-                  ? "bg-primary-green text-gray-900 shadow-sm border border-gray-900"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Siswa
-            </button>
-            <button
-              type="button"
-              onClick={() => setRoleFilter("teacher")}
-              className={`flex-1 sm:flex-initial py-1 px-3 rounded-lg text-xs font-black transition-all ${
-                roleFilter === "teacher"
-                  ? "bg-primary-green text-gray-900 shadow-sm border border-gray-900"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              Guru
-            </button>
-          </div>
+          {enableTeacherAttendance ? (
+            <div className="inline-flex p-1 bg-gray-100 border border-gray-300 rounded-xl gap-1 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setRoleFilter("all")}
+                className={`flex-1 sm:flex-initial py-1 px-3 rounded-lg text-xs font-black transition-all ${
+                  roleFilter === "all"
+                    ? "bg-primary-green text-gray-900 shadow-sm border border-gray-900"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Semua
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoleFilter("student")}
+                className={`flex-1 sm:flex-initial py-1 px-3 rounded-lg text-xs font-black transition-all ${
+                  roleFilter === "student"
+                    ? "bg-primary-green text-gray-900 shadow-sm border border-gray-900"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Siswa
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoleFilter("teacher")}
+                className={`flex-1 sm:flex-initial py-1 px-3 rounded-lg text-xs font-black transition-all ${
+                  roleFilter === "teacher"
+                    ? "bg-primary-green text-gray-900 shadow-sm border border-gray-900"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+              >
+                Guru
+              </button>
+            </div>
+          ) : (
+            <div className="inline-flex py-1 px-3 bg-gray-100 border border-gray-300 rounded-xl text-xs font-black text-gray-700 items-center gap-1.5">
+              <span className="material-symbols-outlined text-sm text-emerald-600">school</span>
+              <span>Presensi Siswa</span>
+            </div>
+          )}
 
           <div className="flex items-center gap-2 flex-1 sm:flex-initial">
             {/* Search Input */}

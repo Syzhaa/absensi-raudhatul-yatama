@@ -9,6 +9,7 @@ import { useEffectiveLembaga } from '../hooks/useEffectiveLembaga';
 import { useKelasFormat } from '../hooks/useKelasFormat';
 import { sortKelasList } from '../utils/kelasHelper';
 import { menuForRole } from '../auth/accessPolicy';
+import { useAttendanceSettings } from '../hooks/useAttendanceSettings';
 import ConfirmModal from './ConfirmModal';
 
 function HeaderSelectors() {
@@ -100,10 +101,13 @@ export default function Layout({ children }) {
   const setUserRole = useAppStore((state) => state.setUserRole);
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
   const { effectiveLembaga } = useEffectiveLembaga();
+  const { enableTeacherAttendance } = useAttendanceSettings();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const allMenuItems = menuForRole(userRole);
-  const menuItems = allMenuItems.filter(item => !['/settings', '/profile'].includes(item.path));
+  const menuItems = allMenuItems
+    .filter((item) => !["/settings", "/profile"].includes(item.path))
+    .filter((item) => enableTeacherAttendance || item.path !== "/teachers");
 
   const handleLogout = async () => {
     try {

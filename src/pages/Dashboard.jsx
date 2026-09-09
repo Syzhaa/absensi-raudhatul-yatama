@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { attendanceService } from "../services";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
+import { useAttendanceSettings } from "../hooks/useAttendanceSettings";
 import { useAppStore } from "../store/useAppStore";
 import { getAutoHoliday } from "../utils/holidays";
 import { format } from "date-fns";
@@ -10,6 +11,7 @@ import { StatCardSkeleton, SkeletonBox } from "../components/Skeleton";
 
 export default function Dashboard() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
+  const { enableTeacherAttendance } = useAttendanceSettings();
   const selectedKelas = useAppStore((state) => state.selectedKelas);
   const queryClient = useQueryClient();
 
@@ -59,13 +61,17 @@ export default function Dashboard() {
       color: "bg-primary-green",
       iconColor: "text-gray-900",
     },
-    {
-      label: "Total Guru",
-      value: stats.total_teachers || 0,
-      icon: "badge",
-      color: "bg-white",
-      iconColor: "text-gray-900",
-    },
+    ...(enableTeacherAttendance
+      ? [
+          {
+            label: "Total Guru",
+            value: stats.total_teachers || 0,
+            icon: "badge",
+            color: "bg-white",
+            iconColor: "text-gray-900",
+          },
+        ]
+      : []),
     {
       label: "Siswa Hadir Hari Ini",
       value: stats.students_present_today || 0,
@@ -73,13 +79,17 @@ export default function Dashboard() {
       color: "bg-emerald-100",
       iconColor: "text-emerald-800",
     },
-    {
-      label: "Guru Hadir Hari Ini",
-      value: stats.teachers_present_today || 0,
-      icon: "verified",
-      color: "bg-amber-100",
-      iconColor: "text-amber-800",
-    },
+    ...(enableTeacherAttendance
+      ? [
+          {
+            label: "Guru Hadir Hari Ini",
+            value: stats.teachers_present_today || 0,
+            icon: "verified",
+            color: "bg-amber-100",
+            iconColor: "text-amber-800",
+          },
+        ]
+      : []),
     {
       label: "Terlambat",
       value: stats.students_late || 0,

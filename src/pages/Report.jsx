@@ -10,6 +10,7 @@ import autoTable from "jspdf-autotable";
 import { TableRowSkeleton } from "../components/Skeleton";
 
 import { useKelasFormat } from "../hooks/useKelasFormat";
+import { useAttendanceSettings } from "../hooks/useAttendanceSettings";
 const STATUS_LABELS = {
   hadir: "Hadir",
   terlambat: "Terlambat",
@@ -42,6 +43,7 @@ export default function Report() {
   const selectedKelas = useAppStore((s) => s.selectedKelas);
   const { effectiveLembaga } = useEffectiveLembaga();
   const { formatKelas } = useKelasFormat();
+  const { enableTeacherAttendance } = useAttendanceSettings();
 
   const today = format(new Date(), "yyyy-MM-dd");
   const firstDay = format(startOfMonth(new Date()), "yyyy-MM-dd");
@@ -270,7 +272,7 @@ export default function Report() {
         {/* Tab Buttons */}
         {!isGuru ? (
           <div className="inline-flex bg-white border-2 md:border-3 border-gray-900 rounded-xl p-1 shadow-neo overflow-x-auto">
-            {["siswa", "guru", "rekap"].map((t) => (
+            {(enableTeacherAttendance ? ["siswa", "guru", "rekap"] : ["siswa", "rekap"]).map((t) => (
               <button
                 key={t}
                 onClick={() => { setTab(t); setPage(1); setSearch(""); }}
