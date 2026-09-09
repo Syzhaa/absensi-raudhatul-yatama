@@ -48,7 +48,7 @@ export default function Report() {
   const today = format(new Date(), "yyyy-MM-dd");
   const firstDay = format(startOfMonth(new Date()), "yyyy-MM-dd");
 
-  const [tab, setTab] = useState("siswa"); // siswa | guru | rekap
+  const [tab, setTab] = useState("siswa"); // siswa | guru | rekap_siswa | rekap_guru
   const [dateFrom, setDateFrom] = useState(firstDay);
   const [dateTo, setDateTo] = useState(today);
   const [statusFilter, setStatusFilter] = useState("");
@@ -96,7 +96,7 @@ export default function Report() {
 
   // Fetch rekap per siswa
   const { data: rekapData, isLoading: rekapLoading } = useQuery({
-    queryKey: ["report-rekap", tab, dateFrom, dateTo, selectedKelas, lembagaFilter],
+    queryKey: ["report-rekap-siswa", tab, dateFrom, dateTo, selectedKelas, lembagaFilter],
     queryFn: () => api.get("/attendance/report/student-summary", { params: {
       date_from: dateFrom,
       date_to: dateTo,
@@ -104,10 +104,22 @@ export default function Report() {
       ...((isSuperAdmin && lembagaFilter) && { lembaga: lembagaFilter }),
       ...(!isSuperAdmin && effectiveLembaga && { lembaga: effectiveLembaga }),
     }}).then(r => r.data.data),
-    enabled: tab === "rekap",
+    enabled: tab === "rekap_siswa" || tab === "rekap",
   });
 
-  const isLoading = siswaLoading || guruLoading || rekapLoading;
+  // Fetch rekap per guru
+  const { data: rekapGuruData, isLoading: rekapGuruLoading } = useQuery({
+    queryKey: ["report-rekap-guru", tab, dateFrom, dateTo, lembagaFilter],
+    queryFn: () => api.get("/attendance/report/teacher-summary", { params: {
+      date_from: dateFrom,
+      date_to: dateTo,
+      ...((isSuperAdmin && lembagaFilter) && { lembaga: lembagaFilter }),
+      ...(!isSuperAdmin && effectiveLembaga && { lembaga: effectiveLembaga }),
+    }}).then(r => r.data.data),
+    enabled: tab === "rekap_guru",
+  });
+
+  const isLoading = siswaLoading || guruLoading || rekapLoading || rekapGuruLoading;
 
   // Filter search client-side
   const siswaRows = useMemo(() => {
@@ -142,7 +154,17 @@ export default function Report() {
     );
   }, [rekapData, search]);
 
-  const summary = tab === "siswa" ? siswaData?.summary : guruData?.summary;
+  const rekapGuruRows = useMemo(() => {
+    const rows = rekapGuruData?.data || [];
+    if (!search) return rows;
+    const q = search.toLowerCase();
+    return rows.filter(r =>
+      r.nama?.toLowerCase().includes(q) ||
+      r.nip?.toLowerCase().includes(q)
+    );
+  }, [rekapGuruData, search]);
+
+  const summary = tab === "siswa" ? siswaData?.summary : tab === "guru" ? guruData?.summary : null;
 
   // Export Excel
   const exportExcel = () => {
@@ -178,6 +200,15 @@ export default function Report() {
           r.check_out || "-",
         ]),
       ];
+    } else if (tab === "rekap_guru") {
+      filename = `rekap-guru-${dateFrom}-${dateTo}.xlsx`;
+      wsData = [
+        ["Nama", "NIP", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"],
+        ...rekapGuruRows.map(r => [
+          r.nama, r.nip || "-", r.lembaga,
+          r.hadir, r.terlambat, r.izin, r.sakit, r.alpha, r.libur, r.total_hadir,
+        ]),
+      ];
     } else {
       filename = `rekap-siswa-${dateFrom}-${dateTo}.xlsx`;
       wsData = [
@@ -202,6 +233,8 @@ export default function Report() {
       ? `Laporan Absensi Siswa (${dateFrom} s/d ${dateTo})`
       : tab === "guru"
       ? `Laporan Absensi Guru (${dateFrom} s/d ${dateTo})`
+      : tab === "rekap_guru"
+      ? `Rekap Absensi Guru (${dateFrom} s/d ${dateTo})`
       : `Rekap Absensi Siswa (${dateFrom} s/d ${dateTo})`;
 
     doc.setFontSize(14);
@@ -239,6 +272,12 @@ export default function Report() {
         r.check_in?.slice(0, 5) || "-",
         r.check_out?.slice(0, 5) || "-",
       ]);
+    } else if (tab === "rekap_guru") {
+      head = [["No", "Nama", "NIP", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total"]];
+      body = rekapGuruRows.map((r, i) => [
+        i + 1, r.nama, r.nip || "-", r.lembaga,
+        r.hadir, r.terlambat, r.izin, r.sakit, r.alpha, r.libur, r.total_hadir,
+      ]);
     } else {
       head = [["No", "Nama", "NIS", "NISN", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total"]];
       body = rekapRows.map((r, i) => [
@@ -271,19 +310,33 @@ export default function Report() {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Tab Buttons */}
         <div className="inline-flex bg-white border-2 md:border-3 border-gray-900 rounded-xl p-1 shadow-neo overflow-x-auto">
-          {(enableTeacherAttendance ? ["siswa", "guru", "rekap"] : ["siswa", "rekap"]).map((t) => (
-            <button
-              key={t}
-              onClick={() => { setTab(t); setPage(1); setSearch(""); }}
-              className={`px-3.5 sm:px-4 py-2 rounded-lg font-black text-xs md:text-sm capitalize transition-all whitespace-nowrap ${
-                tab === t
-                  ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-sm"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-2 border-transparent"
-              }`}
-            >
-              {t === "rekap" ? "Rekap Siswa" : `Log ${t.charAt(0).toUpperCase() + t.slice(1)}`}
-            </button>
-          ))}
+          {(enableTeacherAttendance
+            ? [
+                { id: "siswa", label: "Log Siswa" },
+                { id: "guru", label: "Log Guru" },
+                { id: "rekap_siswa", label: "Rekap Siswa" },
+                { id: "rekap_guru", label: "Rekap Guru" },
+              ]
+            : [
+                { id: "siswa", label: "Log Siswa" },
+                { id: "rekap_siswa", label: "Rekap Siswa" },
+              ]
+          ).map((t) => {
+            const isTabActive = tab === t.id || (t.id === "rekap_siswa" && tab === "rekap");
+            return (
+              <button
+                key={t.id}
+                onClick={() => { setTab(t.id); setPage(1); setSearch(""); }}
+                className={`px-3.5 sm:px-4 py-2 rounded-lg font-black text-xs md:text-sm transition-all whitespace-nowrap ${
+                  isTabActive
+                    ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-2 border-transparent"
+                }`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Export Buttons */}
@@ -333,7 +386,7 @@ export default function Report() {
           </div>
 
           {/* Status */}
-          {tab !== "rekap" && (
+          {tab !== "rekap" && tab !== "rekap_siswa" && tab !== "rekap_guru" && (
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-black text-gray-700 uppercase tracking-wide">Status</label>
               <select
@@ -372,7 +425,11 @@ export default function Report() {
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">search</span>
               <input
                 type="text"
-                placeholder="Cari nama atau NISN..."
+                placeholder={
+                  tab === "guru" || tab === "rekap_guru"
+                    ? "Cari nama atau NIP..."
+                    : "Cari nama, NISN, atau kelas..."
+                }
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-xs md:text-sm text-gray-900 focus:bg-white focus:outline-none shadow-sm"
@@ -383,7 +440,7 @@ export default function Report() {
       </div>
 
       {/* Summary Cards */}
-      {summary && tab !== "rekap" && (
+      {summary && (tab === "siswa" || tab === "guru") && (
         <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
           <SummaryCard label="Hadir" value={summary.hadir} color="text-green-600" />
           <SummaryCard label="Terlambat" value={summary.terlambat} color="text-amber-600" />
@@ -498,7 +555,7 @@ export default function Report() {
             )}
 
             {/* Rekap Siswa Table */}
-            {tab === "rekap" && (
+            {(tab === "rekap" || tab === "rekap_siswa") && (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
@@ -527,6 +584,46 @@ export default function Report() {
                           {r.nisn && <div className="text-gray-400">{r.nisn}</div>}
                         </td>
                         <td className="px-4 py-2.5 font-bold text-gray-700">{formatKelas(r.kelas) || "-"}</td>
+                        {isSuperAdmin && <td className="px-4 py-2.5 text-gray-600 text-xs">{r.lembaga}</td>}
+                        <td className="px-4 py-2.5 text-center font-black text-green-600">{r.hadir}</td>
+                        <td className="px-4 py-2.5 text-center font-black text-amber-600">{r.terlambat}</td>
+                        <td className="px-4 py-2.5 text-center font-black text-blue-600">{r.izin}</td>
+                        <td className="px-4 py-2.5 text-center font-black text-orange-600">{r.sakit}</td>
+                        <td className="px-4 py-2.5 text-center font-black text-red-600">{r.alpha}</td>
+                        <td className="px-4 py-2.5 text-center font-black text-gray-500">{r.libur}</td>
+                        <td className="px-4 py-2.5 text-center font-black text-gray-900">{r.total_hadir}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Rekap Guru Table */}
+            {tab === "rekap_guru" && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Nama Guru</th>
+                      <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">NIP</th>
+                      {isSuperAdmin && <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Lembaga</th>}
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-green-700">Hadir</th>
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-amber-700">Telat</th>
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-blue-700">Izin</th>
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-orange-700">Sakit</th>
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-red-700">Alpha</th>
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide text-gray-700">Libur</th>
+                      <th className="px-4 py-3 text-center font-black text-xs uppercase tracking-wide">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rekapGuruRows.length === 0 ? (
+                      <tr><td colSpan={isSuperAdmin ? "10" : "9"} className="text-center py-12 text-gray-400 font-bold">Tidak ada data rekap guru</td></tr>
+                    ) : rekapGuruRows.map((r, i) => (
+                      <tr key={r.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                        <td className="px-4 py-2.5 font-bold text-gray-900">{r.nama}</td>
+                        <td className="px-4 py-2.5 text-gray-600 text-xs font-mono">{r.nip || "-"}</td>
                         {isSuperAdmin && <td className="px-4 py-2.5 text-gray-600 text-xs">{r.lembaga}</td>}
                         <td className="px-4 py-2.5 text-center font-black text-green-600">{r.hadir}</td>
                         <td className="px-4 py-2.5 text-center font-black text-amber-600">{r.terlambat}</td>
