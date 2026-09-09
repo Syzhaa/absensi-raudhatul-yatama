@@ -29,26 +29,26 @@ const CustomToolbar = (toolbar) => {
   const goToCurrent = () => toolbar.onNavigate("TODAY");
 
   return (
-    <div className="flex flex-wrap items-center justify-between mb-3 gap-y-3 gap-x-2">
+    <div className="flex flex-wrap items-center justify-between mb-4 pb-3 border-b-2 border-gray-100 gap-y-3 gap-x-2">
       <div className="flex items-center gap-1.5 order-1">
         <button
           onClick={goToCurrent}
-          className="px-3 py-1.5 md:px-4 md:py-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold text-xs md:text-sm shadow-[2px_2px_0px_#111827] hover:bg-gray-50 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111827] transition-all"
+          className="px-3 py-1.5 bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-xs md:text-sm shadow-sm hover:bg-gray-200 active:translate-y-0.5 transition-all"
         >
           Hari Ini
         </button>
         <div className="flex items-center gap-1">
           <button
             onClick={goToBack}
-            className="p-1 md:p-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold shadow-[2px_2px_0px_#111827] hover:bg-gray-50 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111827] transition-all flex items-center justify-center"
+            className="p-1.5 bg-white border-2 border-gray-900 rounded-xl font-bold shadow-sm hover:bg-gray-100 active:translate-y-0.5 transition-all flex items-center justify-center"
           >
-            <span className="material-symbols-outlined text-base md:text-lg">chevron_left</span>
+            <span className="material-symbols-outlined text-base">chevron_left</span>
           </button>
           <button
             onClick={goToNext}
-            className="p-1 md:p-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold shadow-[2px_2px_0px_#111827] hover:bg-gray-50 active:translate-y-0.5 active:shadow-[0px_0px_0px_#111827] transition-all flex items-center justify-center"
+            className="p-1.5 bg-white border-2 border-gray-900 rounded-xl font-bold shadow-sm hover:bg-gray-100 active:translate-y-0.5 transition-all flex items-center justify-center"
           >
-            <span className="material-symbols-outlined text-base md:text-lg">chevron_right</span>
+            <span className="material-symbols-outlined text-base">chevron_right</span>
           </button>
         </div>
       </div>
@@ -57,7 +57,7 @@ const CustomToolbar = (toolbar) => {
         <select
           value={toolbar.view}
           onChange={(e) => toolbar.onView(e.target.value)}
-          className="px-2 py-1.5 md:px-3 md:py-1.5 bg-white border-2 border-gray-900 rounded-lg font-bold text-xs md:text-sm shadow-[2px_2px_0px_#111827] focus:outline-none cursor-pointer"
+          className="px-3 py-1.5 bg-gray-50 border-2 border-gray-900 rounded-xl font-bold text-xs md:text-sm shadow-sm focus:outline-none cursor-pointer"
         >
           <option value="month">Bulan</option>
           <option value="week">Minggu</option>
@@ -66,7 +66,7 @@ const CustomToolbar = (toolbar) => {
         </select>
       </div>
 
-      <h2 className="text-base md:text-xl font-black text-gray-900 capitalize w-full text-center order-3 md:order-2 md:w-auto md:text-left">
+      <h2 className="text-base md:text-lg font-black text-gray-900 capitalize w-full text-center order-3 md:order-2 md:w-auto md:text-left">
         {toolbar.label}
       </h2>
     </div>
@@ -316,25 +316,36 @@ export default function Holidays() {
   };
 
   return (
-    <div className="w-full md:max-w-none max-w-6xl mx-auto space-y-4">
-      {/* Header */}
-      <div className="bg-white border-3 border-gray-900 rounded-2xl p-4 shadow-neo flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="w-full md:max-w-none max-w-6xl mx-auto space-y-4 animate-fade-in">
+      {/* Header Compact */}
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-4 shadow-neo flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-tight uppercase">
-            Kalender Libur {effectiveLembaga && `- ${effectiveLembaga}`}
-          </h1>
+          <div className="w-10 h-10 bg-teal-100 border-2 border-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
+            <span className="material-symbols-outlined text-2xl text-teal-900 font-bold">calendar_month</span>
+          </div>
+          <div>
+            <h1 className="font-black text-base sm:text-xl text-gray-900 tracking-tight leading-tight">
+              Kalender Libur Sekolah
+            </h1>
+            <p className="text-[11px] sm:text-xs text-gray-500 font-medium">
+              Jadwal hari libur nasional, akhir pekan & libur khusus lembaga • {effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA"}
+            </p>
+          </div>
         </div>
-        <button
-          onClick={() => openModal()}
-          className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green text-gray-900 font-black border-2 md:border-3 border-gray-900 rounded-xl shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all text-sm"
-        >
-          <span className="material-symbols-outlined text-lg">add</span>
-          Tambah Libur
-        </button>
+
+        <div className="flex items-center gap-2 justify-end">
+          <button
+            onClick={() => openModal()}
+            className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0"
+          >
+            <span className="material-symbols-outlined text-base">add</span>
+            <span>Tambah Libur</span>
+          </button>
+        </div>
       </div>
 
       {/* Calendar Area */}
-      <div className="bg-white border-3 border-gray-900 rounded-2xl p-4 shadow-neo flex-1" style={{ height: "75vh" }}>
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-5 shadow-neo flex-1" style={{ minHeight: "75vh" }}>
         {isLoading ? (
           <div className="w-full h-full p-4 space-y-4">
             <div className="flex justify-between items-center">
