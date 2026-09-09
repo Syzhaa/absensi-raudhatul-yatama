@@ -270,23 +270,21 @@ export default function Report() {
       {/* Action & Tab Header Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Tab Buttons */}
-        {!isGuru ? (
-          <div className="inline-flex bg-white border-2 md:border-3 border-gray-900 rounded-xl p-1 shadow-neo overflow-x-auto">
-            {(enableTeacherAttendance ? ["siswa", "guru", "rekap"] : ["siswa", "rekap"]).map((t) => (
-              <button
-                key={t}
-                onClick={() => { setTab(t); setPage(1); setSearch(""); }}
-                className={`px-3.5 sm:px-4 py-2 rounded-lg font-black text-xs md:text-sm capitalize transition-all whitespace-nowrap ${
-                  tab === t
-                    ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-2 border-transparent"
-                }`}
-              >
-                {t === "rekap" ? "Rekap Siswa" : `Log ${t.charAt(0).toUpperCase() + t.slice(1)}`}
-              </button>
-            ))}
-          </div>
-        ) : <div />}
+        <div className="inline-flex bg-white border-2 md:border-3 border-gray-900 rounded-xl p-1 shadow-neo overflow-x-auto">
+          {(enableTeacherAttendance ? ["siswa", "guru", "rekap"] : ["siswa", "rekap"]).map((t) => (
+            <button
+              key={t}
+              onClick={() => { setTab(t); setPage(1); setSearch(""); }}
+              className={`px-3.5 sm:px-4 py-2 rounded-lg font-black text-xs md:text-sm capitalize transition-all whitespace-nowrap ${
+                tab === t
+                  ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-2 border-transparent"
+              }`}
+            >
+              {t === "rekap" ? "Rekap Siswa" : `Log ${t.charAt(0).toUpperCase() + t.slice(1)}`}
+            </button>
+          ))}
+        </div>
 
         {/* Export Buttons */}
         <div className="flex items-center gap-2 self-end sm:self-auto">
