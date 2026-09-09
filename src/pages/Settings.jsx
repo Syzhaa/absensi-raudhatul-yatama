@@ -163,12 +163,13 @@ export default function Settings() {
     auto_alpha_time: "12:00:00",
     enable_teacher_attendance: true,
     timezone: "Asia/Makassar",
-    kelas_format: "roman",
+    kelas_format: "romawi",
   });
 
   useEffect(() => {
     if (settingsData?.data) {
       const s = settingsData.data;
+      const kf = s.kelas_format === "angka" || s.kelas_format === "numeric" ? "angka" : "romawi";
       setFormData({
         attendance_open: s.attendance_open || s.jam_masuk || "06:00:00",
         attendance_limit: s.attendance_limit || s.jam_batas_masuk || "07:30:00",
@@ -177,7 +178,7 @@ export default function Settings() {
         auto_alpha_time: s.auto_alpha_time || s.jam_auto_alpha || "12:00:00",
         enable_teacher_attendance: s.enable_teacher_attendance !== undefined ? Boolean(s.enable_teacher_attendance) : true,
         timezone: s.timezone || "Asia/Makassar",
-        kelas_format: s.kelas_format || "roman",
+        kelas_format: kf,
       });
     }
   }, [settingsData]);
@@ -427,9 +428,9 @@ export default function Settings() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg">
               <button
                 type="button"
-                onClick={() => setFormData((prev) => ({ ...prev, kelas_format: "roman" }))}
+                onClick={() => setFormData((prev) => ({ ...prev, kelas_format: "romawi" }))}
                 className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  formData.kelas_format === "roman"
+                  formData.kelas_format === "romawi" || formData.kelas_format === "roman"
                     ? "bg-emerald-50 border-gray-900 shadow-neo ring-2 ring-emerald-400"
                     : "bg-gray-50 border-gray-300 hover:bg-gray-100"
                 }`}
@@ -437,7 +438,7 @@ export default function Settings() {
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-black text-sm text-gray-900">Format Romawi</span>
                   <span className="material-symbols-outlined text-base text-emerald-700">
-                    {formData.kelas_format === "roman" ? "check_circle" : "radio_button_unchecked"}
+                    {formData.kelas_format === "romawi" || formData.kelas_format === "roman" ? "check_circle" : "radio_button_unchecked"}
                   </span>
                 </div>
                 <div className="font-mono text-xs text-gray-600 font-bold">VII, VIII, IX, X, XI, XII</div>
@@ -446,9 +447,9 @@ export default function Settings() {
 
               <button
                 type="button"
-                onClick={() => setFormData((prev) => ({ ...prev, kelas_format: "numeric" }))}
+                onClick={() => setFormData((prev) => ({ ...prev, kelas_format: "angka" }))}
                 className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  formData.kelas_format === "numeric"
+                  formData.kelas_format === "angka" || formData.kelas_format === "numeric"
                     ? "bg-emerald-50 border-gray-900 shadow-neo ring-2 ring-emerald-400"
                     : "bg-gray-50 border-gray-300 hover:bg-gray-100"
                 }`}
@@ -456,7 +457,7 @@ export default function Settings() {
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-black text-sm text-gray-900">Format Angka</span>
                   <span className="material-symbols-outlined text-base text-emerald-700">
-                    {formData.kelas_format === "numeric" ? "check_circle" : "radio_button_unchecked"}
+                    {formData.kelas_format === "angka" || formData.kelas_format === "numeric" ? "check_circle" : "radio_button_unchecked"}
                   </span>
                 </div>
                 <div className="font-mono text-xs text-gray-600 font-bold">7, 8, 9, 10, 11, 12</div>
