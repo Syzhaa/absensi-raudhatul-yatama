@@ -8,6 +8,7 @@ import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { format, parse, startOfWeek, getDay } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import HolidaysAPI from "date-holidays";
+import { SkeletonBox } from "../components/Skeleton";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const locales = {
@@ -335,8 +336,19 @@ export default function Holidays() {
       {/* Calendar Area */}
       <div className="bg-white border-3 border-gray-900 rounded-2xl p-4 shadow-neo flex-1" style={{ height: "75vh" }}>
         {isLoading ? (
-          <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold animate-pulse">
-            Memuat Kalender...
+          <div className="w-full h-full p-4 space-y-4">
+            <div className="flex justify-between items-center">
+              <SkeletonBox className="h-8 w-48 rounded-xl" />
+              <div className="flex gap-2">
+                <SkeletonBox className="h-8 w-16 rounded-xl" />
+                <SkeletonBox className="h-8 w-16 rounded-xl" />
+              </div>
+            </div>
+            <div className="grid grid-cols-7 gap-2 h-5/6">
+              {Array.from({ length: 35 }).map((_, i) => (
+                <SkeletonBox key={i} className="h-full w-full rounded-xl" />
+              ))}
+            </div>
           </div>
         ) : (
           <Calendar

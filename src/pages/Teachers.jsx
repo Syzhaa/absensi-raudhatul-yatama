@@ -10,6 +10,7 @@ import StudentCardPrint from "../components/StudentCardPrint";
 import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import { CardSkeleton } from "../components/Skeleton";
 export default function Teachers() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const [confirmModal, setConfirmModal] = useState({
@@ -488,8 +489,11 @@ export default function Teachers() {
       {/* Cards List Container */}
       <div className="space-y-3">
         {isLoading ? (
-          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
-            Loading data guru...
+          <div className="space-y-3">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
           </div>
         ) : teachers.length === 0 ? (
           <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">

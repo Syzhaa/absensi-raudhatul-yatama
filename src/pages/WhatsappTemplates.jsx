@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { whatsappTemplateService } from "../services/whatsappTemplates";
 import WhatsappTemplateForm from "../components/WhatsappTemplateForm";
 import WhatsappTemplatePreview from "../components/WhatsappTemplatePreview";
+import { CardSkeleton } from "../components/Skeleton";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Semua Status", dot: "bg-gray-400" },
@@ -212,9 +213,13 @@ export default function WhatsappTemplates() {
       {/* Template Grid List (Desktop 2-Col, Mobile 1-Col) */}
       <div className="space-y-3">
         {isLoading ? (
-          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-500 shadow-neo">
-            <div className="inline-block w-8 h-8 border-3 border-gray-900 border-t-transparent rounded-full animate-spin mb-2"></div>
-            <div>Memuat daftar template...</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
           </div>
         ) : templates.length === 0 ? (
           <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-500 shadow-neo">

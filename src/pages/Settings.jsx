@@ -6,6 +6,7 @@ import { LogoutModal, ClearSuccessModal, SettingsSuccessModal, ClearAllAttendanc
 
 import { useAppStore } from "../store/useAppStore";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
+import { PageHeaderSkeleton, FormCardSkeleton } from "../components/Skeleton";
 
 function TimeInput({ label, value, onChange, description }) {
   const [localValue, setLocalValue] = useState(value ? value.slice(0, 5) : "");
@@ -156,8 +157,10 @@ export default function Settings({ onLogout }) {
 
   if (isLoading) {
     return (
-      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
-        Loading pengaturan...
+      <div className="space-y-4 pb-40 md:pb-12">
+        <PageHeaderSkeleton />
+        <FormCardSkeleton />
+        <FormCardSkeleton />
       </div>
     );
   }

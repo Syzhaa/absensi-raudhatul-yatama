@@ -90,8 +90,16 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neo-bg">
-        <div className="text-2xl font-bold">Loading...</div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-neo-bg p-4 space-y-4">
+        <div className="w-16 h-16 bg-white border-3 border-gray-900 rounded-2xl shadow-neo flex items-center justify-center animate-bounce">
+          <span className="material-symbols-outlined text-3xl text-gray-900 font-black">
+            school
+          </span>
+        </div>
+        <div className="space-y-2 text-center w-48">
+          <div className="h-4 bg-gray-200 border-2 border-gray-900 rounded-lg animate-pulse"></div>
+          <div className="h-2.5 bg-gray-200 border border-gray-900 rounded-md w-3/4 mx-auto animate-pulse"></div>
+        </div>
       </div>
     );
   }

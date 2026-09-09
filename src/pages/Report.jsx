@@ -7,6 +7,7 @@ import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { TableRowSkeleton } from "../components/Skeleton";
 
 import { useKelasFormat } from "../hooks/useKelasFormat";
 const STATUS_LABELS = {
@@ -396,8 +397,25 @@ export default function Report() {
       {/* Table */}
       <div className="bg-white border-2 border-gray-900 rounded-xl shadow-neo overflow-hidden">
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin w-10 h-10 border-4 border-[#9bd47a] border-t-gray-900 rounded-full"></div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-900 text-white">
+                <tr>
+                  <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Kolom 1</th>
+                  <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Kolom 2</th>
+                  <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Kolom 3</th>
+                  <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Kolom 4</th>
+                  <th className="px-4 py-3 text-left font-black text-xs uppercase tracking-wide">Kolom 5</th>
+                </tr>
+              </thead>
+              <tbody>
+                <TableRowSkeleton cols={5} />
+                <TableRowSkeleton cols={5} />
+                <TableRowSkeleton cols={5} />
+                <TableRowSkeleton cols={5} />
+                <TableRowSkeleton cols={5} />
+              </tbody>
+            </table>
           </div>
         ) : (
           <>

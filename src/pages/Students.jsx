@@ -11,6 +11,7 @@ import Modal from "../components/Modal";
 import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import { CardSkeleton } from "../components/Skeleton";
 export default function Students() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const selectedKelas = useAppStore((state) => state.selectedKelas);
@@ -456,8 +457,11 @@ export default function Students() {
       {/* Cards List Container */}
       <div className="space-y-3">
         {isLoading ? (
-          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
-            Loading data siswa...
+          <div className="space-y-3">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
           </div>
         ) : students.length === 0 ? (
           <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">

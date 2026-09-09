@@ -6,6 +6,7 @@ import UserModal from "../components/UserModal";
 import PromoteModal from "../components/PromoteModal";
 import ConfirmModal from "../components/ConfirmModal";
 import { useKelasFormat } from "../hooks/useKelasFormat";
+import { CardSkeleton } from "../components/Skeleton";
 
 export default function Users() {
   const [showModal, setShowModal] = useState(false);
@@ -228,9 +229,14 @@ export default function Users() {
       {/* User Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pb-40">
         {isLoading ? (
-          <div className="col-span-full bg-white border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
-            Memuat data users...
-          </div>
+          <>
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </>
         ) : filteredUsers.length === 0 ? (
           <div className="col-span-full bg-white border-2 border-gray-200 rounded-2xl p-8 text-center shadow-sm flex flex-col items-center justify-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full border border-gray-200 flex items-center justify-center mb-3">

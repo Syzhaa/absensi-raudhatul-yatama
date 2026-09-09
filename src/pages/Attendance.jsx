@@ -7,6 +7,7 @@ import { useAppStore } from "../store/useAppStore";
 import AttendanceModal from "../components/AttendanceModal";
 import { AttendanceItem } from "../components/AttendanceItems";
 import ConfirmModal from "../components/ConfirmModal";
+import { CardSkeleton } from "../components/Skeleton";
 import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
 import { getAutoHoliday } from "../utils/holidays";
 import { getKelasNumericVal, sortKelasList } from "../utils/kelasHelper";
@@ -531,8 +532,11 @@ export default function Attendance() {
       {/* Attendance Records List */}
       <div className="space-y-3 pb-24 md:pb-12">
         {isLoading ? (
-          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-black text-gray-700 shadow-neo animate-pulse">
-            Memuat roster & data absensi...
+          <div className="space-y-3">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
           </div>
         ) : filteredRecords.length === 0 ? (
           <div className="bg-white border-2 border-gray-900 rounded-2xl p-8 md:p-12 text-center shadow-neo flex flex-col items-center justify-center">

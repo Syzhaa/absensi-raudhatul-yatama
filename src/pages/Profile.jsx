@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { authService } from "../services";
+import { FormCardSkeleton } from "../components/Skeleton";
 import { useAppStore } from "../store/useAppStore";
 import { useState, useEffect } from "react";
 
@@ -68,7 +69,13 @@ export default function Profile() {
     }
   };
 
-  if (isLoading) return <div className="font-bold">Memuat profil...</div>;
+  if (isLoading) {
+    return (
+      <div className="max-w-xl mx-auto">
+        <FormCardSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-xl mx-auto bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-5 space-y-5">

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
+import { PageHeaderSkeleton, FormCardSkeleton } from "../components/Skeleton";
 
 export default function WhatsappApi() {
   const queryClient = useQueryClient();
@@ -97,8 +98,9 @@ export default function WhatsappApi() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-48">
-        <div className="w-10 h-10 border-3 border-gray-900 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-full max-w-xl md:max-w-none px-3 sm:px-6 py-3 sm:py-6 space-y-4">
+        <PageHeaderSkeleton />
+        <FormCardSkeleton />
       </div>
     );
   }

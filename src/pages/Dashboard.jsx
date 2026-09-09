@@ -6,6 +6,7 @@ import { useAppStore } from "../store/useAppStore";
 import { getAutoHoliday } from "../utils/holidays";
 import { format } from "date-fns";
 import api from "../services/api";
+import { StatCardSkeleton, SkeletonBox } from "../components/Skeleton";
 
 export default function Dashboard() {
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
@@ -117,8 +118,24 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-8 text-center font-bold text-gray-600 shadow-neo">
-        Loading data dashboard...
+      <div className="space-y-4 md:space-y-6">
+        <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-6 shadow-neo flex items-center justify-between">
+          <div className="space-y-2">
+            <SkeletonBox className="h-6 w-48" />
+            <SkeletonBox className="h-3 w-64" />
+          </div>
+          <SkeletonBox className="h-10 w-32 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+        </div>
       </div>
     );
   }

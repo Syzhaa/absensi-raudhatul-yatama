@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
 
 import { AttendanceItem } from "../components/AttendanceItems";
+import { CardSkeleton } from "../components/Skeleton";
 
 export default function GuruAttendance() {
   const today = format(new Date(), "yyyy-MM-dd");
@@ -85,7 +86,11 @@ export default function GuruAttendance() {
       <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama siswa..." className="w-full px-3 py-2 md:px-4 md:py-3 bg-white border-2 border-gray-900 rounded-xl text-sm" />
       <div className="space-y-2">
         {isLoading ? (
-          <p className="font-bold">Memuat daftar hadir...</p>
+          <div className="space-y-2">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
         ) : (
           students.map((student) => {
             const isLibur = activeHoliday && (student.status === "belum_absen" || student.status === "alpha" || !student.status);
