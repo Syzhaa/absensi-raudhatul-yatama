@@ -10,6 +10,7 @@ import api from "./services/api";
 import { useAppStore } from "./store/useAppStore";
 import { canAccessPath } from "./auth/accessPolicy";
 import WhatsappApi from "./pages/WhatsappApi";
+import { CardSkeleton, PageHeaderSkeleton } from "./components/Skeleton";
 
 // Lazy load heavy components
 const ScanQR = lazy(() => import("./pages/ScanQR"));
@@ -89,18 +90,21 @@ function App() {
   }, [queryClient, navigate]);
 
   if (loading) {
+    const hasToken = !!localStorage.getItem("auth_token");
+    if (!hasToken) {
+      return null;
+    }
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-neo-bg p-4 space-y-4">
-        <div className="w-16 h-16 bg-white border-3 border-gray-900 rounded-2xl shadow-neo flex items-center justify-center animate-bounce">
-          <span className="material-symbols-outlined text-3xl text-gray-900 font-black">
-            school
-          </span>
+      <Layout>
+        <div className="w-full space-y-4 animate-fade-in p-4 sm:p-6">
+          <PageHeaderSkeleton />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
         </div>
-        <div className="space-y-2 text-center w-48">
-          <div className="h-4 bg-gray-200 border-2 border-gray-900 rounded-lg animate-pulse"></div>
-          <div className="h-2.5 bg-gray-200 border border-gray-900 rounded-md w-3/4 mx-auto animate-pulse"></div>
-        </div>
-      </div>
+      </Layout>
     );
   }
 
@@ -120,8 +124,13 @@ function App() {
     <Layout>
       <Suspense
         fallback={
-          <div className="flex-1 flex items-center justify-center min-h-[50vh]">
-            <div className="animate-spin w-10 h-10 border-4 border-primary-green border-t-gray-900 rounded-full"></div>
+          <div className="w-full space-y-4 animate-fade-in p-4 sm:p-6">
+            <PageHeaderSkeleton />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <CardSkeleton />
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
           </div>
         }
       >
