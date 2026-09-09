@@ -46,6 +46,7 @@ export default function Attendance() {
 
   const queryClient = useQueryClient();
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
+  const { formatKelas } = useKelasFormat();
 
   // Sync kelasFilter dengan selectedKelas dari header global
   const selectedKelas = useAppStore((state) => state.selectedKelas);
