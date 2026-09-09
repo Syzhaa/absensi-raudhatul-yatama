@@ -9,6 +9,7 @@ import { format, parse, startOfWeek, getDay } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import HolidaysAPI from "date-holidays";
 import { SkeletonBox } from "../components/Skeleton";
+import { useAttendanceSettings } from "../hooks/useAttendanceSettings";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const locales = {
@@ -78,6 +79,7 @@ export default function Holidays() {
   const [editingHoliday, setEditingHoliday] = useState(null);
   const [duration, setDuration] = useState("single");
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
+  const { enableTeacherAttendance } = useAttendanceSettings();
   const queryClient = useQueryClient();
 
   const [confirmModal, setConfirmModal] = useState({
@@ -110,7 +112,7 @@ export default function Holidays() {
     name: "",
     start_date: "",
     end_date: "",
-    applies_to: "all",
+    applies_to: enableTeacherAttendance ? "all" : "students",
     description: "",
   });
 
@@ -184,7 +186,7 @@ export default function Holidays() {
         name: "",
         start_date: initDate,
         end_date: initDate,
-        applies_to: "all",
+        applies_to: enableTeacherAttendance ? "all" : "students",
         description: "",
       });
     }
@@ -510,12 +512,24 @@ export default function Holidays() {
             <select
               value={formData.applies_to}
               onChange={(e) => setFormData({ ...formData, applies_to: e.target.value })}
-              className="w-full px-3 py-2 sm:py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all"
+              disabled={!enableTeacherAttendance}
+              className="w-full px-3 py-2 sm:py-2.5 bg-gray-100 border-2 border-gray-200 rounded-xl font-bold text-sm md:text-base focus:border-primary-green focus:bg-white focus:outline-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <option value="all">Semua (Siswa & Guru)</option>
-              <option value="students">Siswa Saja</option>
-              <option value="teachers">Guru Saja</option>
+              {enableTeacherAttendance ? (
+                <>
+                  <option value="all">Semua (Siswa & Guru)</option>
+                  <option value="students">Siswa Saja</option>
+                  <option value="teachers">Guru Saja</option>
+                </>
+              ) : (
+                <option value="students">Siswa Saja</option>
+              )}
             </select>
+            {!enableTeacherAttendance && (
+              <p className="text-[11px] text-gray-500 mt-1 font-medium">
+                Modul presensi guru nonaktif — libur otomatis hanya berlaku untuk siswa.
+              </p>
+            )}
           </div>
           <div>
             <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1">Keterangan (Opsional)</label>
