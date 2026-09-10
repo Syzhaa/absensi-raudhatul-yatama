@@ -568,7 +568,37 @@ export default function Report() {
         </div>
       </div>
 
-      {/* 2. COMPACT SEARCH & SMART FILTER BAR */}
+      {/* 2. COMPACT SUMMARY CARDS (Hemat Tempat di Layar Mobile - Muncul Terlebih Dahulu) */}
+      {summary && (tab === "siswa" || tab === "guru") && (
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 shadow-sm text-center">
+            <span className="text-lg sm:text-xl font-black text-green-600 leading-tight block">{summary.hadir || 0}</span>
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">Hadir</span>
+          </div>
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 shadow-sm text-center">
+            <span className="text-lg sm:text-xl font-black text-amber-600 leading-tight block">{summary.terlambat || 0}</span>
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">Terlambat</span>
+          </div>
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 shadow-sm text-center">
+            <span className="text-lg sm:text-xl font-black text-blue-600 leading-tight block">{summary.izin || 0}</span>
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">Izin</span>
+          </div>
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 shadow-sm text-center">
+            <span className="text-lg sm:text-xl font-black text-orange-600 leading-tight block">{summary.sakit || 0}</span>
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">Sakit</span>
+          </div>
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 shadow-sm text-center">
+            <span className="text-lg sm:text-xl font-black text-red-600 leading-tight block">{summary.alpha || 0}</span>
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">Alpha</span>
+          </div>
+          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 shadow-sm text-center">
+            <span className="text-lg sm:text-xl font-black text-gray-600 leading-tight block">{summary.libur || 0}</span>
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">Libur</span>
+          </div>
+        </div>
+      )}
+
+      {/* 3. COMPACT SEARCH & SMART FILTER BAR (Di Bawah Ringkasan Metrik) */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3 sm:p-3.5 shadow-neo space-y-2.5">
         {/* Row 1: Search Box Utama + Tombol Toggle Filter */}
         <div className="flex items-center gap-2">
@@ -616,7 +646,7 @@ export default function Report() {
           </button>
         </div>
 
-        {/* Row 2: Collapsible Filter Menu (Compact Grid tanpa perlu scroll jauh ke atas) */}
+        {/* Row 2: Collapsible Filter Menu */}
         {(showFilterCollapse || !search) && (
           <div className="pt-2 border-t border-gray-200 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2.5 animate-fade-in">
             {/* Dari Tanggal */}
@@ -696,36 +726,6 @@ export default function Report() {
           </div>
         )}
       </div>
-
-      {/* 3. COMPACT SUMMARY CARDS (Hemat Tempat di Layar Mobile) */}
-      {summary && (tab === "siswa" || tab === "guru") && (
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 shadow-sm text-center">
-            <span className="text-lg sm:text-xl font-black text-green-600 leading-tight block">{summary.hadir || 0}</span>
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">Hadir</span>
-          </div>
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 shadow-sm text-center">
-            <span className="text-lg sm:text-xl font-black text-amber-600 leading-tight block">{summary.terlambat || 0}</span>
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">Terlambat</span>
-          </div>
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 shadow-sm text-center">
-            <span className="text-lg sm:text-xl font-black text-blue-600 leading-tight block">{summary.izin || 0}</span>
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">Izin</span>
-          </div>
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 shadow-sm text-center">
-            <span className="text-lg sm:text-xl font-black text-orange-600 leading-tight block">{summary.sakit || 0}</span>
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">Sakit</span>
-          </div>
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 shadow-sm text-center">
-            <span className="text-lg sm:text-xl font-black text-red-600 leading-tight block">{summary.alpha || 0}</span>
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">Alpha</span>
-          </div>
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 shadow-sm text-center">
-            <span className="text-lg sm:text-xl font-black text-gray-600 leading-tight block">{summary.libur || 0}</span>
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-tight">Libur</span>
-          </div>
-        </div>
-      )}
 
       {/* 4. DATA TABLE */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden">
