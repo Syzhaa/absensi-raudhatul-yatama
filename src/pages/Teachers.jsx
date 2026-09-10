@@ -39,8 +39,8 @@ export default function Teachers() {
     });
 
   const [showForm, setShowForm] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState(null);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [selectedTeachers, setSelectedTeachers] = useState([]);
   const [selectedCardTeachers, setSelectedCardTeachers] = useState([]);
   const [showCardModal, setShowCardModal] = useState(false);
