@@ -103,7 +103,7 @@ export default function Report() {
   const { data: rekapData, isLoading: isRekapLoading } = useQuery({
     queryKey: ["report-rekap-siswa", tab, dateFrom, dateTo, selectedKelas, lembagaFilter],
     queryFn: async () => {
-      const res = await api.get("/attendance/report/student-summary", {
+      const res = await api.get("/attendance/report/student-matrix", {
         params: { ...baseParams, ...(selectedKelas && { kelas: selectedKelas }) },
       });
       return res.data;
@@ -261,20 +261,23 @@ export default function Report() {
         [`Periode: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)} | Dicetak: ${format(new Date(), "dd/MM/yyyy HH:mm")}`],
         [],
         ["No", "Nama Siswa", "NISN", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"],
-        ...rekapRows.map((r, i) => [
-          i + 1,
-          r.nama,
-          r.nisn || "-",
-          formatKelas(r.kelas) || "-",
-          r.lembaga || "-",
-          Number(r.hadir) || 0,
-          Number(r.terlambat) || 0,
-          Number(r.izin) || 0,
-          Number(r.sakit) || 0,
-          Number(r.alpha) || 0,
-          Number(r.libur) || 0,
-          Number(r.total_hadir) || 0,
-        ]),
+        ...rekapRows.map((r, i) => {
+          const s = r.summary || {};
+          return [
+            i + 1,
+            r.nama,
+            r.nisn || r.nis || "-",
+            formatKelas(r.kelas) || "-",
+            r.lembaga || "-",
+            Number(s.hadir ?? r.hadir) || 0,
+            Number(s.terlambat ?? r.terlambat) || 0,
+            Number(s.izin ?? r.izin) || 0,
+            Number(s.sakit ?? r.sakit) || 0,
+            Number(s.alpha ?? r.alpha) || 0,
+            Number(s.libur ?? r.libur) || 0,
+            Number(r.total_hadir) || 0,
+          ];
+        }),
       ];
       colWidths = [{ wch: 6 }, { wch: 28 }, { wch: 14 }, { wch: 12 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 12 }];
     }
@@ -364,20 +367,23 @@ export default function Report() {
       ]);
     } else {
       head = [["No", "Nama Siswa", "NISN", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]];
-      body = rekapRows.map((r, i) => [
-        i + 1,
-        r.nama,
-        r.nisn || "-",
-        formatKelas(r.kelas) || "-",
-        r.lembaga || "-",
-        r.hadir,
-        r.terlambat,
-        r.izin,
-        r.sakit,
-        r.alpha,
-        r.libur,
-        r.total_hadir,
-      ]);
+      body = rekapRows.map((r, i) => {
+        const s = r.summary || {};
+        return [
+          i + 1,
+          r.nama,
+          r.nisn || r.nis || "-",
+          formatKelas(r.kelas) || "-",
+          r.lembaga || "-",
+          s.hadir ?? r.hadir ?? 0,
+          s.terlambat ?? r.terlambat ?? 0,
+          s.izin ?? r.izin ?? 0,
+          s.sakit ?? r.sakit ?? 0,
+          s.alpha ?? r.alpha ?? 0,
+          s.libur ?? r.libur ?? 0,
+          r.total_hadir ?? 0,
+        ];
+      });
     }
 
     autoTable(doc, {
@@ -762,21 +768,24 @@ export default function Report() {
                   <tbody>
                     {rekapRows.length === 0 ? (
                       <tr><td colSpan="11" className="text-center py-10 text-gray-400 font-bold">Tidak ada data rekap</td></tr>
-                    ) : rekapRows.map((r, i) => (
-                      <tr key={r.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/80"}>
-                        <td className="px-3.5 py-2 font-bold text-gray-900">{r.nama}</td>
-                        <td className="px-3.5 py-2 text-gray-600 font-mono text-xs">{r.nisn || "-"}</td>
-                        <td className="px-3.5 py-2 font-bold text-gray-700">{formatKelas(r.kelas) || "-"}</td>
-                        {isSuperAdmin && <td className="px-3.5 py-2 text-gray-600 text-xs">{r.lembaga}</td>}
-                        <td className="px-3.5 py-2 text-center font-black text-green-600">{r.hadir}</td>
-                        <td className="px-3.5 py-2 text-center font-black text-amber-600">{r.terlambat}</td>
-                        <td className="px-3.5 py-2 text-center font-black text-blue-600">{r.izin}</td>
-                        <td className="px-3.5 py-2 text-center font-black text-orange-600">{r.sakit}</td>
-                        <td className="px-3.5 py-2 text-center font-black text-red-600">{r.alpha}</td>
-                        <td className="px-3.5 py-2 text-center font-black text-gray-500">{r.libur}</td>
-                        <td className="px-3.5 py-2 text-center font-black text-gray-900">{r.total_hadir}</td>
-                      </tr>
-                    ))}
+                    ) : rekapRows.map((r, i) => {
+                      const s = r.summary || {};
+                      return (
+                        <tr key={r.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/80"}>
+                          <td className="px-3.5 py-2 font-bold text-gray-900">{r.nama}</td>
+                          <td className="px-3.5 py-2 text-gray-600 font-mono text-xs">{r.nisn || r.nis || "-"}</td>
+                          <td className="px-3.5 py-2 font-bold text-gray-700">{formatKelas(r.kelas) || "-"}</td>
+                          {isSuperAdmin && <td className="px-3.5 py-2 text-gray-600 text-xs">{r.lembaga}</td>}
+                          <td className="px-3.5 py-2 text-center font-black text-green-600">{s.hadir ?? r.hadir ?? 0}</td>
+                          <td className="px-3.5 py-2 text-center font-black text-amber-600">{s.terlambat ?? r.terlambat ?? 0}</td>
+                          <td className="px-3.5 py-2 text-center font-black text-blue-600">{s.izin ?? r.izin ?? 0}</td>
+                          <td className="px-3.5 py-2 text-center font-black text-orange-600">{s.sakit ?? r.sakit ?? 0}</td>
+                          <td className="px-3.5 py-2 text-center font-black text-red-600">{s.alpha ?? r.alpha ?? 0}</td>
+                          <td className="px-3.5 py-2 text-center font-black text-gray-500">{s.libur ?? r.libur ?? 0}</td>
+                          <td className="px-3.5 py-2 text-center font-black text-gray-900">{r.total_hadir ?? 0}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
