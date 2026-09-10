@@ -152,7 +152,7 @@ export default function Settings() {
   const [isClearingAll, setIsClearingAll] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
-  const { data: settingsData, isLoading } = useQuery({
+  const { data: settingsData, isPending } = useQuery({
     queryKey: ["attendance-settings", effectiveLembaga],
     queryFn: () =>
       api
@@ -162,16 +162,7 @@ export default function Settings() {
         .then((r) => r.data),
   });
 
-  const [formData, setFormData] = useState({
-    attendance_open: "06:00:00",
-    attendance_limit: "07:30:00",
-    late_after: "07:30:00",
-    attendance_close: "08:00:00",
-    auto_alpha_time: "12:00:00",
-    enable_teacher_attendance: true,
-    timezone: "Asia/Makassar",
-    kelas_format: "romawi",
-  });
+  const [formData, setFormData] = useState(null);
 
   useEffect(() => {
     if (settingsData?.data) {
@@ -237,7 +228,7 @@ export default function Settings() {
     }
   };
 
-  if (isLoading) {
+  if (isPending || !formData) {
     return (
       <div className="w-full md:max-w-none max-w-5xl mx-auto space-y-4">
         <PageHeaderSkeleton />
