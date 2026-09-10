@@ -126,7 +126,8 @@ export default function Report() {
 
   // Filter rows by search term
   const siswaRows = useMemo(() => {
-    const rows = siswaData?.data?.data || [];
+    const rawData = siswaData?.data?.data || siswaData?.data || [];
+    const rows = Array.isArray(rawData) ? rawData : Array.isArray(rawData?.data) ? rawData.data : [];
     if (!search) return rows;
     const q = search.toLowerCase();
     return rows.filter(r =>
@@ -137,7 +138,8 @@ export default function Report() {
   }, [siswaData, search]);
 
   const guruRows = useMemo(() => {
-    const rows = guruData?.data?.data || [];
+    const rawData = guruData?.data?.data || guruData?.data || [];
+    const rows = Array.isArray(rawData) ? rawData : Array.isArray(rawData?.data) ? rawData.data : [];
     if (!search) return rows;
     const q = search.toLowerCase();
     return rows.filter(r =>
@@ -147,7 +149,8 @@ export default function Report() {
   }, [guruData, search]);
 
   const rekapRows = useMemo(() => {
-    const rows = rekapData?.data || [];
+    const rawData = rekapData?.data?.data || rekapData?.data || [];
+    const rows = Array.isArray(rawData) ? rawData : [];
     if (!search) return rows;
     const q = search.toLowerCase();
     return rows.filter(r =>
@@ -158,7 +161,8 @@ export default function Report() {
   }, [rekapData, search]);
 
   const rekapGuruRows = useMemo(() => {
-    const rows = rekapGuruData?.data || [];
+    const rawData = rekapGuruData?.data?.data || rekapGuruData?.data || [];
+    const rows = Array.isArray(rawData) ? rawData : [];
     if (!search) return rows;
     const q = search.toLowerCase();
     return rows.filter(r =>
@@ -167,7 +171,12 @@ export default function Report() {
     );
   }, [rekapGuruData, search]);
 
-  const summary = tab === "siswa" ? siswaData?.summary : tab === "guru" ? guruData?.summary : null;
+  const summary =
+    tab === "siswa"
+      ? (siswaData?.data?.summary || siswaData?.summary)
+      : tab === "guru"
+      ? (guruData?.data?.summary || guruData?.summary)
+      : null;
 
   // Modern Export Excel (Clean styling with auto-width)
   const exportExcel = () => {
@@ -410,9 +419,9 @@ export default function Report() {
   };
 
   const paginationMeta = tab === "siswa"
-    ? siswaData?.data
+    ? (siswaData?.data?.data ? siswaData?.data : null)
     : tab === "guru"
-    ? guruData?.data
+    ? (guruData?.data?.data ? guruData?.data : null)
     : null;
 
   return (
