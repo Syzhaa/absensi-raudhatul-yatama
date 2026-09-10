@@ -58,10 +58,9 @@ export default function Report() {
   const isSuperAdmin = userRole === "super_admin";
 
   const today = format(new Date(), "yyyy-MM-dd");
-  const firstDay = format(startOfMonth(new Date()), "yyyy-MM-dd");
 
   const [tab, setTab] = useState("siswa"); // siswa | guru | rekap_siswa | rekap_guru
-  const [dateFrom, setDateFrom] = useState(firstDay);
+  const [dateFrom, setDateFrom] = useState(today);
   const [dateTo, setDateTo] = useState(today);
   const [statusFilter, setStatusFilter] = useState("");
   const [lembagaFilter, setLembagaFilter] = useState("");
@@ -122,6 +121,7 @@ export default function Report() {
     enabled: tab === "rekap_guru",
   });
 
+  const isSingleDay = dateFrom === dateTo;
   const isLoading = isSiswaLoading || isGuruLoading || isRekapLoading || isRekapGuruLoading;
 
   // Filter rows by search term
@@ -290,20 +290,105 @@ export default function Report() {
     XLSX.writeFile(wb, filename);
   };
 
-  // Modern Export PDF (Clean Letterhead, Soft Slate Table, Formal School Printout)
-  const exportPdf = () => {
+  // Modern Export PDF:
+  // - Mode "ringkasan": tabel rekap seperti Excel / tampilan layar
+  // - Mode "harian": loop per-tanggal (contoh rentang 10 hari = 10 halaman terpisah per hari)
+  const exportPdf = (mode = "ringkasan") => {
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const institution = (isSuperAdmin && lembagaFilter ? lembagaFilter : effectiveLembaga || "YATAMA").toUpperCase();
 
-    const titleText = tab === "siswa"
-      ? `LAPORAN DETAIL ABSENSI SISWA`
-      : tab === "guru"
-      ? `LAPORAN DETAIL ABSENSI GURU`
-      : tab === "rekap_guru"
-      ? `REKAPITULASI KEHADIRAN GURU`
-      : `REKAPITULASI KEHADIRAN SISWA`;
+    if (mode === "harian" && (tab === "siswa" || tab === "guru")) {
+      // Kelompokkan data per tanggal unik
+      const rows = tab === "siswa" ? siswaRows : guruRows;
+      const groupedByDate = {};
+      rows.forEach((r) => {
+        const rawDate = r.attendance_date ? String(r.attendance_date).split("T")[0].split(" ")[0] : "Lainnya";
+        if (!groupedByDate[rawDate]) groupedByDate[rawDate] = [];
+        groupedByDate[rawDate].push(r);
+      });
 
-    // 1. Kop / Header Laporan
+      const uniqueDates = Object.keys(groupedByDate).sort();
+
+      if (uniqueDates.length === 0) {
+        alert("Tidak ada data untuk dicetak.");
+        return;
+      }
+
+      uniqueDates.forEach((tgl, pageIdx) => {
+        if (pageIdx > 0) doc.addPage("a4", "landscape");
+
+        // Header per halaman
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(17, 24, 39);
+        doc.text(`YAYASAN RAUDHATUL YATAMA - LEMBAGA ${institution}`, 14, 15);
+
+        doc.setFontSize(11);
+        doc.text(tab === "siswa" ? `LAPORAN HARIAN SISWA - TANGGAL: ${formatTgl(tgl)}` : `LAPORAN HARIAN GURU - TANGGAL: ${formatTgl(tgl)}`, 14, 21);
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Dicetak pada: ${format(new Date(), "dd MMMM yyyy HH:mm")}`, 14, 26);
+
+        doc.setDrawColor(30, 41, 59);
+        doc.setLineWidth(0.6);
+        doc.line(14, 29, 283, 29);
+
+        const currentRows = groupedByDate[tgl] || [];
+        const head = tab === "siswa"
+          ? [["No", "Nama Siswa", "NISN", "Kelas", "Lembaga", "Status", "Masuk", "Pulang"]]
+          : [["No", "Nama Guru", "NIP", "Lembaga", "Status", "Masuk", "Pulang"]];
+
+        const body = tab === "siswa"
+          ? currentRows.map((r, i) => [
+              i + 1,
+              r.student?.nama || "-",
+              r.student?.nisn || "-",
+              formatKelas(r.student?.kelas) || "-",
+              r.lembaga || "-",
+              STATUS_LABELS[r.status] || r.status,
+              r.check_in ? r.check_in.slice(0, 5) : "-",
+              r.check_out ? r.check_out.slice(0, 5) : "-",
+            ])
+          : currentRows.map((r, i) => [
+              i + 1,
+              r.teacher?.nama || "-",
+              r.teacher?.nip || "-",
+              r.lembaga || "-",
+              STATUS_LABELS[r.status] || r.status,
+              r.check_in ? r.check_in.slice(0, 5) : "-",
+              r.check_out ? r.check_out.slice(0, 5) : "-",
+            ]);
+
+        autoTable(doc, {
+          startY: 33,
+          head,
+          body,
+          theme: "grid",
+          styles: { fontSize: 8.5, cellPadding: 2, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.15 },
+          headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold", lineWidth: 0.3, lineColor: [15, 23, 42] },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+        });
+
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text(`Halaman ${pageIdx + 1} dari ${uniqueDates.length}  —  Laporan Absensi Raudhatul Yatama (${formatTgl(tgl)})`, 14, 202);
+      });
+
+      doc.save(`Laporan_${tab}_Per_Hari_${dateFrom}_sd_${dateTo}.pdf`);
+      return;
+    }
+
+    // Default mode: Ringkasan / Rekapitulasi
+    const titleText = tab === "siswa"
+      ? (isSingleDay ? `LAPORAN HARIAN SISWA (${formatTgl(dateFrom)})` : `REKAPITULASI KEHADIRAN SISWA (${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)})`)
+      : tab === "guru"
+      ? (isSingleDay ? `LAPORAN HARIAN GURU (${formatTgl(dateFrom)})` : `REKAPITULASI KEHADIRAN GURU (${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)})`)
+      : tab === "rekap_guru"
+      ? `REKAPITULASI KEHADIRAN GURU (${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)})`
+      : `REKAPITULASI KEHADIRAN SISWA (${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)})`;
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
     doc.setTextColor(17, 24, 39);
@@ -317,7 +402,6 @@ export default function Report() {
     doc.setTextColor(100, 116, 139);
     doc.text(`Rentang Tanggal: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)}   |   Dicetak pada: ${format(new Date(), "dd MMMM yyyy HH:mm")}`, 14, 26);
 
-    // Garis Kop Pemisah
     doc.setDrawColor(30, 41, 59);
     doc.setLineWidth(0.6);
     doc.line(14, 29, 283, 29);
@@ -325,11 +409,10 @@ export default function Report() {
     let head = [];
     let body = [];
 
-    if (tab === "siswa") {
-      head = [["No", "Tanggal", "Nama Siswa", "NISN", "Kelas", "Lembaga", "Status", "Masuk", "Pulang"]];
+    if (isSingleDay && tab === "siswa") {
+      head = [["No", "Nama Siswa", "NISN", "Kelas", "Lembaga", "Status", "Masuk", "Pulang"]];
       body = siswaRows.map((r, i) => [
         i + 1,
-        formatTgl(r.attendance_date),
         r.student?.nama || "-",
         r.student?.nisn || "-",
         formatKelas(r.student?.kelas) || "-",
@@ -338,11 +421,10 @@ export default function Report() {
         r.check_in ? r.check_in.slice(0, 5) : "-",
         r.check_out ? r.check_out.slice(0, 5) : "-",
       ]);
-    } else if (tab === "guru") {
-      head = [["No", "Tanggal", "Nama Guru", "NIP", "Lembaga", "Status", "Masuk", "Pulang"]];
+    } else if (isSingleDay && tab === "guru") {
+      head = [["No", "Nama Guru", "NIP", "Lembaga", "Status", "Masuk", "Pulang"]];
       body = guruRows.map((r, i) => [
         i + 1,
-        formatTgl(r.attendance_date),
         r.teacher?.nama || "-",
         r.teacher?.nip || "-",
         r.lembaga || "-",
@@ -350,7 +432,7 @@ export default function Report() {
         r.check_in ? r.check_in.slice(0, 5) : "-",
         r.check_out ? r.check_out.slice(0, 5) : "-",
       ]);
-    } else if (tab === "rekap_guru") {
+    } else if (tab === "rekap_guru" || (!isSingleDay && tab === "guru")) {
       head = [["No", "Nama Guru", "NIP", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]];
       body = rekapGuruRows.map((r, i) => [
         i + 1,
@@ -391,26 +473,10 @@ export default function Report() {
       head,
       body,
       theme: "grid",
-      styles: {
-        fontSize: 8.5,
-        cellPadding: 2.2,
-        textColor: [30, 41, 59],
-        lineColor: [226, 232, 240],
-        lineWidth: 0.15,
-      },
-      headStyles: {
-        fillColor: [241, 245, 249],
-        textColor: [15, 23, 42],
-        fontStyle: "bold",
-        lineWidth: 0.3,
-        lineColor: [15, 23, 42],
-      },
-      alternateRowStyles: {
-        fillColor: [248, 250, 252],
-      },
-      columnStyles: {
-        0: { halign: "center", cellWidth: 10 },
-      },
+      styles: { fontSize: 8.5, cellPadding: 2.2, textColor: [30, 41, 59], lineColor: [226, 232, 240], lineWidth: 0.15 },
+      headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold", lineWidth: 0.3, lineColor: [15, 23, 42] },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: { 0: { halign: "center", cellWidth: 10 } },
     });
 
     const pageCount = doc.internal.getNumberOfPages();
@@ -467,23 +533,37 @@ export default function Report() {
         </div>
 
         {/* Quick Action: Export Excel & PDF */}
-        <div className="flex items-center gap-2 justify-end flex-shrink-0">
+        <div className="flex items-center gap-1.5 justify-end flex-shrink-0">
           <button
             onClick={exportExcel}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer"
-            title="Download Format Excel Resmi"
+            className="flex items-center justify-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer"
+            title="Download Format Excel"
           >
             <span className="material-symbols-outlined text-base">table_view</span>
             <span>Excel</span>
           </button>
+
+          {/* PDF Rekapitulasi */}
           <button
-            onClick={exportPdf}
-            className="flex-1 md:flex-none flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer"
-            title="Cetak Format Dokumen PDF Resmi"
+            onClick={() => exportPdf("ringkasan")}
+            className="flex items-center justify-center gap-1 px-3 py-1.5 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer"
+            title="Download Dokumen PDF (Rekap / Ringkasan)"
           >
             <span className="material-symbols-outlined text-base">picture_as_pdf</span>
-            <span>PDF</span>
+            <span>PDF Rekap</span>
           </button>
+
+          {/* PDF Per-Tanggal (Hanya saat rentang tanggal lebih dari 1 hari) */}
+          {!isSingleDay && (tab === "siswa" || tab === "guru") && (
+            <button
+              onClick={() => exportPdf("harian")}
+              className="flex items-center justify-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer"
+              title="Download PDF Detail Harian (1 Hari = 1 Halaman Lengkap)"
+            >
+              <span className="material-symbols-outlined text-base">layers</span>
+              <span>PDF Harian</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -674,7 +754,7 @@ export default function Report() {
                 <table className="w-full text-sm">
                   <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
                     <tr>
-                      <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>
+                      {!isSingleDay && <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>}
                       <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Nama Siswa</th>
                       <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">NISN</th>
                       <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Kelas</th>
@@ -686,10 +766,10 @@ export default function Report() {
                   </thead>
                   <tbody>
                     {siswaRows.length === 0 ? (
-                      <tr><td colSpan="8" className="text-center py-10 text-gray-400 font-bold">Tidak ada data siswa ditemukan</td></tr>
+                      <tr><td colSpan={isSingleDay ? "7" : "8"} className="text-center py-10 text-gray-400 font-bold">Tidak ada data siswa ditemukan</td></tr>
                     ) : siswaRows.map((r, i) => (
                       <tr key={r.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/80"}>
-                        <td className="px-3.5 py-2 font-bold text-xs text-gray-800 whitespace-nowrap">{formatTgl(r.attendance_date)}</td>
+                        {!isSingleDay && <td className="px-3.5 py-2 font-bold text-xs text-gray-800 whitespace-nowrap">{formatTgl(r.attendance_date)}</td>}
                         <td className="px-3.5 py-2 font-bold text-gray-900">{r.student?.nama || "-"}</td>
                         <td className="px-3.5 py-2 text-gray-600 font-mono text-xs">{r.student?.nisn || "-"}</td>
                         <td className="px-3.5 py-2 font-bold text-gray-700">{formatKelas(r.student?.kelas) || "-"}</td>
@@ -714,7 +794,7 @@ export default function Report() {
                 <table className="w-full text-sm">
                   <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
                     <tr>
-                      <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>
+                      {!isSingleDay && <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>}
                       <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Nama Guru</th>
                       <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">NIP</th>
                       {isSuperAdmin && <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Lembaga</th>}
@@ -725,10 +805,10 @@ export default function Report() {
                   </thead>
                   <tbody>
                     {guruRows.length === 0 ? (
-                      <tr><td colSpan="7" className="text-center py-10 text-gray-400 font-bold">Tidak ada data guru ditemukan</td></tr>
+                      <tr><td colSpan={isSingleDay ? "6" : "7"} className="text-center py-10 text-gray-400 font-bold">Tidak ada data guru ditemukan</td></tr>
                     ) : guruRows.map((r, i) => (
                       <tr key={r.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50/80"}>
-                        <td className="px-3.5 py-2 font-bold text-xs text-gray-800 whitespace-nowrap">{formatTgl(r.attendance_date)}</td>
+                        {!isSingleDay && <td className="px-3.5 py-2 font-bold text-xs text-gray-800 whitespace-nowrap">{formatTgl(r.attendance_date)}</td>}
                         <td className="px-3.5 py-2 font-bold text-gray-900">{r.teacher?.nama || "-"}</td>
                         <td className="px-3.5 py-2 text-gray-600 font-mono text-xs">{r.teacher?.nip || "-"}</td>
                         {isSuperAdmin && <td className="px-3.5 py-2 text-gray-600 text-xs">{r.lembaga}</td>}
