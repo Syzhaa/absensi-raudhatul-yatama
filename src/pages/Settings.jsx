@@ -238,9 +238,9 @@ export default function Settings() {
   }
 
   return (
-    <div className="w-full md:max-w-none max-w-5xl mx-auto space-y-4 pb-20 md:pb-8 animate-fade-in">
+    <div className="w-full md:max-w-none max-w-5xl mx-auto space-y-4 pb-32 md:pb-8 animate-fade-in">
       {/* Header Bar */}
-      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-4 shadow-neo flex items-center justify-between gap-3">
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-4 shadow-neo flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-amber-100 border-2 border-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
             <span className="material-symbols-outlined text-2xl text-amber-900 font-bold">settings</span>
@@ -256,11 +256,11 @@ export default function Settings() {
         </div>
 
         {/* Tab Selector Desktop & Mobile */}
-        <div className="flex items-center bg-gray-100 p-1 border-2 border-gray-900 rounded-xl gap-1">
+        <div className="flex items-center bg-gray-100 p-1 border-2 border-gray-900 rounded-xl gap-1 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => handleTabChange("jam")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
               activeTab === "jam"
                 ? "bg-primary-green text-gray-900 border border-gray-900 shadow-sm"
                 : "text-gray-600 hover:text-gray-900"
@@ -272,7 +272,7 @@ export default function Settings() {
           <button
             type="button"
             onClick={() => handleTabChange("format")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
               activeTab === "format"
                 ? "bg-primary-green text-gray-900 border border-gray-900 shadow-sm"
                 : "text-gray-600 hover:text-gray-900"
@@ -284,7 +284,7 @@ export default function Settings() {
           <button
             type="button"
             onClick={() => handleTabChange("system")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1 ${
+            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
               activeTab === "system"
                 ? "bg-primary-green text-gray-900 border border-gray-900 shadow-sm"
                 : "text-gray-600 hover:text-gray-900"

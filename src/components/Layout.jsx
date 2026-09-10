@@ -201,38 +201,41 @@ export default function Layout({ children }) {
           </nav>
         </aside>
 
-        <main className="flex-1 p-4 md:p-6 portrait:pb-24 landscape:pb-6 md:pb-6 min-w-0 bg-gray-50/30">
-          <header className="flex bg-white border-2 md:border-3 border-gray-900 px-4 py-3 items-center justify-between mb-4 md:mb-6 shadow-neo rounded-2xl">
-            <div className="flex items-center gap-3">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 portrait:pb-28 landscape:pb-6 md:pb-6 min-w-0 bg-gray-50/30">
+          <header className="flex bg-white border-2 md:border-3 border-gray-900 px-3 py-2 sm:px-4 sm:py-3 items-center justify-between mb-3 md:mb-6 shadow-neo rounded-2xl gap-2">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               <button 
                 onClick={() => setIsSidebarOpen(true)}
-                className="flex portrait:!hidden md:!hidden p-1.5 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center"
+                className="flex portrait:!hidden md:!hidden p-1.5 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center flex-shrink-0"
               >
-                <span className="material-symbols-outlined">menu</span>
+                <span className="material-symbols-outlined text-lg">menu</span>
               </button>
               <button 
                 onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
-                className="hidden md:flex p-1.5 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center"
+                className="hidden md:flex p-1.5 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center flex-shrink-0"
               >
-                <span className="material-symbols-outlined">{isDesktopSidebarOpen ? 'menu_open' : 'menu'}</span>
+                <span className="material-symbols-outlined text-lg">{isDesktopSidebarOpen ? 'menu_open' : 'menu'}</span>
               </button>
-              <HeaderSelectors />
+              <div className="min-w-0 flex-1">
+                <HeaderSelectors />
+              </div>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Link to="/profile" className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-gray-900 flex items-center justify-center bg-blue-100 text-blue-900 hover:bg-blue-200 transition-colors shadow-sm">
-                <span className="material-symbols-outlined text-lg md:text-xl">person</span>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <Link to="/profile" className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 border-gray-900 flex items-center justify-center bg-blue-100 text-blue-900 hover:bg-blue-200 transition-colors shadow-sm" title="Profil">
+                <span className="material-symbols-outlined text-base sm:text-lg">person</span>
               </Link>
               {userRole !== 'guru' && (
-                <Link to="/settings" className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-gray-900 flex items-center justify-center bg-gray-100 text-gray-900 hover:bg-gray-200 transition-colors shadow-sm">
-                  <span className="material-symbols-outlined text-lg md:text-xl">settings</span>
+                <Link to="/settings" className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 border-gray-900 flex items-center justify-center bg-gray-100 text-gray-900 hover:bg-gray-200 transition-colors shadow-sm" title="Pengaturan">
+                  <span className="material-symbols-outlined text-base sm:text-lg">settings</span>
                 </Link>
               )}
               <button 
                 onClick={() => setIsLogoutModalOpen(true)} 
-                className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-red-500 flex items-center justify-center bg-red-50 text-red-600 hover:bg-red-100 transition-colors shadow-sm"
+                className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 border-red-500 flex items-center justify-center bg-red-50 text-red-600 hover:bg-red-100 transition-colors shadow-sm"
+                title="Keluar"
               >
-                <span className="material-symbols-outlined text-lg md:text-xl">logout</span>
+                <span className="material-symbols-outlined text-base sm:text-lg">logout</span>
               </button>
             </div>
           </header>
