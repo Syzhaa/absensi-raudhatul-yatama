@@ -172,29 +172,28 @@ export default function Layout({ children }) {
         )}
 
         {/* Desktop Sidebar */}
-        <aside className={`${isDesktopSidebarOpen ? 'hidden md:flex' : 'hidden'} flex-col w-64 h-screen sticky top-0 bg-white border-r-3 border-gray-900 flex-shrink-0 z-40 overflow-y-auto`}>
-          <div className="p-5 border-b-3 border-gray-900 flex items-center gap-3 sticky top-0 z-10">
+        <aside className={`${isDesktopSidebarOpen ? 'hidden md:flex' : 'hidden'} flex-col w-64 h-screen sticky top-0 bg-white border-r-2 border-gray-900 flex-shrink-0 z-40 overflow-y-auto`}>
+          <div className="p-4 border-b-2 border-gray-900 bg-white flex items-center gap-3 sticky top-0 z-20">
             <div className="w-10 h-10 bg-white border-2 border-gray-900 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0">
               <img fetchpriority="high" loading="eager" src="/logo.jpg" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="font-black text-base text-gray-900 leading-tight">Absensi Digital</h1>
+              <h1 className="font-black text-sm text-gray-900 leading-tight">Absensi Digital</h1>
               <p className="font-bold text-xs text-gray-500">Raudhatul Yatama</p>
             </div>
           </div>
-          <div className="pt-2"></div>
-          <nav className="p-4 space-y-2 flex-1">
+          <nav className="p-3 space-y-1.5 flex-1 bg-white">
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 font-bold border-3 border-gray-900 rounded-xl transition-all ${
+                  className={`flex items-center gap-2.5 px-3 py-2 font-bold text-xs border-2 border-gray-900 rounded-xl transition-all ${
                     isActive ? 'bg-primary-green text-gray-900 shadow-neo' : 'bg-white text-gray-800 hover:bg-gray-50 shadow-neo'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-2xl">{item.icon}</span>
+                  <span className="material-symbols-outlined text-xl">{item.icon}</span>
                   <span>{item.label}</span>
                 </Link>
               );
