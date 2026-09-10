@@ -11,6 +11,24 @@ import { TableRowSkeleton } from "../components/Skeleton";
 
 import { useKelasFormat } from "../hooks/useKelasFormat";
 import { useAttendanceSettings } from "../hooks/useAttendanceSettings";
+
+const formatTgl = (val) => {
+  if (!val) return "-";
+  try {
+    const s = String(val);
+    const cleanDate = s.includes("T") ? s.split("T")[0] : s.split(" ")[0];
+    const parts = cleanDate.split("-");
+    if (parts.length === 3) {
+      const [y, m, d] = parts;
+      const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+      const mIdx = parseInt(m, 10) - 1;
+      return `${d} ${months[mIdx] || m} ${y}`;
+    }
+    return cleanDate;
+  } catch {
+    return String(val);
+  }
+};
 const STATUS_LABELS = {
   hadir: "Hadir",
   terlambat: "Terlambat",
@@ -176,7 +194,7 @@ export default function Report() {
       wsData = [
         ["Tanggal", "Nama", "NIS", "Kelas", "Lembaga", "Status", "Check In", "Check Out"],
         ...siswaRows.map(r => [
-          r.attendance_date,
+          formatTgl(r.attendance_date),
           r.student?.nama || "-",
           r.student?.nisn || "-",
           r.student?.kelas || "-",
@@ -191,7 +209,7 @@ export default function Report() {
       wsData = [
         ["Tanggal", "Nama", "NIP", "Lembaga", "Status", "Check In", "Check Out"],
         ...guruRows.map(r => [
-          r.attendance_date,
+          formatTgl(r.attendance_date),
           r.teacher?.nama || "-",
           r.teacher?.nip || "-",
           r.lembaga,
@@ -251,7 +269,7 @@ export default function Report() {
       head = [["No", "Tanggal", "Nama", "NIS", "Kelas", "Lembaga", "Status", "Masuk", "Pulang"]];
       body = siswaRows.map((r, i) => [
         i + 1,
-        r.attendance_date,
+        formatTgl(r.attendance_date),
         r.student?.nama || "-",
         r.student?.nisn || "-",
         r.student?.kelas || "-",
@@ -264,7 +282,7 @@ export default function Report() {
       head = [["No", "Tanggal", "Nama", "NIP", "Lembaga", "Status", "Masuk", "Pulang"]];
       body = guruRows.map((r, i) => [
         i + 1,
-        r.attendance_date,
+        formatTgl(r.attendance_date),
         r.teacher?.nama || "-",
         r.teacher?.nip || "-",
         r.lembaga,
@@ -497,7 +515,7 @@ export default function Report() {
                       <tr><td colSpan="8" className="text-center py-12 text-gray-400 font-bold">Tidak ada data</td></tr>
                     ) : siswaRows.map((r, i) => (
                       <tr key={r.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                        <td className="px-4 py-2.5 font-mono text-xs text-gray-600">{r.attendance_date}</td>
+                        <td className="px-4 py-2.5 font-bold text-xs text-gray-800 whitespace-nowrap">{formatTgl(r.attendance_date)}</td>
                         <td className="px-4 py-2.5 font-bold text-gray-900">{r.student?.nama || "-"}</td>
                         <td className="px-4 py-2.5 text-gray-600 text-xs">{r.student?.nisn || "-"}</td>
                         <td className="px-4 py-2.5 font-bold text-gray-700">{formatKelas(r.student?.kelas) || "-"}</td>
@@ -536,7 +554,7 @@ export default function Report() {
                       <tr><td colSpan="7" className="text-center py-12 text-gray-400 font-bold">Tidak ada data</td></tr>
                     ) : guruRows.map((r, i) => (
                       <tr key={r.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                        <td className="px-4 py-2.5 font-mono text-xs text-gray-600">{r.attendance_date}</td>
+                        <td className="px-4 py-2.5 font-bold text-xs text-gray-800 whitespace-nowrap">{formatTgl(r.attendance_date)}</td>
                         <td className="px-4 py-2.5 font-bold text-gray-900">{r.teacher?.nama || "-"}</td>
                         <td className="px-4 py-2.5 text-gray-600 text-xs">{r.teacher?.nip || "-"}</td>
                         {isSuperAdmin && <td className="px-4 py-2.5 text-gray-600 text-xs">{r.lembaga}</td>}
