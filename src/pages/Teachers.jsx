@@ -6,6 +6,7 @@ import TeacherForm from "../components/TeacherForm";
 import TeacherCard from "../components/TeacherCard";
 import CredentialsModal from "../components/CredentialsModal";
 import ConfirmModal from "../components/ConfirmModal";
+import ExcelImportModal from "../components/ExcelImportModal";
 import StudentCardPrint from "../components/StudentCardPrint";
 import QRCode from "qrcode";
 import JSZip from "jszip";
@@ -38,7 +39,8 @@ export default function Teachers() {
     });
 
   const [showForm, setShowForm] = useState(false);
-  const [editingTeacher, setEditingTeacher] = useState(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [selectedTeachers, setSelectedTeachers] = useState([]);
   const [selectedCardTeachers, setSelectedCardTeachers] = useState([]);
   const [showCardModal, setShowCardModal] = useState(false);
@@ -450,6 +452,16 @@ export default function Teachers() {
             </button>
           )}
 
+          {/* Import Excel Button */}
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0 cursor-pointer"
+            title="Import Banyak Guru dari Excel/CSV"
+          >
+            <span className="material-symbols-outlined text-base text-emerald-600">upload_file</span>
+            <span>Import Excel</span>
+          </button>
+
           {/* Desktop Add Button */}
           <button
             onClick={() => {
@@ -784,6 +796,19 @@ export default function Teachers() {
           }
           isResetPending={resetPasswordMutation.isPending}
           isDeactivatePending={deactivateAccessMutation.isPending}
+        />
+      )}
+
+      {/* Excel Import Modal */}
+      {showImportModal && (
+        <ExcelImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          type="teachers"
+          apiEndpoint="/attendance/teachers/bulk-import"
+          onSuccess={() => {
+            queryClient.invalidateQueries(["teachers"]);
+          }}
         />
       )}
 

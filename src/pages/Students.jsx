@@ -7,6 +7,7 @@ import StudentForm from "../components/StudentForm";
 import StudentCard from "../components/StudentCard";
 import StudentCardPrint from "../components/StudentCardPrint";
 import PromoteClassModal from "../components/PromoteClassModal";
+import ExcelImportModal from "../components/ExcelImportModal";
 import Modal from "../components/Modal";
 import QRCode from "qrcode";
 import JSZip from "jszip";
@@ -26,6 +27,7 @@ export default function Students() {
     count: 0,
   });
   const [showPromoteModal, setShowPromoteModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
   const [successModal, setSuccessModal] = useState({ isOpen: false, message: "" });
   const [selectedCardStudents, setSelectedCardStudents] = useState([]);
@@ -410,6 +412,16 @@ export default function Students() {
             </>
           )}
 
+          {/* Import Excel Button */}
+          <button
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0 cursor-pointer"
+            title="Import Banyak Siswa dari Excel/CSV"
+          >
+            <span className="material-symbols-outlined text-base text-emerald-600">upload_file</span>
+            <span>Import Excel</span>
+          </button>
+
           {/* Desktop Add Button */}
           <button
             onClick={() => {
@@ -717,6 +729,19 @@ export default function Students() {
           }}
           onSubmit={handleSubmitPromote}
           isPending={promoteClassMutation.isPending}
+        />
+      )}
+
+      {/* Excel Import Modal */}
+      {showImportModal && (
+        <ExcelImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          type="students"
+          apiEndpoint="/attendance/students/bulk-import"
+          onSuccess={() => {
+            queryClient.invalidateQueries(["students"]);
+          }}
         />
       )}
 
