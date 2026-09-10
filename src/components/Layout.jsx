@@ -242,21 +242,21 @@ export default function Layout({ children }) {
       </div>
 
       {/* Mobile Bottom Nav */}
-      <nav className="hidden md:!hidden fixed bottom-4 left-0 w-full z-40 portrait:flex landscape:hidden justify-center px-4 pointer-events-none">
-        <div className="bg-white border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden pointer-events-auto max-w-full">
-          <div className="flex overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <nav className="hidden md:!hidden fixed bottom-3 left-0 w-full z-40 portrait:flex landscape:hidden justify-center px-2 pointer-events-none">
+        <div className="bg-white border-2 border-gray-900 rounded-2xl shadow-neo overflow-hidden pointer-events-auto w-full max-w-sm">
+          <div className="flex justify-around items-center py-1.5 px-1">
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex-none min-w-[64px] flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all ${
-                    isActive ? 'bg-primary-green text-gray-900 font-bold' : 'bg-white text-gray-800 hover:bg-gray-50'
+                  className={`flex-1 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+                    isActive ? 'bg-primary-green text-gray-900 font-black shadow-sm' : 'bg-transparent text-gray-700 hover:bg-gray-100 font-bold'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-xl">{item.icon}</span>
-                  <span className="text-[10px] font-bold text-center leading-tight whitespace-nowrap">{item.label}</span>
+                  <span className="material-symbols-outlined text-[20px] leading-none">{item.icon}</span>
+                  <span className="text-[9px] font-black text-center leading-tight whitespace-nowrap mt-0.5">{item.label}</span>
                 </Link>
               );
             })}

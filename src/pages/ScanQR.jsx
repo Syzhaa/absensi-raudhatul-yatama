@@ -214,19 +214,19 @@ export default function ScanQR() {
 
           {/* 2. Area Kamera (Viewfinder) - Hidden when manual form active */}
           {!showManualForm && (
-            <div className="relative w-full aspect-[4/3] md:aspect-[4/3] lg:aspect-[16/10] bg-gray-950 rounded-2xl md:rounded-3xl border-2 md:border-3 border-gray-900 overflow-hidden shadow-neo">
+            <div className="relative w-full aspect-square sm:aspect-[4/3] md:aspect-[4/3] lg:aspect-[16/10] bg-gray-950 rounded-2xl md:rounded-3xl border-2 md:border-3 border-gray-900 overflow-hidden shadow-neo flex items-center justify-center">
               {/* QR Reader Viewport */}
-              <div id="qr-reader" className="w-full h-full" />
+              <div id="qr-reader" className="w-full h-full flex items-center justify-center overflow-hidden" />
 
-              {/* Visual Bracket Scanner Corners */}
-              <div className="absolute inset-5 sm:inset-6 pointer-events-none z-10 flex flex-col justify-between">
+              {/* Visual Bracket Scanner Corners (Frame Persegi Pas di Tengah) */}
+              <div className="absolute inset-6 sm:inset-10 pointer-events-none z-10 flex flex-col justify-between">
                 <div className="flex justify-between">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-t-4 border-l-4 border-white rounded-tl-xl"></div>
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-t-4 border-r-4 border-white rounded-tr-xl"></div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-t-4 border-l-4 border-primary-green rounded-tl-xl shadow-sm"></div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-t-4 border-r-4 border-primary-green rounded-tr-xl shadow-sm"></div>
                 </div>
                 <div className="flex justify-between">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-b-4 border-l-4 border-white rounded-bl-xl"></div>
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-b-4 border-r-4 border-white rounded-br-xl"></div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-b-4 border-l-4 border-primary-green rounded-bl-xl shadow-sm"></div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-b-4 border-r-4 border-primary-green rounded-br-xl shadow-sm"></div>
                 </div>
               </div>
 

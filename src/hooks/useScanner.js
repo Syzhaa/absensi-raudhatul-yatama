@@ -31,11 +31,7 @@ export function useScanner({
             { facingMode: "environment" },
             { 
               fps: 10,
-              qrbox: (viewfinderWidth, viewfinderHeight) => {
-                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                const qrboxSize = Math.floor(minEdge * 0.8);
-                return { width: qrboxSize, height: qrboxSize };
-              }
+              aspectRatio: 1.0,
             },
             async (decodedText) => {
               if (

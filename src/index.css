@@ -146,7 +146,6 @@
     @apply transition-all duration-100 hover-lift active-press;
   }
 
-  /* Scanning line animation */
   @keyframes scan-line {
     0% { top: 10%; opacity: 0.65; }
     50% { opacity: 1; }
@@ -157,6 +156,26 @@
     animation: scan-line 1.8s ease-in-out infinite alternate;
   }
 }
+
+/* Html5Qrcode Scanner Styling Override */
+#qr-reader {
+  border: none !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+#qr-reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: inherit !important;
+}
+
+/* Sembunyikan shaded overlay bawaan library yang bikin frame terpotong/gepeng */
+#qr-shaded-region {
+  display: none !important;
+}
+
 
 /* React Big Calendar Overrides */
 .rbc-calendar {
