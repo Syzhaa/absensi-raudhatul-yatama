@@ -56,7 +56,12 @@ export default function Attendance() {
     setKelasFilter(selectedKelas || "all");
   }, [selectedKelas]);
 
-  // 1. Fetch Master Active Students
+  // Reset role filter jika teacher attendance dinonaktifkan
+  useEffect(() => {
+    if (!enableTeacherAttendance) {
+      setRoleFilter("student");
+    }
+  }, [enableTeacherAttendance]);
   const { data: masterStudents, isLoading: isMasterStudentsLoading } = useQuery({
     queryKey: ["students_master", effectiveLembaga],
     queryFn: async () => {

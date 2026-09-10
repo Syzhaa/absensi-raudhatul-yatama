@@ -198,6 +198,10 @@ export default function Settings() {
       ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance_today"] });
+      queryClient.invalidateQueries({ queryKey: ["students_master"] });
+      queryClient.invalidateQueries({ queryKey: ["teachers_master"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard_stats"] });
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
     },

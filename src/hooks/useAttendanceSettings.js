@@ -13,7 +13,8 @@ export function useAttendanceSettings() {
       });
       return res.data?.data;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // Selalu fresh saat berpindah halaman tanpa perlu hard refresh
+    refetchOnMount: "always",
   });
 
   const enableTeacherAttendance =
