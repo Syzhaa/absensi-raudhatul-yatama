@@ -201,7 +201,7 @@ export default function Layout({ children }) {
           </nav>
         </aside>
 
-        <main className="flex-1 p-3 sm:p-4 md:p-6 portrait:pb-28 landscape:pb-6 md:pb-6 min-w-0 bg-gray-50/30">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 portrait:pb-28 landscape:pb-6 md:pb-6 min-w-0 bg-[#fdfaf5]">
           <header className="flex bg-white border-2 md:border-3 border-gray-900 px-3 py-2 sm:px-4 sm:py-3 items-center justify-between mb-3 md:mb-6 shadow-neo rounded-2xl gap-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <button 

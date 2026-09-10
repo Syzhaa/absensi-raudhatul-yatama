@@ -4,13 +4,13 @@
 
 @layer base {
   body {
-    @apply bg-white text-gray-900;
-    font-family: 'Inter', sans-serif;
-    background-color: #F8F9FA;
+    @apply bg-[#fdfaf5] text-gray-900;
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    background-color: #fdfaf5;
     background-image: 
-      linear-gradient(to right, #e2e8f0 1px, transparent 1px),
-      linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
-    background-size: 30px 30px;
+      linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 }
 
