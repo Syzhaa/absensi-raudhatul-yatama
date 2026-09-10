@@ -58,6 +58,7 @@ export default function Report() {
   const isSuperAdmin = userRole === "super_admin";
 
   const today = format(new Date(), "yyyy-MM-dd");
+  const firstDay = format(startOfMonth(new Date()), "yyyy-MM-dd");
 
   const [tab, setTab] = useState("siswa"); // siswa | guru | rekap_siswa | rekap_guru
   const [dateFrom, setDateFrom] = useState(today);
