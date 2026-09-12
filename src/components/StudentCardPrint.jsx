@@ -375,7 +375,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               top: 50%; left: 50%;
               transform: translate(-50%, -50%);
               width: 140px; height: 140px;
-              background-image: url('/logo.jpg');
+              background-image: url('/logo.png');
               background-size: contain;
               background-repeat: no-repeat;
               background-position: center;
@@ -487,7 +487,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               top: 50%; left: 50%;
               transform: translate(-50%, -50%);
               width: 160px; height: 160px;
-              background-image: url('/logo.jpg');
+              background-image: url('/logo.png');
               background-size: contain;
               background-repeat: no-repeat;
               background-position: center;
@@ -600,7 +600,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                 <div className="id-card">
                   <div className="card-header">
                     <div className="logo">
-                      <img src="/logo.jpg" alt="Logo" />
+                      <img src="/logo.png" alt="Logo" />
                     </div>
                     <div className="title-group">
                       <h1>{getLembagaName(person.lembaga)}</h1>
