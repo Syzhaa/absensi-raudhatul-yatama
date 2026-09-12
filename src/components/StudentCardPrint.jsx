@@ -296,14 +296,15 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             .card-header {
               background: linear-gradient(135deg, #059669 0%, #10b981 100%);
               color: white;
-              padding: 5px 6px;
+              padding: 5px 8px;
               display: flex;
               align-items: center;
+              justify-content: space-between;
               border-bottom-left-radius: 8px;
               border-bottom-right-radius: 8px;
               min-height: 54px;
               box-sizing: border-box;
-              gap: 3px;
+              gap: 4px;
             }
             .card-header .logo {
               width: 38px;
