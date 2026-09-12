@@ -361,12 +361,12 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             }
 
             .card-body {
-              padding: 5px 8px 6px;
+              padding: 6px 8px 6px;
               flex: 1;
               display: flex;
               flex-direction: column;
               align-items: center;
-              justify-content: space-between;
+              justify-content: space-evenly;
               position: relative;
             }
             .card-body::before {
@@ -387,7 +387,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               font-size: 10px;
               color: #059669;
               font-weight: 900;
-              margin: 1px auto 4px;
+              margin: 0 auto 3px;
               text-transform: uppercase;
               z-index: 10;
               text-align: center;
@@ -406,7 +406,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               display: flex;
               justify-content: center;
               align-items: center;
-              margin: 0 auto 4px;
+              margin: 0 auto 3px;
               box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             }
             .photo-frame img {
