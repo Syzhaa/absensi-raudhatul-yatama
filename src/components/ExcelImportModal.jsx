@@ -50,10 +50,12 @@ export default function ExcelImportModal({
           });
 
           if (isStudent) {
+            // Normalisasi kelas saat parsing (dukung baik angka 7/8/9/10/11/12 maupun Romawi VII/VIII/IX/X/XI/XII)
+            const rawKelas = item.kelas || item.rombel || "";
             return {
               nama: item.nama || item.namasiswa || item.fullname || "",
               nisn: item.nisn || item.nis || item.nomorinduk || "",
-              kelas: item.kelas || item.rombel || "",
+              kelas: rawKelas,
               jenis_kelamin: item.jeniskelamin || item.jk || item.gender || "L",
               nomor_hp_orangtua: item.nomorhporangtua || item.nohportu || item.whatsapp || item.wa || item.hp || "",
               lembaga: item.lembaga || "",
@@ -99,18 +101,18 @@ export default function ExcelImportModal({
         {
           "Nama": "Ahmad Zaki",
           "NISN": "0012345678",
-          "Kelas": "X-A",
+          "Kelas": "X", // Contoh MA: Bisa diisi angka (10) atau Romawi (X)
           "Jenis Kelamin": "L",
           "Nomor HP Orang Tua": "081234567890",
-          "Lembaga": "MA",
+          "Lembaga": "MA", // Contoh 1: Madrasah Aliyah (MA)
         },
         {
           "Nama": "Siti Fatimah",
           "NISN": "0012345679",
-          "Kelas": "X-B",
+          "Kelas": "7", // Contoh MTs: Bisa diisi angka (7) atau Romawi (VII)
           "Jenis Kelamin": "P",
           "Nomor HP Orang Tua": "085234567891",
-          "Lembaga": "MA",
+          "Lembaga": "MTs", // Contoh 2: Madrasah Tsanawiyah (MTs)
         },
       ];
     } else {
@@ -121,14 +123,14 @@ export default function ExcelImportModal({
           "NIP": "198501012010011001",
           "Mata Pelajaran": "Bahasa Arab",
           "Nomor HP": "081234567890",
-          "Lembaga": "MA",
+          "Lembaga": "MA", // Contoh 1: MA
         },
         {
           "Nama": "Ustadzah Maryam, M.Pd",
           "NIP": "199002022015022002",
           "Mata Pelajaran": "Fiqih",
           "Nomor HP": "085234567891",
-          "Lembaga": "MA",
+          "Lembaga": "MTs", // Contoh 2: MTs
         },
       ];
     }

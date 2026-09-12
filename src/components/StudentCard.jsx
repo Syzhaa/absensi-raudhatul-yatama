@@ -46,7 +46,7 @@ export default function StudentCard({
             {student.foto ? (
               <img
                 loading="lazy"
-                src={student.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.nama)}&background=random`}
+                src={getPhotoUrl(student.foto) || student.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.nama)}&background=random`}
                 alt={student.nama}
                 className="w-full h-full object-cover"
                 onError={(e) => {

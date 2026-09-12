@@ -15,11 +15,16 @@ export const getPhotoUrl = (url) => {
   if (url.startsWith("http") || url.startsWith("data:") || url.startsWith("blob:")) return url;
   
   // Fallback if VITE_API_BASE_URL is missing
-  const apiBase = import.meta.env.VITE_API_BASE_URL || "https://apima.sylink.my.id/api/v1";
+  const apiBase = import.meta.env.VITE_API_BASE_URL || "https://api.raudhatulyatama.sch.id/api/v1";
   // Remove /api/v1 or /api to get the root domain
   const baseUrl = apiBase.replace(/\/api(\/v1)?$/, "");
   
-  return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+  let cleanPath = url.startsWith("/") ? url : `/${url}`;
+  if (!cleanPath.startsWith("/storage/")) {
+    cleanPath = `/storage${cleanPath}`;
+  }
+  
+  return `${baseUrl}${cleanPath}`;
 };
 
 // Request interceptor untuk inject token

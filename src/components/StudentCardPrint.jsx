@@ -151,10 +151,11 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   };
 
   const getLembagaName = (code) => {
-    if (code === "MA") return "MADRASAH ALIYAH";
-    if (code === "MTs") return "MADRASAH TSANAWIYAH";
-    if (code === "Yayasan") return "YAYASAN RAUDHATUL YATAMA";
-    return code;
+    const c = (code || "").trim().toUpperCase();
+    if (c === "MA") return "MADRASAH ALIYAH";
+    if (c === "MTS") return "MADRASAH TSANAWIYAH";
+    if (c === "YAYASAN") return "YAYASAN RAUDHATUL YATAMA";
+    return code || "MADRASAH ALIYAH";
   };
 
   const calculateValidUntil = (kelas) => {
@@ -182,9 +183,13 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     
     let fullUrl = url;
     if (!url.startsWith("http")) {
-      const apiBase = import.meta.env.VITE_API_BASE_URL || "https://apima.sylink.my.id/api/v1";
+      const apiBase = import.meta.env.VITE_API_BASE_URL || "https://api.raudhatulyatama.sch.id/api/v1";
       const baseUrl = apiBase.replace(/\/api(\/v1)?$/, "");
-      fullUrl = `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+      let cleanPath = url.startsWith("/") ? url : `/${url}`;
+      if (!cleanPath.startsWith("/storage/")) {
+        cleanPath = `/storage${cleanPath}`;
+      }
+      fullUrl = `${baseUrl}${cleanPath}`;
     }
     // We use wsrv.nl proxy because it reliably returns CORS headers for html-to-image
     const encodedUrl = encodeURIComponent(fullUrl);
@@ -296,23 +301,28 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               align-items: center;
               border-bottom-left-radius: 8px;
               border-bottom-right-radius: 8px;
-              min-height: 58px;
+              min-height: 54px;
               box-sizing: border-box;
+              gap: 6px;
             }
             .card-header .logo {
-              width: 40px;
-              height: 40px;
+              width: 36px;
+              height: 36px;
               flex-shrink: 0;
               display: flex;
               align-items: center;
               justify-content: center;
-              margin-left: 16px;
-              margin-right: 5px;
+              border-radius: 50%;
+              background: #ffffff;
+              padding: 1.5px;
+              box-sizing: border-box;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.2);
             }
             .card-header .logo img {
               width: 100%;
               height: 100%;
               object-fit: contain;
+              border-radius: 50%;
               display: block;
             }
             .card-header .title-group {
@@ -322,37 +332,41 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               align-items: center;
               justify-content: center;
               min-width: 0;
-              padding-left: 2px;
-              padding-right: 16px;
+              text-align: center;
             }
             .card-header h1 {
-              font-size: 10px;
+              font-size: 8.5px;
               font-weight: 900;
               margin: 0;
               text-transform: uppercase;
               line-height: 1.15;
+              white-space: nowrap;
+              letter-spacing: 0.2px;
             }
             .card-header h2 {
               font-size: 8px;
               font-weight: 800;
               margin: 1px 0 0 0;
               line-height: 1.15;
+              white-space: nowrap;
+              letter-spacing: 0.2px;
             }
             .card-header h3 {
               font-size: 6.5px;
-              font-weight: 600;
+              font-weight: 700;
               margin: 1px 0 0 0;
               line-height: 1.1;
               opacity: 0.95;
+              white-space: nowrap;
             }
 
             .card-body {
-              padding: 6px 10px 8px;
+              padding: 5px 8px 6px;
               flex: 1;
               display: flex;
               flex-direction: column;
               align-items: center;
-              justify-content: space-around;
+              justify-content: space-between;
               position: relative;
             }
             .card-body::before {
@@ -360,7 +374,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               position: absolute;
               top: 50%; left: 50%;
               transform: translate(-50%, -50%);
-              width: 145px; height: 145px;
+              width: 140px; height: 140px;
               background-image: url('/logo.jpg');
               background-size: contain;
               background-repeat: no-repeat;
@@ -370,19 +384,20 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               pointer-events: none;
             }
             .student-role {
-              font-size: 10.5px;
+              font-size: 10px;
               color: #059669;
               font-weight: 900;
-              margin: 1px auto 5px;
+              margin: 1px auto 4px;
               text-transform: uppercase;
               z-index: 10;
               text-align: center;
               width: 100%;
               line-height: 1.2;
+              letter-spacing: 0.5px;
             }
             .photo-frame {
-              width: 87px;
-              height: 110px;
+              width: 84px;
+              height: 106px;
               border: 2px solid #059669;
               border-radius: 4px;
               background: #f9fafb;
@@ -391,17 +406,19 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               display: flex;
               justify-content: center;
               align-items: center;
-              margin: 0 auto 5px;
+              margin: 0 auto 4px;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             }
             .photo-frame img {
               width: 100%;
               height: 100%;
               object-fit: cover;
+              object-position: center 20%;
               display: block;
             }
             
             .student-name {
-              font-size: 12.5px;
+              font-size: 11.5px;
               font-weight: 900;
               color: #111827;
               margin: 0 auto;
@@ -410,19 +427,24 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               width: 100%;
               z-index: 10;
               display: block;
+              padding: 0 2px;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             }
 
             .info-grid {
               width: 100%;
               display: grid;
-              grid-template-columns: 30px 4px 1fr;
-              gap: 3.5px 0;
-              font-size: 8.5px;
-              line-height: 1.3;
-              margin-top: 7px;
+              grid-template-columns: 32px 5px 1fr;
+              gap: 2.5px 0;
+              font-size: 8px;
+              line-height: 1.25;
+              margin-top: 5px;
               margin-bottom: 2px;
-              padding-left: 4px;
+              padding: 0 2px;
               z-index: 10;
+              box-sizing: border-box;
             }
             .info-label {
               font-weight: bold;
@@ -436,6 +458,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             .info-value {
               color: #111827;
               font-weight: 600;
+              word-break: break-word;
+              overflow-wrap: break-word;
             }
             .card-footer-front {
               background: #059669;
