@@ -72,6 +72,18 @@ export default function Teachers() {
     enabled: !isLembagaLoading,
   });
 
+  const { data: kelasData } = useQuery({
+    queryKey: ["kelas", effectiveLembaga],
+    queryFn: async () => {
+      const api = await import("../services/api").then((m) => m.default);
+      const response = await api.get("/admin/kelas", {
+        params: { lembaga: effectiveLembaga },
+      });
+      return response.data;
+    },
+    enabled: !isLembagaLoading,
+  });
+
   const createMutation = useMutation({
     mutationFn: teacherService.create,
     onSuccess: () => {
@@ -484,6 +496,8 @@ export default function Teachers() {
         setFormData={setFormData}
         onSubmit={handleSubmit}
         isPending={createMutation.isPending || updateMutation.isPending || isUploading}
+        kelasData={kelasData}
+        allTeachers={teachers}
       />
 
       {/* Select All & Total */}

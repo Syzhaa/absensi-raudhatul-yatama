@@ -46,7 +46,7 @@ export default function TeacherCard({
             {teacher.foto ? (
               <img
                 loading="lazy"
-                src={teacher.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(teacher.nama)}&background=random`}
+                src={getPhotoUrl(teacher.foto) || teacher.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(teacher.nama)}&background=random`}
                 alt={teacher.nama}
                 className="w-full h-full object-cover"
                 onError={(e) => {
