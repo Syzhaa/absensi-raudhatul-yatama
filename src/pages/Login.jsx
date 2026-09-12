@@ -250,7 +250,7 @@ export default function Login({ onLogin }) {
                 <div className="flex justify-center">
                   <Turnstile
                     ref={turnstileRef}
-                    siteKey="0x4AAAAAAEWtKdi7szdpuPB9"
+                    siteKey="0x4AAAAAAExJEjLWiMHh678K"
                     onSuccess={(token) => setTurnstileToken(token)}
                     onError={() => { setTurnstileToken(""); }}
                     onExpire={() => { setTurnstileToken(""); }}
