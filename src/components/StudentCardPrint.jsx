@@ -303,26 +303,20 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               border-bottom-right-radius: 8px;
               min-height: 54px;
               box-sizing: border-box;
-              gap: 6px;
+              gap: 3px;
             }
             .card-header .logo {
-              width: 36px;
-              height: 36px;
+              width: 38px;
+              height: 38px;
               flex-shrink: 0;
               display: flex;
               align-items: center;
               justify-content: center;
-              border-radius: 50%;
-              background: #ffffff;
-              padding: 1.5px;
-              box-sizing: border-box;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.2);
             }
             .card-header .logo img {
               width: 100%;
               height: 100%;
               object-fit: contain;
-              border-radius: 50%;
               display: block;
             }
             .card-header .title-group {
