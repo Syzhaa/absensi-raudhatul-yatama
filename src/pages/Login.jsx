@@ -109,7 +109,7 @@ export default function Login({ onLogin }) {
               <img
                 alt="MA Raudhatul Yatama Logo"
                 className="w-full h-full object-contain"
-                src="/logo.jpg"
+                src="/logo.png"
               />
             </div>
             <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-gray-800 uppercase tracking-tight">
