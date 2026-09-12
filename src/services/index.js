@@ -1,5 +1,6 @@
 import api from "./api";
 import { format } from "date-fns";
+import { compressImage } from "../utils/imageCompressor";
 
 export const authService = {
   login: async (email, password, deviceId, turnstileToken = "") => {
@@ -145,8 +146,9 @@ export const studentService = {
   },
 
   uploadPhoto: async (id, file) => {
+    const compressed = await compressImage(file, 800, 0.85);
     const formData = new FormData();
-    formData.append("foto", file);
+    formData.append("foto", compressed);
     const response = await api.post(`/attendance/students/${id}/photo`, formData, {
       headers: { "Content-Type": undefined },
     });
@@ -196,8 +198,9 @@ export const teacherService = {
   },
 
   uploadPhoto: async (id, file) => {
+    const compressed = await compressImage(file, 800, 0.85);
     const formData = new FormData();
-    formData.append("foto", file);
+    formData.append("foto", compressed);
     const response = await api.post(`/attendance/teachers/${id}/photo`, formData, {
       headers: { "Content-Type": undefined },
     });
