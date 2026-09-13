@@ -313,17 +313,11 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               display: flex;
               align-items: center;
               justify-content: center;
-              border-radius: 50%;
-              background: #ffffff;
-              padding: 1.5px;
-              box-sizing: border-box;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.2);
             }
             .card-header .logo img {
               width: 100%;
               height: 100%;
               object-fit: contain;
-              border-radius: 50%;
               display: block;
             }
             .card-header .title-group {
@@ -601,7 +595,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                 <div className="id-card">
                   <div className="card-header">
                     <div className="logo">
-                      <img src="/logo.jpg" alt="Logo" />
+                      <img src="/logo.png" alt="Logo" />
                     </div>
                     <div className="title-group">
                       <h1>{getLembagaName(person.lembaga)}</h1>
