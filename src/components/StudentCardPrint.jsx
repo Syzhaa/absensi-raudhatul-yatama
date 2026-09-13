@@ -336,6 +336,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               display: flex;
               align-items: center;
               justify-content: center;
+              margin-left: 8px;
+              margin-right: -8px;
             }
             .card-header .logo img {
               width: 100%;
