@@ -16,6 +16,7 @@ const STATUS_OPTIONS = [
 export default function WhatsappTemplateForm({ template, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     status: template?.status || "hadir",
+    target_type: template?.target_type || "group",
     opening: template?.opening ? template.opening.replace(/\\n/g, '\n') : "",
     closing: template?.closing ? template.closing.replace(/\\n/g, '\n') : "",
     weight: template?.weight || 1,
@@ -56,9 +57,11 @@ export default function WhatsappTemplateForm({ template, onClose, onSuccess }) {
       opening: formData.opening.replace(/\n/g, '\\n'),
       closing: formData.closing.replace(/\n/g, '\\n'),
       status: formData.status,
+      target_type: formData.target_type,
       name: "Ahmad Zaki",
       kelas: "XII",
       time: "07:30:00",
+      parent_phone: formData.target_type === "group" ? "083142477851" : null,
     });
   };
 
@@ -99,10 +102,56 @@ export default function WhatsappTemplateForm({ template, onClose, onSuccess }) {
           </div>
         )}
 
+        {/* Mode Target Pengiriman: Grup vs Pribadi */}
+        <div>
+          <label className="block text-xs font-black uppercase text-gray-700 mb-1.5">
+            Mode Target Notifikasi <span className="text-red-600">*</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <label
+              className={`flex items-center gap-2 p-2.5 rounded-xl border-2 cursor-pointer transition-all ${
+                formData.target_type === "group"
+                  ? "bg-emerald-50 border-emerald-600 shadow-sm text-emerald-950 font-black"
+                  : "bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-600 font-bold"
+              }`}
+            >
+              <input
+                type="radio"
+                name="target_type"
+                value="group"
+                checked={formData.target_type === "group"}
+                onChange={(e) => handleChange("target_type", e.target.value)}
+                className="text-emerald-600 focus:ring-emerald-500"
+              />
+              <span className="material-symbols-outlined text-emerald-600 text-base">groups</span>
+              <span className="text-xs">Mode Grup WA</span>
+            </label>
+
+            <label
+              className={`flex items-center gap-2 p-2.5 rounded-xl border-2 cursor-pointer transition-all ${
+                formData.target_type === "personal"
+                  ? "bg-blue-50 border-blue-600 shadow-sm text-blue-950 font-black"
+                  : "bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-600 font-bold"
+              }`}
+            >
+              <input
+                type="radio"
+                name="target_type"
+                value="personal"
+                checked={formData.target_type === "personal"}
+                onChange={(e) => handleChange("target_type", e.target.value)}
+                className="text-blue-600 focus:ring-blue-500"
+              />
+              <span className="material-symbols-outlined text-blue-600 text-base">person</span>
+              <span className="text-xs">Mode Pribadi (Ortu)</span>
+            </label>
+          </div>
+        </div>
+
         {/* Status */}
         <div>
           <label className="block text-xs font-bold text-gray-700 mb-1">
-            Status <span className="text-red-600">*</span>
+            Status Presensi <span className="text-red-600">*</span>
           </label>
           <select
             value={formData.status}

@@ -33,6 +33,7 @@ export default function WhatsappTemplates() {
   const [page, setPage] = useState(1);
   const [perPage] = useState(15);
   const [statusFilter, setStatusFilter] = useState("");
+  const [targetTypeFilter, setTargetTypeFilter] = useState("");
   const [activeFilter, setActiveFilter] = useState("");
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -40,12 +41,13 @@ export default function WhatsappTemplates() {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["whatsapp-templates", page, perPage, statusFilter, activeFilter, search],
+    queryKey: ["whatsapp-templates", page, perPage, statusFilter, targetTypeFilter, activeFilter, search],
     queryFn: () =>
       whatsappTemplateService.getAll({
         page,
         per_page: perPage,
         ...(statusFilter && { status: statusFilter }),
+        ...(targetTypeFilter && { target_type: targetTypeFilter }),
         ...(activeFilter && { is_active: activeFilter }),
         ...(search && { search }),
       }),
@@ -137,39 +139,114 @@ export default function WhatsappTemplates() {
 
       {/* Stats Summary Bar - Neo Minimal */}
       {stats?.data && (
-        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
-            <div className="text-[10px] font-black uppercase text-gray-500">Total</div>
-            <div className="text-base sm:text-xl font-black text-gray-900">{stats.data.total || 0}</div>
-          </div>
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
-            <div className="text-[10px] font-black uppercase text-emerald-600">Aktif</div>
-            <div className="text-base sm:text-xl font-black text-emerald-700">{stats.data.active || 0}</div>
-          </div>
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
-            <div className="text-[10px] font-black uppercase text-blue-600">Hadir</div>
-            <div className="text-base sm:text-xl font-black text-blue-700">{stats.data.by_status?.hadir || 0}</div>
-          </div>
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
-            <div className="text-[10px] font-black uppercase text-amber-600">Telat</div>
-            <div className="text-base sm:text-xl font-black text-amber-700">{stats.data.by_status?.terlambat || 0}</div>
-          </div>
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
-            <div className="text-[10px] font-black uppercase text-purple-600">Izin/Skt</div>
-            <div className="text-base sm:text-xl font-black text-purple-700">
-              {(stats.data.by_status?.izin || 0) + (stats.data.by_status?.sakit || 0)}
+        <div className="space-y-2">
+          {/* Mode Summary Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="bg-white border-2 border-gray-900 rounded-xl p-2.5 shadow-neo flex items-center justify-between">
+              <div>
+                <div className="text-[10px] font-black uppercase text-gray-500">Total Template</div>
+                <div className="text-lg sm:text-2xl font-black text-gray-900">{stats.data.total || 0}</div>
+              </div>
+              <span className="material-symbols-outlined text-gray-400 text-2xl">chat</span>
+            </div>
+            <div className="bg-emerald-50/70 border-2 border-emerald-600 rounded-xl p-2.5 shadow-neo flex items-center justify-between">
+              <div>
+                <div className="text-[10px] font-black uppercase text-emerald-800">Mode Grup WA</div>
+                <div className="text-lg sm:text-2xl font-black text-emerald-900">{stats.data.by_target_type?.group || 0}</div>
+              </div>
+              <span className="material-symbols-outlined text-emerald-600 text-2xl">groups</span>
+            </div>
+            <div className="bg-blue-50/70 border-2 border-blue-600 rounded-xl p-2.5 shadow-neo flex items-center justify-between">
+              <div>
+                <div className="text-[10px] font-black uppercase text-blue-800">Mode Pribadi (Ortu)</div>
+                <div className="text-lg sm:text-2xl font-black text-blue-900">{stats.data.by_target_type?.personal || 0}</div>
+              </div>
+              <span className="material-symbols-outlined text-blue-600 text-2xl">person</span>
+            </div>
+            <div className="bg-white border-2 border-gray-900 rounded-xl p-2.5 shadow-neo flex items-center justify-between">
+              <div>
+                <div className="text-[10px] font-black uppercase text-emerald-600">Status Aktif</div>
+                <div className="text-lg sm:text-2xl font-black text-emerald-700">{stats.data.active || 0}</div>
+              </div>
+              <span className="material-symbols-outlined text-emerald-600 text-2xl">check_circle</span>
             </div>
           </div>
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
-            <div className="text-[10px] font-black uppercase text-red-600">Alpha</div>
-            <div className="text-base sm:text-xl font-black text-red-700">{stats.data.by_status?.alpha || 0}</div>
-          </div>
-          <div className="bg-white border-2 border-gray-900 rounded-xl p-2 sm:p-2.5 shadow-neo text-center">
-            <div className="text-[10px] font-black uppercase text-teal-600">Pulang</div>
-            <div className="text-base sm:text-xl font-black text-teal-700">{stats.data.by_status?.pulang || 0}</div>
+
+          {/* Status Breakdown Bar */}
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5 sm:gap-2">
+            <div className="bg-white border-2 border-gray-900 rounded-xl p-1.5 sm:p-2 text-center">
+              <div className="text-[9px] font-black uppercase text-blue-600">Hadir</div>
+              <div className="text-xs sm:text-base font-black text-blue-700">{stats.data.by_status?.hadir || 0}</div>
+            </div>
+            <div className="bg-white border-2 border-gray-900 rounded-xl p-1.5 sm:p-2 text-center">
+              <div className="text-[9px] font-black uppercase text-amber-600">Telat</div>
+              <div className="text-xs sm:text-base font-black text-amber-700">{stats.data.by_status?.terlambat || 0}</div>
+            </div>
+            <div className="bg-white border-2 border-gray-900 rounded-xl p-1.5 sm:p-2 text-center">
+              <div className="text-[9px] font-black uppercase text-blue-600">Izin</div>
+              <div className="text-xs sm:text-base font-black text-blue-700">{stats.data.by_status?.izin || 0}</div>
+            </div>
+            <div className="bg-white border-2 border-gray-900 rounded-xl p-1.5 sm:p-2 text-center">
+              <div className="text-[9px] font-black uppercase text-purple-600">Sakit</div>
+              <div className="text-xs sm:text-base font-black text-purple-700">{stats.data.by_status?.sakit || 0}</div>
+            </div>
+            <div className="bg-white border-2 border-gray-900 rounded-xl p-1.5 sm:p-2 text-center">
+              <div className="text-[9px] font-black uppercase text-red-600">Alpha</div>
+              <div className="text-xs sm:text-base font-black text-red-700">{stats.data.by_status?.alpha || 0}</div>
+            </div>
+            <div className="bg-white border-2 border-gray-900 rounded-xl p-1.5 sm:p-2 text-center">
+              <div className="text-[9px] font-black uppercase text-teal-600">Pulang</div>
+              <div className="text-xs sm:text-base font-black text-teal-700">{stats.data.by_status?.pulang || 0}</div>
+            </div>
+            <div className="bg-white border-2 border-gray-900 rounded-xl p-1.5 sm:p-2 text-center">
+              <div className="text-[9px] font-black uppercase text-gray-600">Libur</div>
+              <div className="text-xs sm:text-base font-black text-gray-700">{stats.data.by_status?.libur || 0}</div>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Mode Switcher Tabs */}
+      <div className="flex items-center gap-2 border-b-2 border-gray-200 pb-1 pt-1 overflow-x-auto">
+        <button
+          type="button"
+          onClick={() => { setTargetTypeFilter(""); setPage(1); }}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-black text-xs border-2 transition-all whitespace-nowrap ${
+            targetTypeFilter === ""
+              ? "bg-white border-gray-900 text-gray-900 shadow-neo -translate-y-0.5"
+              : "bg-gray-100 border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          <span className="material-symbols-outlined text-base">apps</span>
+          <span>Semua Mode ({stats?.data?.total || 0})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setTargetTypeFilter("group"); setPage(1); }}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-black text-xs border-2 transition-all whitespace-nowrap ${
+            targetTypeFilter === "group"
+              ? "bg-emerald-100 border-emerald-900 text-emerald-950 shadow-neo -translate-y-0.5"
+              : "bg-gray-100 border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          <span className="material-symbols-outlined text-base text-emerald-600">groups</span>
+          <span>Mode Grup WA ({stats?.data?.by_target_type?.group || 0})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setTargetTypeFilter("personal"); setPage(1); }}
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-black text-xs border-2 transition-all whitespace-nowrap ${
+            targetTypeFilter === "personal"
+              ? "bg-blue-100 border-blue-900 text-blue-950 shadow-neo -translate-y-0.5"
+              : "bg-gray-100 border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          <span className="material-symbols-outlined text-base text-blue-600">person</span>
+          <span>Mode Pribadi Ortu ({stats?.data?.by_target_type?.personal || 0})</span>
+        </button>
+      </div>
 
       {/* Filter & Search Bar */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3 sm:p-4 shadow-neo flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
@@ -239,6 +316,18 @@ export default function WhatsappTemplates() {
                     {/* Header Item */}
                     <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
+                        {template.target_type === "group" ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase border bg-emerald-100 text-emerald-900 border-emerald-400">
+                            <span className="material-symbols-outlined text-[13px] text-emerald-700">groups</span>
+                            Grup WA
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase border bg-blue-100 text-blue-900 border-blue-400">
+                            <span className="material-symbols-outlined text-[13px] text-blue-700">person</span>
+                            Pribadi Ortu
+                          </span>
+                        )}
+
                         <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase border ${cfg.badge}`}>
                           {cfg.label || template.status}
                         </span>
