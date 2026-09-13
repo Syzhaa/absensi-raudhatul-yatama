@@ -6,6 +6,29 @@ import { getKelasNumericVal } from "../utils/kelasHelper";
 export default function StudentCardPrint({ students = [], onClose, type = "student" }) {
   const cardRef = useRef(null);
   const [qrCodes, setQrCodes] = useState({});
+  const [logoUrl, setLogoUrl] = useState("/logo.png");
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchApiLogo = async () => {
+      try {
+        const apiBase = import.meta.env.VITE_API_BASE_URL || "https://api.raudhatulyatama.sch.id/api/v1";
+        const res = await fetch(`${apiBase}/logo`, { headers: { Accept: "application/json" } });
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.data?.url && isMounted) {
+            setLogoUrl(json.data.url);
+          }
+        }
+      } catch (err) {
+        console.warn("Logo API fallback to /logo.png:", err);
+      }
+    };
+    fetchApiLogo();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     // Prevent body scrolling when modal is open
@@ -370,7 +393,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               top: 50%; left: 50%;
               transform: translate(-50%, -50%);
               width: 140px; height: 140px;
-              background-image: url('/logo.png');
+              background-image: url('${logoUrl}');
               background-size: contain;
               background-repeat: no-repeat;
               background-position: center;
@@ -482,7 +505,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               top: 50%; left: 50%;
               transform: translate(-50%, -50%);
               width: 160px; height: 160px;
-              background-image: url('/logo.png');
+              background-image: url('${logoUrl}');
               background-size: contain;
               background-repeat: no-repeat;
               background-position: center;
@@ -595,7 +618,16 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                 <div className="id-card">
                   <div className="card-header">
                     <div className="logo">
-                      <img src="/logo.png" alt="Logo" />
+                      <img 
+                        src={logoUrl} 
+                        alt="Logo" 
+                        crossOrigin="anonymous"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.removeAttribute('crossOrigin');
+                          e.target.src = "/logo.png";
+                        }}
+                      />
                     </div>
                     <div className="title-group">
                       <h1>{getLembagaName(person.lembaga)}</h1>

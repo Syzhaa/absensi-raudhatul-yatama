@@ -27,6 +27,22 @@ function HeaderSelectors() {
     staleTime: 10 * 60 * 1000,
   });
 
+  const { data: logoData } = useQuery({
+    queryKey: ['public_logo'],
+    queryFn: async () => {
+      try {
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://api.raudhatulyatama.sch.id/api/v1';
+        const res = await fetch(`${apiBase}/logo`, { headers: { Accept: 'application/json' } });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 60 * 60 * 1000,
+  });
+  const logoUrl = logoData?.data?.url || '/logo.png';
+
   const { data: studentData } = useQuery({
     queryKey: ['students_for_kelas', effectiveLembaga, userRole],
     queryFn: async () => {
@@ -137,7 +153,7 @@ export default function Layout({ children }) {
               <div className="p-4 border-b-3 border-gray-900 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-white border-2 border-gray-900 rounded-full overflow-hidden flex items-center justify-center">
-                    <img fetchpriority="high" loading="eager" src="/logo.jpg" alt="Logo" className="w-full h-full object-contain" />
+                    <img fetchpriority="high" loading="eager" src={logoUrl} alt="Logo" className="w-full h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src = "/logo.png"; }} />
                   </div>
                   <h1 className="font-black text-sm text-gray-900 leading-tight">Menu Utama</h1>
                 </div>
@@ -175,7 +191,7 @@ export default function Layout({ children }) {
         <aside className={`${isDesktopSidebarOpen ? 'hidden md:flex' : 'hidden'} flex-col w-64 h-screen sticky top-0 bg-white border-r-2 border-gray-900 flex-shrink-0 z-40 overflow-y-auto`}>
           <div className="p-4 border-b-2 border-gray-900 bg-white flex items-center gap-3 sticky top-0 z-20">
             <div className="w-10 h-10 bg-white border-2 border-gray-900 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0">
-              <img fetchpriority="high" loading="eager" src="/logo.jpg" alt="Logo" className="w-full h-full object-contain" />
+              <img fetchpriority="high" loading="eager" src={logoUrl} alt="Logo" className="w-full h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src = "/logo.png"; }} />
             </div>
             <div>
               <h1 className="font-black text-sm text-gray-900 leading-tight">Absensi Digital</h1>

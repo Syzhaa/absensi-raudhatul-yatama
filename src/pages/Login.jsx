@@ -33,10 +33,31 @@ export default function Login({ onLogin }) {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [logoUrl, setLogoUrl] = useState("/logo.png");
   const turnstileRef = useRef(null);
 
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
   const setUserRole = useAppStore((state) => state.setUserRole);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchApiLogo = async () => {
+      try {
+        const apiBase = import.meta.env.VITE_API_BASE_URL || "https://api.raudhatulyatama.sch.id/api/v1";
+        const res = await fetch(`${apiBase}/logo`, { headers: { Accept: "application/json" } });
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.data?.url && isMounted) {
+            setLogoUrl(json.data.url);
+          }
+        }
+      } catch (err) {
+        console.warn("Logo fetch fallback:", err);
+      }
+    };
+    fetchApiLogo();
+    return () => { isMounted = false; };
+  }, []);
 
   // Load remembered email on mount
   useEffect(() => {
@@ -109,7 +130,11 @@ export default function Login({ onLogin }) {
               <img
                 alt="MA Raudhatul Yatama Logo"
                 className="w-full h-full object-contain"
-                src="/logo.jpg"
+                src={logoUrl}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/logo.png";
+                }}
               />
             </div>
             <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-gray-800 uppercase tracking-tight">
