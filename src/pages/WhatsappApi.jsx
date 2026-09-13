@@ -430,7 +430,7 @@ export default function WhatsappApi() {
                 type="tel"
                 value={testPhoneNumber}
                 onChange={(e) => setTestPhoneNumber(e.target.value)}
-                placeholder={formData.wa_target_type === "group" ? "No. WA (Opsional untuk grup - pesan dikirim ke grup di API Key)" : "No. WA Penerima (contoh: 08123456789 atau 8123456789)"}
+                placeholder={formData.wa_target_type === "group" ? "No. HP Ortu untuk di-tag @ di grup (Opsional)" : "No. WA Penerima (contoh: 08123456789 atau 8123456789)"}
                 className="flex-1 px-3 py-2 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-mono text-gray-900 focus:outline-none"
               />
               <button
@@ -569,7 +569,9 @@ export default function WhatsappApi() {
               <span className="material-symbols-outlined text-emerald-600 text-2xl">groups</span>
               <div className="flex-1">
                 <span className="font-black text-xs text-emerald-900 block">Mode Pengiriman Aktif: Grup WhatsApp</span>
-                <span className="text-[11px] text-emerald-700 font-medium">Pesan simulasi akan langsung dikirim ke grup WhatsApp yang dipilih pada API Key di wa.tappdigital.id. Nomor tester opsional.</span>
+                <span className="text-[11px] text-emerald-700 font-medium">
+                  Pesan simulasi akan langsung dikirim ke grup WhatsApp. Nomor orang tua di bawah akan otomatis di-tag / mention (@) di dalam grup.
+                </span>
               </div>
             </div>
           ) : null}
@@ -579,7 +581,7 @@ export default function WhatsappApi() {
             <div className="flex items-center justify-between">
               <label className="block text-xs font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base text-emerald-600">contacts</span>
-                <span>{formData.wa_target_type === "group" ? "Nomor Tester (Opsional untuk Grup)" : "Pilih Nomor Penerima Tes *"}</span>
+                <span>{formData.wa_target_type === "group" ? "Nomor WhatsApp Orang Tua (Di-tag @ di Grup)" : "Pilih Nomor WhatsApp Orang Tua Penerima *"}</span>
               </label>
               <span className="text-[10px] text-gray-500 font-medium">Bisa 08... atau 8...</span>
             </div>
@@ -587,7 +589,9 @@ export default function WhatsappApi() {
             {/* Dropdown Nomor Tersimpan di DB */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <label className="text-[11px] font-bold text-gray-600 mb-1 block">Daftar Nomor Tester ({effectiveLembaga.toUpperCase()})</label>
+                <label className="text-[11px] font-bold text-gray-600 mb-1 block">
+                  {formData.wa_target_type === "group" ? `Daftar Contoh Nomor Ortu (${effectiveLembaga.toUpperCase()})` : `Daftar Nomor Ortu Tester (${effectiveLembaga.toUpperCase()})`}
+                </label>
                 <select
                   value={selectedRecipientId}
                   onChange={(e) => setSelectedRecipientId(e.target.value)}
@@ -604,7 +608,9 @@ export default function WhatsappApi() {
 
               {/* Input Nomor HP */}
               <div>
-                <label className="text-[11px] font-bold text-gray-600 mb-1 block">Nomor WhatsApp Target</label>
+                <label className="text-[11px] font-bold text-gray-600 mb-1 block">
+                  {formData.wa_target_type === "group" ? "Nomor HP Ortu untuk di-tag" : "Nomor WhatsApp Target"}
+                </label>
                 <div className="flex items-center gap-1.5">
                   <input
                     type="tel"
@@ -616,7 +622,7 @@ export default function WhatsappApi() {
                         setSelectedRecipientId("manual");
                       }
                     }}
-                    placeholder={formData.wa_target_type === "group" ? "Opsional untuk grup" : "Contoh: 08123456789 atau 8123456789"}
+                    placeholder={formData.wa_target_type === "group" ? "Contoh: 08123456789 (akan di-tag @ di grup)" : "Contoh: 08123456789 atau 8123456789"}
                     className="flex-1 px-3 py-2.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none"
                   />
                   {selectedRecipientId !== "manual" && (
