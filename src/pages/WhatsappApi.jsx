@@ -12,6 +12,7 @@ export default function WhatsappApi() {
   // Settings state
   const [formData, setFormData] = useState({
     wa_api_key: "",
+    wa_target_type: "group", // "group" | "parent"
     wa_is_active: false,
   });
   const [showKey, setShowKey] = useState(false);
@@ -56,6 +57,7 @@ export default function WhatsappApi() {
     if (settingsData?.data) {
       setFormData({
         wa_api_key: settingsData.data.wa_api_key || "",
+        wa_target_type: settingsData.data.wa_target_type || "group",
         wa_is_active: settingsData.data.wa_is_active || false,
       });
     }
@@ -88,9 +90,10 @@ export default function WhatsappApi() {
   });
 
   const testMutation = useMutation({
-    mutationFn: async ({ wa_api_key, phone_number }) => {
+    mutationFn: async ({ wa_api_key, wa_target_type, phone_number }) => {
       const response = await api.post(`/attendance/whatsapp-settings/test`, {
         wa_api_key,
+        wa_target_type,
         phone_number: phone_number || undefined,
       });
       return response.data;
@@ -160,17 +163,19 @@ export default function WhatsappApi() {
     setTestResult(null);
     testMutation.mutate({
       wa_api_key: formData.wa_api_key.trim(),
+      wa_target_type: formData.wa_target_type,
       phone_number: testPhoneNumber.trim(),
     });
   };
 
   const handleSimulate = (e) => {
     e.preventDefault();
-    if (!customPhone.trim()) {
+    const isGroup = formData.wa_target_type === "group";
+    if (!isGroup && !customPhone.trim()) {
       alert("Masukkan atau pilih nomor WhatsApp tujuan simulasi.");
       return;
     }
-    if (saveAsNewRecipient && !newRecipientName.trim()) {
+    if (!isGroup && saveAsNewRecipient && !newRecipientName.trim()) {
       alert("Masukkan nama label untuk nomor tester baru.");
       return;
     }
@@ -181,8 +186,9 @@ export default function WhatsappApi() {
       nama_siswa: simNamaSiswa.trim(),
       kelas: simKelas.trim(),
       jam: simJam.trim(),
+      target_type: formData.wa_target_type,
       phone_number: customPhone.trim(),
-      save_recipient: saveAsNewRecipient,
+      save_recipient: !isGroup && saveAsNewRecipient,
       recipient_name: newRecipientName.trim(),
     });
   };
@@ -282,7 +288,7 @@ export default function WhatsappApi() {
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5">
-                Otomatis kirim pesan WA ke nomor ortu saat siswa scan masuk atau pulang
+                Otomatis kirim pesan notifikasi saat siswa scan presensi masuk atau pulang
               </p>
             </div>
 
@@ -295,6 +301,66 @@ export default function WhatsappApi() {
               />
               <div className="w-12 h-6.5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[3px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
             </label>
+          </div>
+
+          {/* Target Pengiriman Selector */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-black uppercase tracking-wider text-gray-800">
+              Tujuan Pengiriman Notifikasi *
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <label
+                className={`flex items-start gap-2.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                  formData.wa_target_type === "group"
+                    ? "bg-emerald-50/70 border-emerald-600 shadow-sm"
+                    : "bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-600"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="wa_target_type"
+                  value="group"
+                  checked={formData.wa_target_type === "group"}
+                  onChange={(e) => setFormData({ ...formData, wa_target_type: e.target.value })}
+                  className="mt-0.5 text-primary-green focus:ring-primary-green"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 font-black text-xs text-gray-900">
+                    <span className="material-symbols-outlined text-base text-emerald-600">groups</span>
+                    <span>Grup WhatsApp (Direkomendasikan)</span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-snug">
+                    Pesan presensi dikirim ke grup WhatsApp yang dipilih pada API Key di <strong className="text-gray-700">wa.tappdigital.id</strong>
+                  </p>
+                </div>
+              </label>
+
+              <label
+                className={`flex items-start gap-2.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                  formData.wa_target_type === "parent"
+                    ? "bg-blue-50/70 border-blue-600 shadow-sm"
+                    : "bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-600"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="wa_target_type"
+                  value="parent"
+                  checked={formData.wa_target_type === "parent"}
+                  onChange={(e) => setFormData({ ...formData, wa_target_type: e.target.value })}
+                  className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 font-black text-xs text-gray-900">
+                    <span className="material-symbols-outlined text-base text-blue-600">person</span>
+                    <span>WhatsApp Orang Tua (Pribadi)</span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-snug">
+                    Pesan dikirim langsung ke nomor WhatsApp masing-masing orang tua siswa
+                  </p>
+                </div>
+              </label>
+            </div>
           </div>
 
           {/* Input API Key */}
@@ -364,7 +430,7 @@ export default function WhatsappApi() {
                 type="tel"
                 value={testPhoneNumber}
                 onChange={(e) => setTestPhoneNumber(e.target.value)}
-                placeholder="No. WA Penerima (contoh: 08123456789 atau 8123456789)"
+                placeholder={formData.wa_target_type === "group" ? "No. WA (Opsional untuk grup - pesan dikirim ke grup di API Key)" : "No. WA Penerima (contoh: 08123456789 atau 8123456789)"}
                 className="flex-1 px-3 py-2 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-mono text-gray-900 focus:outline-none"
               />
               <button
@@ -497,12 +563,23 @@ export default function WhatsappApi() {
             </div>
           </div>
 
+          {/* Info Mode Pengiriman Simulasi */}
+          {formData.wa_target_type === "group" ? (
+            <div className="p-3.5 bg-emerald-50 border-2 border-emerald-500 rounded-xl flex items-center gap-3">
+              <span className="material-symbols-outlined text-emerald-600 text-2xl">groups</span>
+              <div className="flex-1">
+                <span className="font-black text-xs text-emerald-900 block">Mode Pengiriman Aktif: Grup WhatsApp</span>
+                <span className="text-[11px] text-emerald-700 font-medium">Pesan simulasi akan langsung dikirim ke grup WhatsApp yang dipilih pada API Key di wa.tappdigital.id. Nomor tester opsional.</span>
+              </div>
+            </div>
+          ) : null}
+
           {/* Nomor Tujuan Tester */}
           <div className="space-y-3 p-3.5 sm:p-4 bg-emerald-50/50 border-2 border-emerald-200 rounded-xl">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-base text-emerald-600">contacts</span>
-                <span>Pilih Nomor Penerima Tes</span>
+                <span>{formData.wa_target_type === "group" ? "Nomor Tester (Opsional untuk Grup)" : "Pilih Nomor Penerima Tes *"}</span>
               </label>
               <span className="text-[10px] text-gray-500 font-medium">Bisa 08... atau 8...</span>
             </div>
@@ -531,7 +608,7 @@ export default function WhatsappApi() {
                 <div className="flex items-center gap-1.5">
                   <input
                     type="tel"
-                    required
+                    required={formData.wa_target_type !== "group"}
                     value={customPhone}
                     onChange={(e) => {
                       setCustomPhone(e.target.value);
@@ -539,7 +616,7 @@ export default function WhatsappApi() {
                         setSelectedRecipientId("manual");
                       }
                     }}
-                    placeholder="Contoh: 08123456789 atau 8123456789"
+                    placeholder={formData.wa_target_type === "group" ? "Opsional untuk grup" : "Contoh: 08123456789 atau 8123456789"}
                     className="flex-1 px-3 py-2.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none"
                   />
                   {selectedRecipientId !== "manual" && (
