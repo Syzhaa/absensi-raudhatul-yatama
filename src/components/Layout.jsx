@@ -27,22 +27,6 @@ function HeaderSelectors() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const { data: logoData } = useQuery({
-    queryKey: ['public_logo'],
-    queryFn: async () => {
-      try {
-        const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://api.raudhatulyatama.sch.id/api/v1';
-        const res = await fetch(`${apiBase}/logo`, { headers: { Accept: 'application/json' } });
-        if (!res.ok) return null;
-        return await res.json();
-      } catch {
-        return null;
-      }
-    },
-    staleTime: 60 * 60 * 1000,
-  });
-  const logoUrl = logoData?.data?.url || '/logo.png';
-
   const { data: studentData } = useQuery({
     queryKey: ['students_for_kelas', effectiveLembaga, userRole],
     queryFn: async () => {
@@ -119,6 +103,22 @@ export default function Layout({ children }) {
   const { effectiveLembaga } = useEffectiveLembaga();
   const { enableTeacherAttendance } = useAttendanceSettings();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  const { data: logoData } = useQuery({
+    queryKey: ['public_logo'],
+    queryFn: async () => {
+      try {
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://api.raudhatulyatama.sch.id/api/v1';
+        const res = await fetch(`${apiBase}/logo`, { headers: { Accept: 'application/json' } });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    },
+    staleTime: 60 * 60 * 1000,
+  });
+  const logoUrl = logoData?.data?.url || '/logo.png';
 
   const allMenuItems = menuForRole(userRole);
   const menuItems = allMenuItems

@@ -36,6 +36,31 @@ function App() {
 
   useBackgroundSync();
 
+  // Sinkronisasi logo dinamis & favicon dari backend API
+  useEffect(() => {
+    const syncLogoAndFavicon = async () => {
+      try {
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'https://api.raudhatulyatama.sch.id/api/v1';
+        const res = await fetch(`${apiBase}/logo`, { headers: { Accept: 'application/json' } });
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.data?.url) {
+            let link = document.querySelector("link[rel~='icon']");
+            if (!link) {
+              link = document.createElement('link');
+              link.rel = 'icon';
+              document.head.appendChild(link);
+            }
+            link.href = json.data.url;
+          }
+        }
+      } catch (err) {
+        // Fallback
+      }
+    };
+    syncLogoAndFavicon();
+  }, []);
+
   useEffect(() => {
     const hydrateAuth = async () => {
       const token = localStorage.getItem("auth_token");

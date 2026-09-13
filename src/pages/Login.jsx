@@ -93,6 +93,23 @@ export default function Login({ onLogin }) {
         response.data?.user?.lembaga || response.data?.data?.user?.lembaga;
       const role = response.data?.user?.role || response.data?.data?.user?.role;
 
+      if (role === "siswa") {
+        setError("Akun siswa/santri tidak diizinkan masuk ke Sistem Presensi. Silakan akses Portal Siswa di raudhatulyatama.sch.id.");
+        setTurnstileToken("");
+        if (turnstileRef.current) turnstileRef.current.reset();
+        setLoading(false);
+        return;
+      }
+
+      const allowedRoles = ["super_admin", "admin_ma", "admin_mts", "admin_akademik", "guru"];
+      if (role && !allowedRoles.includes(role)) {
+        setError("Akun ini tidak memiliki hak akses ke Sistem Presensi & Absensi.");
+        setTurnstileToken("");
+        if (turnstileRef.current) turnstileRef.current.reset();
+        setLoading(false);
+        return;
+      }
+
       if (token) {
         localStorage.setItem("auth_token", token);
         if (lembaga) setUserLembaga(lembaga);
