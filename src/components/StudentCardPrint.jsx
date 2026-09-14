@@ -1,12 +1,12 @@
 import { useRef, useState, useEffect } from "react";
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
-import { getKelasNumericVal } from "../utils/kelasHelper";
 
 export default function StudentCardPrint({ students = [], onClose, type = "student" }) {
   const cardRef = useRef(null);
   const [qrCodes, setQrCodes] = useState({});
   const [logoUrl, setLogoUrl] = useState("/logo.png");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -31,14 +31,13 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   }, []);
 
   useEffect(() => {
-    // Prevent body scrolling when modal is open
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "unset";
     };
   }, []);
 
-  // Intersection Observer for Lazy QR Code Generation
+  // Generate QR code for each person
   useEffect(() => {
     if (!students || students.length === 0) return;
 
@@ -46,9 +45,9 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       if (!uuid || qrCodes[id]) return;
       try {
         const qr = await QRCode.toDataURL(uuid, {
-          width: 300,
+          width: 320,
           margin: 1,
-          color: { dark: "#000000", light: "#ffffff" },
+          color: { dark: "#0f172a", light: "#ffffff" },
         });
         setQrCodes((prev) => ({ ...prev, [id]: qr }));
       } catch (err) {
@@ -56,57 +55,23 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       }
     };
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const id = entry.target.dataset.id;
-            const uuid = entry.target.dataset.uuid;
-            if (id && uuid) {
-              generateQR(id, uuid);
-              observer.unobserve(entry.target);
-            }
-          }
-        });
-      },
-      { root: cardRef.current, rootMargin: "400px" } // trigger well before scrolling into view
-    );
-
-    const checkAndObserve = () => {
-      const cards = cardRef.current?.querySelectorAll(".student-card-print");
-      if (cards && cards.length > 0) {
-        cards.forEach((card) => observer.observe(card));
-      } else {
-        // If not rendered yet, try again in a bit
-        setTimeout(checkAndObserve, 100);
+    students.forEach((person) => {
+      if (person.id && person.uuid) {
+        generateQR(person.id, person.uuid);
       }
-    };
-    
-    checkAndObserve();
-
-    return () => {
-      const cards = cardRef.current?.querySelectorAll(".student-card-print");
-      if (cards) {
-        cards.forEach((card) => observer.unobserve(card));
-      }
-      observer.disconnect();
-    };
-  }, [students]);
-
-  const [isDownloading, setIsDownloading] = useState(false);
+    });
+  }, [students, qrCodes]);
 
   const handleDownloadPNG = async () => {
     setIsDownloading(true);
     try {
-      const wrappers = cardRef.current.querySelectorAll('.id-card-wrapper');
+      const wrappers = cardRef.current.querySelectorAll(".id-card-wrapper");
       if (wrappers.length === 0) return;
 
-      // html-to-image uses browser's own rendering engine (SVG foreignObject)
-      // sehingga hasil PNG 100% identik dengan tampilan preview
       const captureWrapper = async (wrapper) => {
         return toPng(wrapper, {
           pixelRatio: 3,
-          backgroundColor: '#ffffff',
+          backgroundColor: "#ffffff",
           skipFonts: false,
           cacheBust: true,
         });
@@ -119,8 +84,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         link.href = dataUrl;
         link.click();
       } else {
-        const JSZip = (await import('jszip')).default;
-        const { saveAs } = await import('file-saver');
+        const JSZip = (await import("jszip")).default;
+        const { saveAs } = await import("file-saver");
         const zip = new JSZip();
 
         for (let i = 0; i < wrappers.length; i++) {
@@ -131,11 +96,11 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         }
 
         const content = await zip.generateAsync({ type: "blob" });
-        saveAs(content, "kartu_pelajar_batch.zip");
+        saveAs(content, "kartu_identitas_batch.zip");
       }
     } catch (error) {
       console.error("Gagal mendownload PNG:", error);
-      alert("Gagal mendownload PNG. Pastikan gambar (foto/logo) dapat diakses.");
+      alert("Gagal mendownload PNG. Pastikan gambar dapat diakses.");
     } finally {
       setIsDownloading(false);
     }
@@ -144,7 +109,6 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   const handlePrint = () => {
     const printWindow = window.open("", "_blank");
     const cardHTML = cardRef.current.innerHTML;
-    // We get the styles from the style tag we'll inject in the component
     const styles = document.getElementById("id-card-styles").innerHTML;
 
     printWindow.document.write(`
@@ -165,8 +129,6 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     `);
 
     printWindow.document.close();
-
-    // Wait for images and QR to load
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
@@ -177,33 +139,27 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     const c = (code || "").trim().toUpperCase();
     if (c === "MA") return "MADRASAH ALIYAH";
     if (c === "MTS") return "MADRASAH TSANAWIYAH";
-    if (c === "YAYASAN") return "YAYASAN RAUDHATUL YATAMA";
+    if (c === "YAYASAN") return "RAUDHATUL YATAMA";
     return code || "MADRASAH ALIYAH";
-  };
-
-  const calculateValidUntil = (kelas) => {
-    const currentYear = new Date().getFullYear();
-    // Simplified logic: If they are class 10/7 it's +3 years, 11/8 +2, 12/9 +1.
-    // If not standard, fallback to "Selama Menjadi Siswa"
-    const k = getKelasNumericVal(kelas);
-    if ([7, 10].includes(k)) return currentYear + 3;
-    if ([8, 11].includes(k)) return currentYear + 2;
-    if ([9, 12].includes(k)) return currentYear + 1;
-    return "Selama Menjadi Siswa";
   };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
-    return new Date(dateStr).toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
+    }
   };
 
   const getPhotoUrl = (url) => {
-    if (!url || url === 'storage/' || url === '/storage/') return null;
-    
+    if (!url || url === "storage/" || url === "/storage/") return null;
     let fullUrl = url;
     if (!url.startsWith("http")) {
       const apiBase = import.meta.env.VITE_API_BASE_URL || "https://api.raudhatulyatama.sch.id/api/v1";
@@ -214,30 +170,32 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       }
       fullUrl = `${baseUrl}${cleanPath}`;
     }
-    // We use wsrv.nl proxy because it reliably returns CORS headers for html-to-image
     const encodedUrl = encodeURIComponent(fullUrl);
     const cacheBuster = `&cb=${Date.now()}`;
     return `https://wsrv.nl/?url=${encodedUrl}${cacheBuster}`;
   };
 
   const getFallbackAvatar = () => {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="200" height="200"><rect width="100%" height="100%" fill="#e5e7eb"/><path fill="#9ca3af" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="200" height="200"><rect width="100%" height="100%" fill="#e2e8f0"/><path fill="#94a3b8" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-100 flex flex-col z-[100] overflow-hidden">
-      {/* Responsive Header */}
-      <div className="bg-white border-b-2 border-gray-900 shadow-md p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 z-10 relative shrink-0">
+    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col z-[100] overflow-hidden animate-fade-in">
+      {/* Top Action Header */}
+      <div className="bg-white border-b-2 border-gray-900 shadow-md p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 z-10 shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg sm:text-xl font-black text-gray-900 leading-tight">Preview Cetak Kartu</h2>
-            <p className="text-xs sm:text-sm text-gray-500 font-semibold">{students.length} Kartu siap dicetak</p>
+            <h2 className="text-base sm:text-lg font-black text-gray-900 leading-tight">
+              Preview Kartu {type === "teacher" ? "Guru & Pendidik" : "Pelajar & Santri"}
+            </h2>
+            <p className="text-xs text-gray-500 font-medium">
+              {students.length} Kartu siap cetak atau unduh format PNG
+            </p>
           </div>
-          {/* Close button for mobile */}
           <button
             onClick={onClose}
-            className="sm:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300 flex items-center justify-center"
+            className="sm:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
             title="Tutup"
           >
             <span className="material-symbols-outlined text-xl">close</span>
@@ -248,471 +206,474 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           <button
             onClick={handleDownloadPNG}
             disabled={isDownloading}
-            className="flex-1 sm:flex-initial py-2 px-3 sm:px-5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-lg shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 sm:gap-2 disabled:opacity-50"
+            className="flex-1 sm:flex-initial py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-black rounded-xl border-2 border-gray-900 shadow-neo hover:shadow-neo-lg active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-base sm:text-lg">{isDownloading ? 'hourglass_empty' : 'image'}</span>
-            <span>{isDownloading ? 'Memproses...' : 'Unduh PNG'}</span>
+            <span className="material-symbols-outlined text-base">
+              {isDownloading ? "hourglass_empty" : "download"}
+            </span>
+            <span>{isDownloading ? "Memproses..." : "Unduh PNG"}</span>
           </button>
           <button
             onClick={handlePrint}
-            className="flex-1 sm:flex-initial py-2 px-3 sm:px-5 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs sm:text-sm font-bold rounded-lg shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 sm:gap-2 border-2 border-gray-900"
+            className="flex-1 sm:flex-initial py-2 px-4 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs sm:text-sm font-black rounded-xl border-2 border-gray-900 shadow-neo hover:shadow-neo-lg active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-base sm:text-lg">print</span>
+            <span className="material-symbols-outlined text-base">print</span>
             <span>Cetak Kartu</span>
           </button>
           <button
             onClick={onClose}
-            className="hidden sm:inline-flex px-4 py-2 font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm"
+            className="hidden sm:inline-flex px-4 py-2 font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-xs sm:text-sm border border-gray-300 cursor-pointer"
           >
             Tutup
           </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto overflow-x-auto p-3 sm:p-6 md:p-8 bg-gray-200 flex flex-col items-center">
+      {/* Main Preview Container */}
+      <div className="flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-8 bg-slate-200 flex flex-col items-center">
         <style id="id-card-styles">{`
-            * { margin: 0; padding: 0; box-sizing: border-box; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f1f5f9;
+            padding: 20px;
+          }
+          .print-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            max-width: 100%;
+          }
+          .id-card-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            page-break-inside: avoid;
+            flex-shrink: 0;
+          }
+          @media (min-width: 640px) {
+            .id-card-wrapper {
+              flex-direction: row;
+              align-items: flex-start;
+              gap: 16px;
+            }
+          }
+
+          /* CR80 Card Dimensions (Standard ID Card) */
+          .id-card {
+            width: 216px;
+            height: 342px;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+            border: 1.5px solid #cbd5e1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          /* HEADER ZONE: Navy Blue Bar with Circular Emblem */
+          .card-header-nct {
+            background: #0f1c3f;
+            color: #ffffff;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 52px;
+            border-bottom: 2px solid #1e293b;
+          }
+          .card-header-nct .logo-emblem {
+            width: 34px;
+            height: 34px;
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          }
+          .card-header-nct .logo-emblem img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+          }
+          .card-header-nct .title-box {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+          }
+          .card-header-nct .title-institution {
+            font-size: 8px;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            line-height: 1.1;
+          }
+          .card-header-nct .title-main {
+            font-size: 10.5px;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            line-height: 1.2;
+            font-family: Georgia, serif, 'Times New Roman';
+          }
+          .card-header-nct .title-location {
+            font-size: 6.5px;
+            font-weight: 600;
+            color: #cbd5e1;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            line-height: 1.1;
+          }
+
+          /* MIDDLE ZONE: Vertical Typography on Left + Portrait Photo on Right */
+          .card-middle-nct {
+            padding: 10px 12px 6px 12px;
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            gap: 10px;
+            flex: 1;
+          }
+          .vertical-ribbon {
+            width: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1.5px solid #e2e8f0;
+            padding-right: 4px;
+          }
+          .vertical-text {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 7.5px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: #475569;
+            text-transform: uppercase;
+            white-space: nowrap;
+          }
+          .photo-container-nct {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .photo-box-nct {
+            width: 105px;
+            height: 130px;
+            border-radius: 8px;
+            border: 1.5px solid #0f1c3f;
+            background: #f8fafc;
+            overflow: hidden;
+            box-shadow: 0 3px 8px rgba(15, 28, 63, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .photo-box-nct img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 20%;
+            display: block;
+          }
+
+          /* BOTTOM ZONE: Personal Info with Dashed Line Separators */
+          .card-info-nct {
+            padding: 0 14px 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+          }
+          .info-dashed-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 6px;
+            padding: 3px 0;
+            border-bottom: 1px dashed #cbd5e1;
+          }
+          .info-dashed-row:last-child {
+            border-bottom: none;
+          }
+          .label-typewriter {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 7px;
+            font-weight: 700;
+            color: #64748b;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+          }
+          .value-navy {
+            font-size: 8px;
+            font-weight: 800;
+            color: #0f1c3f;
+            text-align: right;
+            word-break: break-word;
+            line-height: 1.2;
+            max-width: 130px;
+          }
+          .value-navy.value-name {
+            font-size: 8.5px;
+            font-weight: 900;
+            text-transform: uppercase;
+          }
+
+          /* BACK SIDE: Matching Navy Accent + Big Crisp QR */
+          .back-header-nct {
+            background: #0f1c3f;
+            color: #ffffff;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Georgia, serif, 'Times New Roman';
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            min-height: 38px;
+            border-bottom: 2px solid #1e293b;
+          }
+          .back-body-nct {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+          }
+          .back-qr-box {
+            width: 120px;
+            height: 120px;
+            background: #ffffff;
+            border: 2px solid #0f1c3f;
+            border-radius: 10px;
+            padding: 6px;
+            box-shadow: 0 4px 10px rgba(15, 28, 63, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .back-qr-box img {
+            width: 100%;
+            height: 100%;
+            display: block;
+          }
+          .back-qr-label {
+            margin-top: 6px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 7px;
+            font-weight: 800;
+            color: #475569;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+          }
+          .back-rules-nct {
+            background: #f8fafc;
+            border-top: 1px dashed #cbd5e1;
+            padding: 8px 12px;
+            font-size: 6px;
+            line-height: 1.35;
+            color: #475569;
+          }
+          .back-rules-nct strong {
+            display: block;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 6.5px;
+            color: #0f1c3f;
+            margin-bottom: 2px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+          }
+          .back-rules-nct ol {
+            padding-left: 12px;
+          }
+
+          /* PRINT MEDIA OPTIMIZATION */
+          @media print {
             body {
-              font-family: Arial, Helvetica, sans-serif;
-              background: #f3f4f6;
-              padding: 20px;
+              background: #ffffff;
+              padding: 0;
             }
             .print-container {
-              display: flex;
-              flex-wrap: wrap;
-              gap: 20px;
-              justify-content: center;
-              max-width: 100%;
+              display: block;
+              gap: 0;
             }
             .id-card-wrapper {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              gap: 16px;
-              margin-bottom: 24px;
-              page-break-inside: avoid;
-              flex-shrink: 0;
-            }
-            @media (min-width: 640px) {
-              .id-card-wrapper {
-                flex-direction: row;
-                align-items: flex-start;
-                gap: 14px;
-              }
+              display: block;
+              margin: 0;
+              padding: 0;
             }
             .id-card {
-              width: 204px;
-              height: 325px;
-              background: white;
-              border-radius: 8px;
-              overflow: hidden;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-              border: 1px solid #e5e7eb;
-              position: relative;
-              display: flex;
-              flex-direction: column;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-            }
-            
-            /* FRONT SIDE */
-            .card-header {
-              background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-              color: white;
-              padding: 6px 8px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              border-bottom-left-radius: 8px;
-              border-bottom-right-radius: 8px;
-              min-height: 54px;
-              box-sizing: border-box;
-              gap: 4px;
-            }
-            .card-header .logo {
-              width: 36px;
-              height: 36px;
-              flex-shrink: 0;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              margin-left: 8px;
-              margin-right: -8px;
-            }
-            .card-header .logo img {
-              width: 100%;
-              height: 100%;
-              object-fit: contain;
-              display: block;
-            }
-            .card-header .title-group {
-              flex: 1;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              min-width: 0;
-              text-align: center;
-            }
-            .card-header h1 {
-              font-size: 8.5px;
-              font-weight: 900;
-              margin: 0;
-              text-transform: uppercase;
-              line-height: 1.15;
-              white-space: nowrap;
-              letter-spacing: 0.2px;
-            }
-            .card-header h2 {
-              font-size: 8px;
-              font-weight: 800;
-              margin: 1px 0 0 0;
-              line-height: 1.15;
-              white-space: nowrap;
-              letter-spacing: 0.2px;
-            }
-            .card-header h3 {
-              font-size: 6.5px;
-              font-weight: 700;
-              margin: 1px 0 0 0;
-              line-height: 1.1;
-              opacity: 0.95;
-              white-space: nowrap;
-            }
-
-            .card-body {
-              padding: 6px 8px 6px;
-              flex: 1;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: space-evenly;
-              position: relative;
-            }
-            .card-body::before {
-              content: '';
-              position: absolute;
-              top: 50%; left: 50%;
-              transform: translate(-50%, -50%);
-              width: 140px; height: 140px;
-              background-image: url('${logoUrl}');
-              background-size: contain;
-              background-repeat: no-repeat;
-              background-position: center;
-              opacity: 0.06;
-              z-index: 1;
-              pointer-events: none;
-            }
-            .student-role {
-              font-size: 10px;
-              color: #059669;
-              font-weight: 900;
-              margin: 0 auto 3px;
-              text-transform: uppercase;
-              z-index: 10;
-              text-align: center;
-              width: 100%;
-              line-height: 1.2;
-              letter-spacing: 0.5px;
-            }
-            .photo-frame {
-              width: 84px;
-              height: 106px;
-              border: 2px solid #059669;
-              border-radius: 4px;
-              background: #f9fafb;
-              z-index: 10;
-              overflow: hidden;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              margin: 0 auto 3px;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            }
-            .photo-frame img {
-              width: 100%;
-              height: 100%;
-              object-fit: cover;
-              object-position: center 20%;
-              display: block;
-            }
-            
-            .student-name {
-              font-size: 11.5px;
-              font-weight: 900;
-              color: #111827;
-              margin: 0 auto;
-              text-align: center;
-              line-height: 1.2;
-              width: 100%;
-              z-index: 10;
-              display: block;
-              padding: 0 2px;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-            }
-
-            .info-grid {
-              width: 100%;
-              display: grid;
-              grid-template-columns: 32px 5px 1fr;
-              gap: 2.5px 0;
-              font-size: 8px;
-              line-height: 1.25;
-              margin-top: 5px;
-              margin-bottom: 2px;
-              padding: 0 2px;
-              z-index: 10;
-              box-sizing: border-box;
-            }
-            .info-label {
-              font-weight: bold;
-              color: #374151;
-            }
-            .info-colon {
-              text-align: center;
-              color: #374151;
-              font-weight: bold;
-            }
-            .info-value {
-              color: #111827;
-              font-weight: 600;
-              word-break: break-word;
-              overflow-wrap: break-word;
-            }
-            .card-footer-front {
-              background: #059669;
-              color: white;
-              font-size: 8px;
-              width: 100%;
-              font-weight: bold;
-              padding: 4.5px 0;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              z-index: 10;
+              width: 54mm !important;
+              height: 85.6mm !important;
+              box-shadow: none !important;
+              border: 1px solid #cbd5e1 !important;
+              page-break-after: always;
+              page-break-inside: avoid;
+              border-radius: 4mm !important;
               margin: 0;
             }
-
-            /* BACK SIDE */
-            .back-side {
-              background: #f9fafb;
-              justify-content: space-between;
-              position: relative;
-            }
-            .back-side::before {
-              content: '';
-              position: absolute;
-              top: 50%; left: 50%;
-              transform: translate(-50%, -50%);
-              width: 160px; height: 160px;
-              background-image: url('${logoUrl}');
-              background-size: contain;
-              background-repeat: no-repeat;
-              background-position: center;
-              opacity: 0.05;
-              z-index: 1;
-              pointer-events: none;
-            }
-            .back-header {
-              background: #059669;
-              color: white;
-              font-size: 8.5px;
-              font-weight: 900;
-              padding: 5px 0;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              z-index: 2;
-              width: 100%;
+            @page {
               margin: 0;
+              size: 54mm 85.6mm;
             }
-            .qr-container {
-              flex: 1;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: center;
-              z-index: 2;
-              padding: 4px 0;
-            }
-            .qr-box {
-              width: 106px;
-              height: 106px;
-              background: white;
-              padding: 6px;
-              border-radius: 4px;
-              border: 1.5px solid #10b981;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            }
-            .qr-box img {
-              width: 100%;
-              height: 100%;
-              display: block;
-            }
-            .qr-text {
-              margin-top: 4px;
-              font-size: 7.5px;
-              font-weight: bold;
-              color: #374151;
-              text-align: center;
-            }
-            .rules {
-              font-size: 6px;
-              padding: 6px 8px;
-              z-index: 2;
-              background: rgba(255,255,255,0.9);
-              line-height: 1.35;
-              color: #374151;
-            }
-            .rules ol {
-              padding-left: 12px;
-              margin-top: 2px;
-              color: #374151;
-            }
-
-            @media print {
-              body {
-                background: white;
-                padding: 0;
-              }
-              .print-container {
-                display: block;
-                gap: 0;
-              }
-              .id-card-wrapper {
-                display: block;
-                margin: 0;
-                padding: 0;
-              }
-              .id-card {
-                width: 54mm !important;
-                height: 86mm !important;
-                box-shadow: none;
-                border: none;
-                page-break-after: always;
-                page-break-inside: avoid;
-                margin: 0;
-              }
-              @page {
-                margin: 0;
-                size: 54mm 86mm;
-              }
-            }
+          }
         `}</style>
-        <div ref={cardRef} className="flex flex-wrap justify-center gap-6">
+
+        <div ref={cardRef} className="flex flex-wrap justify-center gap-6 sm:gap-8">
           {students.map((person) => {
             const isTeacher = type === "teacher" || person.nip !== undefined;
             const ttl = [person.tempat_lahir, formatDate(person.tanggal_lahir)]
               .filter(Boolean)
               .join(", ");
-            const rawValidUntil = isTeacher ? "Selama Menjadi Guru" : calculateValidUntil(person.kelas);
-            const validUntil = typeof rawValidUntil === "number"
-              ? `${new Date().getFullYear()} - ${rawValidUntil}`
-              : rawValidUntil;
+
+            const formattedKelas = person.kelas
+              ? person.kelas.toString().toLowerCase().startsWith("kelas")
+                ? person.kelas
+                : `Kelas ${person.kelas}`
+              : "-";
 
             return (
-              <div key={person.id} data-id={person.id} data-uuid={person.uuid} className="student-card-print id-card-wrapper">
-                {/* FRONT SIDE */}
+              <div
+                key={person.id}
+                data-id={person.id}
+                data-uuid={person.uuid}
+                className="student-card-print id-card-wrapper"
+              >
+                {/* FRONT SIDE (DESAIN NCT 127 STYLE) */}
                 <div className="id-card">
-                  <div className="card-header">
-                    <div className="logo">
-                      <img 
-                        src={logoUrl} 
-                        alt="Logo" 
+                  {/* 1. Header Zone: Navy Block with Circular Logo */}
+                  <div className="card-header-nct">
+                    <div className="logo-emblem">
+                      <img
+                        src={logoUrl}
+                        alt="Logo"
                         crossOrigin="anonymous"
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.removeAttribute('crossOrigin');
+                          e.target.removeAttribute("crossOrigin");
                           e.target.src = "/logo.png";
                         }}
                       />
                     </div>
-                    <div className="title-group">
-                      <h1>{getLembagaName(person.lembaga)}</h1>
-                      <h2>RAUDHATUL YATAMA</h2>
-                      <h3>KABUPATEN BANJAR</h3>
+                    <div className="title-box">
+                      <div className="title-institution">{getLembagaName(person.lembaga)}</div>
+                      <div className="title-main">RAUDHATUL YATAMA</div>
+                      <div className="title-location">KABUPATEN BANJAR</div>
                     </div>
                   </div>
 
-                  <div className="card-body">
-                    <div className="student-role">
-                      {isTeacher ? "GURU / PENDIDIK" : "KARTU PELAJAR"}
+                  {/* 2. Middle Zone: Vertical Text Ribbon & Portrait Photo */}
+                  <div className="card-middle-nct">
+                    <div className="vertical-ribbon">
+                      <div className="vertical-text">
+                        {isTeacher ? "TEACHER IDENTITY CARD" : "STUDENT IDENTITY CARD"}
+                      </div>
                     </div>
-
-                    <div className="photo-frame">
-                      {person.foto ? (
-                        <img
-                          src={getPhotoUrl(person.foto)}
-                          alt={person.nama}
-                          crossOrigin="anonymous"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.removeAttribute('crossOrigin');
-                            e.target.src = getFallbackAvatar();
-                          }}
-                        />
-                      ) : (
-                        <img
-                          src={getFallbackAvatar()}
-                          alt={person.nama}
-                        />
-                      )}
-                    </div>
-
-                    <div className="student-name">{person.nama}</div>
-
-                    <div className="info-grid">
-                      {isTeacher ? (
-                        <>
-                          <div className="info-label">NIP/NPK</div><div className="info-colon">:</div>
-                          <div className="info-value">{person.nip || "-"}</div>
-                          <div className="info-label">Mapel</div><div className="info-colon">:</div>
-                          <div className="info-value">{person.mata_pelajaran || "Umum"}</div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="info-label">NISN</div><div className="info-colon">:</div>
-                          <div className="info-value">{person.nisn || "-"}</div>
-                        </>
-                      )}
-
-                      <div className="info-label">TTL</div><div className="info-colon">:</div>
-                      <div className="info-value" style={{ whiteSpace: "normal" }}>{ttl || "-"}</div>
-
-                      <div className="info-label">Alamat</div><div className="info-colon">:</div>
-                      <div className="info-value" style={{ whiteSpace: "normal" }}>
-                        {person.alamat || "-"}
+                    <div className="photo-container-nct">
+                      <div className="photo-box-nct">
+                        {person.foto ? (
+                          <img
+                            src={getPhotoUrl(person.foto)}
+                            alt={person.nama}
+                            crossOrigin="anonymous"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.removeAttribute("crossOrigin");
+                              e.target.src = getFallbackAvatar();
+                            }}
+                          />
+                        ) : (
+                          <img src={getFallbackAvatar()} alt={person.nama} />
+                        )}
                       </div>
                     </div>
                   </div>
-                  <div className="card-footer-front">
-                    Berlaku: {validUntil}
+
+                  {/* 3. Bottom Zone: Fields with Dashed Separators */}
+                  <div className="card-info-nct">
+                    {/* Row 1: Nama */}
+                    <div className="info-dashed-row">
+                      <span className="label-typewriter">NAMA</span>
+                      <span className="value-navy value-name">{person.nama || "-"}</span>
+                    </div>
+
+                    {isTeacher ? (
+                      <>
+                        {/* Row 2 Guru: NPK / NIP */}
+                        <div className="info-dashed-row">
+                          <span className="label-typewriter">NPK / NIP</span>
+                          <span className="value-navy font-mono">{person.nip || "-"}</span>
+                        </div>
+                        {/* Row 3 Guru: Mapel */}
+                        <div className="info-dashed-row">
+                          <span className="label-typewriter">MAPEL</span>
+                          <span className="value-navy">{person.mata_pelajaran || "Umum"}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Row 2 Siswa: Kelas */}
+                        <div className="info-dashed-row">
+                          <span className="label-typewriter">KELAS</span>
+                          <span className="value-navy">{formattedKelas}</span>
+                        </div>
+                        {/* Row 3 Siswa: TTL */}
+                        <div className="info-dashed-row">
+                          <span className="label-typewriter">TTL</span>
+                          <span className="value-navy">{ttl || "-"}</span>
+                        </div>
+                        {/* Row 4 Siswa: Alamat */}
+                        <div className="info-dashed-row">
+                          <span className="label-typewriter">ALAMAT</span>
+                          <span className="value-navy">{person.alamat || "-"}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {/* BACK SIDE */}
-                <div className="id-card back-side">
-                  <div className="back-header">
-                    KARTU {isTeacher ? "GURU" : "PELAJAR"} & ABSENSI
+                {/* BACK SIDE (SISI BELAKANG: QR PRESENSI DIGITAL) */}
+                <div className="id-card">
+                  <div className="back-header-nct">
+                    KARTU PRESENSI DIGITAL {isTeacher ? "GURU" : "SANTRI"}
                   </div>
 
-                  <div className="qr-container">
-                    <div className="qr-box">
-                      {qrCodes[person.id] && <img src={qrCodes[person.id]} alt="QR" />}
+                  <div className="back-body-nct">
+                    <div className="back-qr-box">
+                      {qrCodes[person.id] ? (
+                        <img src={qrCodes[person.id]} alt="QR Presensi" />
+                      ) : (
+                        <div className="text-[10px] text-gray-400 font-mono">Membuat QR...</div>
+                      )}
                     </div>
-                    <div className="qr-text">Scan Untuk Presensi</div>
+                    <div className="back-qr-label">SCAN UNTUK PRESENSI</div>
                   </div>
 
-                  <div className="rules">
-                    <strong>Ketentuan:</strong>
+                  <div className="back-rules-nct">
+                    <strong>Ketentuan Kartu:</strong>
                     <ol>
-                      <li>Kartu ini wajib dibawa setiap hari ke sekolah.</li>
-                      <li>Digunakan untuk presensi kehadiran secara digital.</li>
-                      <li>Apabila hilang, harap segera melapor ke Tata Usaha.</li>
+                      <li>Kartu identitas resmi Raudhatul Yatama.</li>
+                      <li>Wajib dibawa untuk presensi kehadiran digital.</li>
+                      <li>Jika kartu hilang, segera lapor ke bagian administrasi.</li>
                     </ol>
                   </div>
                 </div>
