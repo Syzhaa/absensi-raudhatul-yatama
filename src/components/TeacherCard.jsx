@@ -94,7 +94,7 @@ export default function TeacherCard({
 
               {teacher.nip && (
                 <span className="text-[11px] font-medium text-gray-500 hidden sm:inline">
-                  NIP: {teacher.nip}
+                  NIP/NUPTK/NPK: {teacher.nip}
                 </span>
               )}
             </div>

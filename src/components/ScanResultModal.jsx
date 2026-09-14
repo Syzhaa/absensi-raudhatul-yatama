@@ -74,9 +74,9 @@ export default function ScanResultModal({ result, scanType, handleCloseModal }) 
                     {personName}
                   </span>
                 </div>
-                <div className="grid grid-cols-[55px_10px_1fr] items-baseline pb-1.5 border-b border-gray-200">
+                <div className="grid grid-cols-[65px_10px_1fr] items-baseline pb-1.5 border-b border-gray-200">
                   <span className="font-bold text-gray-600">
-                    {result.data.type === "student" ? "NISN" : "NIP"}
+                    {result.data.type === "student" ? "NISN" : "NIP/NPK"}
                   </span>
                   <span className="font-bold text-gray-600">:</span>
                   <span className="font-bold text-gray-900">

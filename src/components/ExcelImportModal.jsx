@@ -192,7 +192,7 @@ export default function ExcelImportModal({
         <div className="p-3 bg-amber-50 border-2 border-amber-300 rounded-xl flex items-start gap-2.5">
           <span className="material-symbols-outlined text-amber-600 text-xl flex-shrink-0 mt-0.5">info</span>
           <div className="text-xs text-amber-900 leading-relaxed">
-            Gunakan format kolom yang sesuai. Jika data dengan {isStudent ? "NISN" : "NIP / Nama"} yang sama sudah ada di sistem, <strong>data akan otomatis diperbarui (update)</strong> tanpa membuat duplikat.
+            Gunakan format kolom yang sesuai. Jika data dengan {isStudent ? "NISN" : "NIP / NUPTK / NPK / Nama"} yang sama sudah ada di sistem, <strong>data akan otomatis diperbarui (update)</strong> tanpa membuat duplikat.
           </div>
         </div>
 
@@ -257,7 +257,7 @@ export default function ExcelImportModal({
                   <tr>
                     <th className="px-2.5 py-1.5">No</th>
                     <th className="px-2.5 py-1.5">Nama</th>
-                    <th className="px-2.5 py-1.5">{isStudent ? "NISN" : "NIP"}</th>
+                    <th className="px-2.5 py-1.5">{isStudent ? "NISN" : "NIP / NUPTK / NPK"}</th>
                     <th className="px-2.5 py-1.5">{isStudent ? "Kelas" : "Mapel"}</th>
                     <th className="px-2.5 py-1.5">No. HP</th>
                   </tr>

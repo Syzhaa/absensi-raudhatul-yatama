@@ -220,7 +220,7 @@ export default function Report() {
         [headerTitle],
         [`Periode: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)} | Dicetak: ${format(new Date(), "dd/MM/yyyy HH:mm")}`],
         [],
-        ["No", "Tanggal", "Nama Guru", "NIP", "Lembaga", "Status", "Jam Masuk", "Jam Pulang"],
+        ["No", "Tanggal", "Nama Guru", "NIP / NUPTK / NPK", "Lembaga", "Status", "Jam Masuk", "Jam Pulang"],
         ...guruRows.map((r, i) => [
           i + 1,
           formatTgl(r.attendance_date),
@@ -239,7 +239,7 @@ export default function Report() {
         [headerTitle],
         [`Periode: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)} | Dicetak: ${format(new Date(), "dd/MM/yyyy HH:mm")}`],
         [],
-        ["No", "Nama Guru", "NIP", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"],
+        ["No", "Nama Guru", "NIP / NUPTK / NPK", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"],
         ...rekapGuruRows.map((r, i) => [
           i + 1,
           r.nama,
@@ -339,7 +339,7 @@ export default function Report() {
         const currentRows = groupedByDate[tgl] || [];
         const head = tab === "siswa"
           ? [["No", "Nama Siswa", "NISN", "Kelas", "Lembaga", "Status", "Masuk", "Pulang"]]
-          : [["No", "Nama Guru", "NIP", "Lembaga", "Status", "Masuk", "Pulang"]];
+          : [["No", "Nama Guru", "NIP / NUPTK / NPK", "Lembaga", "Status", "Masuk", "Pulang"]];
 
         const body = tab === "siswa"
           ? currentRows.map((r, i) => [
@@ -423,7 +423,7 @@ export default function Report() {
         r.check_out ? r.check_out.slice(0, 5) : "-",
       ]);
     } else if (isSingleDay && tab === "guru") {
-      head = [["No", "Nama Guru", "NIP", "Lembaga", "Status", "Masuk", "Pulang"]];
+      head = [["No", "Nama Guru", "NIP / NUPTK / NPK", "Lembaga", "Status", "Masuk", "Pulang"]];
       body = guruRows.map((r, i) => [
         i + 1,
         r.teacher?.nama || "-",
@@ -434,7 +434,7 @@ export default function Report() {
         r.check_out ? r.check_out.slice(0, 5) : "-",
       ]);
     } else if (tab === "rekap_guru" || (!isSingleDay && tab === "guru")) {
-      head = [["No", "Nama Guru", "NIP", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]];
+      head = [["No", "Nama Guru", "NIP / NUPTK / NPK", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]];
       body = rekapGuruRows.map((r, i) => [
         i + 1,
         r.nama,
@@ -610,7 +610,7 @@ export default function Report() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder={
                 tab === "guru" || tab === "rekap_guru"
-                  ? "Cari nama guru atau NIP..."
+                  ? "Cari nama guru atau NIP / NUPTK / NPK..."
                   : "Cari nama siswa, NISN, atau kelas..."
               }
               className="w-full pl-9 pr-8 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl font-bold text-xs md:text-sm text-gray-900 focus:outline-none transition-all shadow-inner"
@@ -797,7 +797,7 @@ export default function Report() {
                     <tr>
                       {!isSingleDay && <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>}
                       <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Nama Guru</th>
-                      <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">NIP</th>
+                      <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">NIP / NUPTK / NPK</th>
                       {isSuperAdmin && <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Lembaga</th>}
                       <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Status</th>
                       <th className="px-3.5 py-2.5 text-center font-black text-xs uppercase tracking-wide">Masuk</th>
@@ -879,7 +879,7 @@ export default function Report() {
                   <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
                     <tr>
                       <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Nama Guru</th>
-                      <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">NIP</th>
+                      <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">NIP / NUPTK / NPK</th>
                       {isSuperAdmin && <th className="px-3.5 py-2.5 text-left font-black text-xs uppercase tracking-wide">Lembaga</th>}
                       <th className="px-3.5 py-2.5 text-center font-black text-xs uppercase text-green-700">Hadir</th>
                       <th className="px-3.5 py-2.5 text-center font-black text-xs uppercase text-amber-700">Telat</th>

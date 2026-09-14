@@ -284,12 +284,12 @@ export default function TeacherForm({
         </div>
 
         <div>
-          <label className={labelClass}>NIP / NIDN</label>
+          <label className={labelClass}>NIP / NUPTK / NPK</label>
           <input
             type="text"
             {...field("nip")}
             className={inputClass}
-            placeholder="Nomor Induk Pegawai"
+            placeholder="Nomor NIP / NUPTK / NPK"
           />
         </div>
 

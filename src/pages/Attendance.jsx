@@ -568,7 +568,7 @@ export default function Attendance() {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-gray-900 text-white text-xs uppercase tracking-wider font-black">
                   <tr>
-                    <th className="p-3.5">Nama & NISN/NIP</th>
+                    <th className="p-3.5">Nama & NISN / NIP / NPK</th>
                     <th className="p-3.5">Peran & Lembaga</th>
                     <th className="p-3.5">Jam Masuk</th>
                     <th className="p-3.5">Jam Pulang</th>
@@ -621,7 +621,7 @@ export default function Attendance() {
                   <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 uppercase text-[11px] font-black tracking-wider select-none">
                     <tr>
                       <th className="py-3 px-4">Nama Lengkap</th>
-                      <th className="py-3 px-4">Kelas / NIP</th>
+                      <th className="py-3 px-4">Kelas / NIP / NPK</th>
                       <th className="py-3 px-3 text-center">Peran</th>
                       <th className="py-3 px-4 text-center">Jam Masuk</th>
                       <th className="py-3 px-4 text-center">Jam Pulang</th>
@@ -658,7 +658,7 @@ export default function Attendance() {
                               </span>
                             ) : (
                               <span className="font-mono text-xs text-gray-600">
-                                {person?.nip ? `NIP: ${person.nip}` : "Guru/Staf"}
+                                {person?.nip ? `NIP/NPK: ${person.nip}` : "Guru/Staf"}
                               </span>
                             )}
                           </td>

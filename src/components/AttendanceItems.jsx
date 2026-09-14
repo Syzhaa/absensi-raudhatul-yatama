@@ -9,7 +9,7 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
 
   const subtitle = isStudent
     ? `Kelas ${formatKelas(person?.kelas) || "-"} • NISN: ${person?.nisn || "-"}`
-    : `${person?.nip ? "NIP: " + person.nip : "Guru / Staf"}`;
+    : `${person?.nip ? "NIP/NUPTK/NPK: " + person.nip : "Guru / Staf"}`;
 
   const lembagaName = (item.lembaga || person?.lembaga || "MA").toUpperCase();
 

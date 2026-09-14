@@ -668,7 +668,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                     <div className="info-grid">
                       {isTeacher ? (
                         <>
-                          <div className="info-label">NIP</div><div className="info-colon">:</div>
+                          <div className="info-label">NIP/NPK</div><div className="info-colon">:</div>
                           <div className="info-value">{person.nip || "-"}</div>
                           <div className="info-label">Mapel</div><div className="info-colon">:</div>
                           <div className="info-value">{person.mata_pelajaran || "Umum"}</div>

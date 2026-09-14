@@ -443,7 +443,7 @@ export default function Teachers() {
           <div className="relative w-full sm:w-60">
             <input
               type="text"
-              placeholder="Cari nama atau NIP..."
+              placeholder="Cari nama atau NIP / NUPTK / NPK..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl text-xs sm:text-sm font-medium focus:outline-none transition-all"
@@ -534,7 +534,7 @@ export default function Teachers() {
                 <thead className="bg-gray-900 text-white text-xs uppercase tracking-wider font-black">
                   <tr>
                     <th className="p-3.5">Nama Guru</th>
-                    <th className="p-3.5">NIP</th>
+                    <th className="p-3.5">NIP / NUPTK / NPK</th>
                     <th className="p-3.5">Mata Pelajaran / Jabatan</th>
                     <th className="p-3.5">No. WhatsApp</th>
                     <th className="p-3.5 text-center">Status</th>
@@ -592,7 +592,7 @@ export default function Teachers() {
                         />
                       </th>
                       <th className="py-3 px-4">Nama Lengkap</th>
-                      <th className="py-3 px-4">NIP</th>
+                      <th className="py-3 px-4">NIP / NUPTK / NPK</th>
                       <th className="py-3 px-4">Mata Pelajaran</th>
                       <th className="py-3 px-4">Jabatan</th>
                       <th className="py-3 px-4">No. HP</th>

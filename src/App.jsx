@@ -24,6 +24,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const WhatsappTemplates = lazy(() => import("./pages/WhatsappTemplates"));
 const Report = lazy(() => import("./pages/Report"));
 const Guide = lazy(() => import("./pages/Guide"));
+const ScanGuru = lazy(() => import("./pages/ScanGuru"));
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -136,13 +137,16 @@ function App() {
 
   if (!isAuthenticated) {
     return (
-      <Routes>
-        <Route
-          path="/login"
-          element={<Login onLogin={() => setIsAuthenticated(true)} />}
-        />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+      <Suspense fallback={<div className="p-8 text-center font-bold text-gray-500">Memuat...</div>}>
+        <Routes>
+          <Route
+            path="/login"
+            element={<Login onLogin={() => setIsAuthenticated(true)} />}
+          />
+          <Route path="/scan-guru" element={<ScanGuru />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Suspense>
     );
   }
 
@@ -218,6 +222,10 @@ function App() {
           <Route
             path="/guide"
             element={<Guide />}
+          />
+          <Route
+            path="/scan-guru"
+            element={<ScanGuru />}
           />
           <Route
             path="*"
