@@ -111,21 +111,26 @@ export default function Users() {
         !user.name?.toLowerCase().includes(searchQuery.toLowerCase())
       )
         return false;
-      // Super admin yayasan lihat semua lembaga, jangan filter
-      if (userLembaga && userLembaga !== 'yayasan' && user.lembaga !== userLembaga) return false;
+      // Jangan filter lembaga di client jika super_admin atau yayasan
+      const isSuper = userRole === 'super_admin' || (userLembaga || '').toLowerCase() === 'yayasan';
+      if (!isSuper && userLembaga) {
+        if ((user.lembaga || '').toLowerCase() !== (userLembaga || '').toLowerCase()) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [users, roleFilter, searchQuery, userLembaga]);
+  }, [users, roleFilter, searchQuery, userLembaga, userRole]);
 
   const canEdit = (targetUser) => {
     // Super admin bisa edit semua user kecuali akun yang lebih tinggi
     if (userRole === 'super_admin') return true;
     // Admin biasa tidak dapat mengedit akun super_admin atau admin_yayasan
     if (targetUser.role === 'super_admin' || targetUser.role === 'admin_yayasan') return false;
-    // Admin MA hanya bisa edit user MA
-    if (userLembaga === "ma" && targetUser.lembaga !== "ma") return false;
-    // Admin MTS hanya bisa edit user MTS
-    if (userLembaga === "mts" && targetUser.lembaga !== "mts") return false;
+    // Admin MA/MTs hanya bisa edit user di lembaganya
+    const myLembaga = (userLembaga || '').toLowerCase();
+    const targetLembaga = (targetUser.lembaga || '').toLowerCase();
+    if (myLembaga && myLembaga !== 'yayasan' && targetLembaga !== myLembaga) return false;
     // Admin Akademik hanya bisa edit guru dan siswa
     if (userRole === "admin_akademik" && !["guru", "siswa"].includes(targetUser.role)) return false;
     return true;
