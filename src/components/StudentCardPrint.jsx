@@ -391,45 +391,61 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
 
           /* BOTTOM ZONE: Personal Info with Dashed Line Separators */
           .card-info-nct {
-            padding: 0 14px 10px 14px;
+            padding: 0 14px 11px 14px;
             display: flex;
             flex-direction: column;
-            gap: 2.5px;
+            gap: 2px;
           }
           .info-dashed-row {
             display: flex;
-            align-items: baseline;
+            align-items: flex-start;
             justify-content: space-between;
-            gap: 6px;
-            padding: 3px 0;
-            border-bottom: 1px dashed #cbd5e1;
+            gap: 8px;
+            padding: 2.5px 0;
+            border-bottom: 0.8px dashed #cbd5e1;
           }
           .info-dashed-row:last-child {
             border-bottom: none;
           }
           .label-typewriter {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 7px;
+            font-size: 6.8px;
             font-weight: 700;
             color: #64748b;
             letter-spacing: 0.8px;
             text-transform: uppercase;
             flex-shrink: 0;
+            line-height: 1.25;
+            padding-top: 0.5px;
           }
-          .value-navy {
-            font-size: 8px;
-            font-weight: 800;
-            color: #064e3b;
+          .value-text {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-size: 7.2px;
+            font-weight: 600;
+            color: #000000;
             text-align: right;
             word-break: break-word;
             line-height: 1.25;
-            max-width: 135px;
+            max-width: 138px;
           }
-          .value-navy.value-name {
-            font-size: 8.5px;
-            font-weight: 900;
+          .value-text.value-name {
+            font-size: 7.8px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
             text-transform: uppercase;
-            color: #042f24;
+            color: #000000;
+          }
+          .value-text.value-class {
+            font-size: 7.5px;
+            font-weight: 800;
+            color: #000000;
+          }
+          .value-text.value-address {
+            font-size: 6.4px;
+            font-weight: 600;
+            line-height: 1.25;
+            color: #111827;
+            letter-spacing: 0.1px;
           }
 
           /* BACK SIDE: Matching Dark Green Accent + Big Crisp QR */
@@ -577,8 +593,10 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               .filter(Boolean)
               .join(", ");
 
-            // Clean address string from duplicate whitespaces/newlines
+            // Clean address string from duplicate whitespaces/newlines and fix missing spaces after dots/commas
             const cleanAlamat = (person.alamat || "-")
+              .replace(/\.([a-zA-Z])/g, ". $1")
+              .replace(/,([a-zA-Z])/g, ", $1")
               .replace(/\s+/g, " ")
               .trim();
 
@@ -644,7 +662,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                     {/* Row 1: Nama */}
                     <div className="info-dashed-row">
                       <span className="label-typewriter">NAMA</span>
-                      <span className="value-navy value-name">{person.nama || "-"}</span>
+                      <span className="value-text value-name">{person.nama || "-"}</span>
                     </div>
 
                     {isTeacher ? (
@@ -652,12 +670,12 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                         {/* Row 2 Guru: NPK / NIP */}
                         <div className="info-dashed-row">
                           <span className="label-typewriter">NPK / NIP</span>
-                          <span className="value-navy font-mono">{person.nip || "-"}</span>
+                          <span className="value-text font-mono font-bold">{person.nip || "-"}</span>
                         </div>
                         {/* Row 3 Guru: Mapel */}
                         <div className="info-dashed-row">
                           <span className="label-typewriter">MAPEL</span>
-                          <span className="value-navy">{person.mata_pelajaran || "Umum"}</span>
+                          <span className="value-text font-semibold">{person.mata_pelajaran || "Umum"}</span>
                         </div>
                       </>
                     ) : (
@@ -665,17 +683,17 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                         {/* Row 2 Siswa: Kelas (Langsung X, XI, XII tanpa kata 'Kelas') */}
                         <div className="info-dashed-row">
                           <span className="label-typewriter">KELAS</span>
-                          <span className="value-navy font-bold">{cleanKelas}</span>
+                          <span className="value-text value-class">{cleanKelas}</span>
                         </div>
                         {/* Row 3 Siswa: TTL */}
                         <div className="info-dashed-row">
                           <span className="label-typewriter">TTL</span>
-                          <span className="value-navy">{ttl || "-"}</span>
+                          <span className="value-text">{ttl || "-"}</span>
                         </div>
                         {/* Row 4 Siswa: Alamat */}
                         <div className="info-dashed-row">
                           <span className="label-typewriter">ALAMAT</span>
-                          <span className="value-navy">{cleanAlamat}</span>
+                          <span className="value-text value-address">{cleanAlamat}</span>
                         </div>
                       </>
                     )}
