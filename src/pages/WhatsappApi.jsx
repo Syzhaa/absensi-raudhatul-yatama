@@ -3,11 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { PageHeaderSkeleton, FormCardSkeleton } from "../components/Skeleton";
+import WhatsappChannelsManager from "../components/WhatsappChannelsManager";
 
 export default function WhatsappApi() {
   const queryClient = useQueryClient();
   const { effectiveLembaga } = useEffectiveLembaga();
-  const [activeTab, setActiveTab] = useState("settings"); // "settings" | "simulator"
+  const [activeTab, setActiveTab] = useState("settings"); // "settings" | "channels" | "simulator"
 
   // Settings state
   const [formData, setFormData] = useState({
@@ -25,6 +26,7 @@ export default function WhatsappApi() {
   const [simNamaSiswa, setSimNamaSiswa] = useState("Ahmad Zaki (Uji Coba)");
   const [simKelas, setSimKelas] = useState("X-A");
   const [simJam, setSimJam] = useState("07:15");
+  const [selectedChannelId, setSelectedChannelId] = useState("auto");
   const [selectedRecipientId, setSelectedRecipientId] = useState("manual");
   const [customPhone, setCustomPhone] = useState("");
   const [saveAsNewRecipient, setSaveAsNewRecipient] = useState(false);
@@ -40,6 +42,18 @@ export default function WhatsappApi() {
       return response.data;
     },
   });
+
+  // Fetch channels list for simulator selector
+  const { data: channelsData } = useQuery({
+    queryKey: ["whatsapp-channels", effectiveLembaga],
+    queryFn: async () => {
+      const params = effectiveLembaga ? { lembaga: effectiveLembaga } : {};
+      const response = await api.get(`/attendance/whatsapp-channels`, { params });
+      return response.data;
+    },
+  });
+
+  const channelsList = channelsData?.data?.channels || [];
 
   // Fetch recipients list
   const { data: recipientsData, isLoading: isRecipientsLoading } = useQuery({
@@ -188,6 +202,7 @@ export default function WhatsappApi() {
       jam: simJam.trim(),
       target_type: formData.wa_target_type,
       phone_number: customPhone.trim(),
+      channel_id: selectedChannelId !== "auto" ? selectedChannelId : undefined,
       save_recipient: !isGroup && saveAsNewRecipient,
       recipient_name: newRecipientName.trim(),
     });
@@ -247,11 +262,11 @@ export default function WhatsappApi() {
       </div>
 
       {/* Modern Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b-2 border-gray-200 pb-1">
+      <div className="flex items-center gap-2 border-b-2 border-gray-200 pb-1 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab("settings")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm border-2 transition-all ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-black text-xs sm:text-sm border-2 transition-all whitespace-nowrap ${
             activeTab === "settings"
               ? "bg-white border-gray-900 text-gray-900 shadow-neo -translate-y-0.5"
               : "bg-gray-100 border-transparent text-gray-500 hover:text-gray-900"
@@ -263,15 +278,28 @@ export default function WhatsappApi() {
 
         <button
           type="button"
+          onClick={() => setActiveTab("channels")}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-black text-xs sm:text-sm border-2 transition-all whitespace-nowrap ${
+            activeTab === "channels"
+              ? "bg-emerald-100 border-emerald-900 text-emerald-950 shadow-neo -translate-y-0.5"
+              : "bg-gray-100 border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          <span className="material-symbols-outlined text-base sm:text-lg text-emerald-600">hub</span>
+          <span>2. Saluran Multi API Key ({channelsList.length})</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab("simulator")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm border-2 transition-all ${
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-black text-xs sm:text-sm border-2 transition-all whitespace-nowrap ${
             activeTab === "simulator"
               ? "bg-primary-green border-gray-900 text-gray-900 shadow-neo -translate-y-0.5"
               : "bg-gray-100 border-transparent text-gray-500 hover:text-gray-900"
           }`}
         >
           <span className="material-symbols-outlined text-base sm:text-lg">experiment</span>
-          <span>2. Simulator & Tes WA</span>
+          <span>3. Simulator & Tes WA</span>
         </button>
       </div>
 
@@ -487,15 +515,47 @@ export default function WhatsappApi() {
         </form>
       )}
 
-      {/* TAB 2: SIMULATOR & TEST WA */}
+      {/* TAB 2: MULTI SALURAN / ROUTING PER KELAS & GURU */}
+      {activeTab === "channels" && (
+        <WhatsappChannelsManager effectiveLembaga={effectiveLembaga} />
+      )}
+
+      {/* TAB 3: SIMULATOR & TEST WA */}
       {activeTab === "simulator" && (
         <form onSubmit={handleSimulate} className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 sm:p-5 shadow-neo space-y-5">
           {/* Info Banner Keamanan */}
           <div className="p-3 bg-amber-50 border-2 border-amber-300 rounded-xl flex items-start gap-2.5">
             <span className="material-symbols-outlined text-amber-600 text-xl flex-shrink-0 mt-0.5">verified_user</span>
             <div className="text-xs text-amber-900 leading-relaxed font-medium">
-              <strong className="font-black text-amber-950">Mode Sandbox Terisolasi:</strong> Pengujian di simulator ini <span className="underline font-bold">tidak akan mengotori</span> tabel data presensi maupun rekap siswa/guru. Pesan WhatsApp hanya dikirim ke nomor tester yang Anda tentukan di bawah.
+              <strong className="font-black text-amber-950">Mode Sandbox Terisolasi:</strong> Pengujian di simulator ini <span className="underline font-bold">tidak akan mengotori</span> tabel data presensi maupun rekap siswa/guru. Pesan WhatsApp dikirim langsung sesuai saluran & tujuan yang dipilih.
             </div>
+          </div>
+
+          {/* Selector Saluran Pengiriman Multi API Key */}
+          <div className="space-y-1.5 p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-wider text-gray-800">
+                Pilih Saluran / API Key untuk Simulasi:
+              </label>
+              <span className="text-[10px] font-bold text-gray-500">
+                Multi-Grup Routing
+              </span>
+            </div>
+            <select
+              value={selectedChannelId}
+              onChange={(e) => setSelectedChannelId(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-white border-2 border-gray-900 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-green"
+            >
+              <option value="auto">⚡ Otomatis (Sesuai Kelas Siswa / Fallback API Key Utama)</option>
+              {channelsList.map((ch) => (
+                <option key={ch.id} value={ch.id}>
+                  {ch.name} — [{ch.target_scope === 'class' ? `Kelas ${ch.kelas}` : ch.target_scope === 'teacher' ? 'Dewan Guru' : 'Umum'}] ({ch.target_type === 'group' ? 'Grup' : 'Pribadi'})
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-gray-500 font-medium">
+              Mode otomatis mencocokkan input kelas siswa tiruan dengan daftar saluran di Tab 2.
+            </p>
           </div>
 
           {/* Skenario Status Presensi */}
