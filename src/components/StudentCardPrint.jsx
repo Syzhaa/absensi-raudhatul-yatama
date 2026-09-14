@@ -291,22 +291,18 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             border-bottom: 2px solid #1e293b;
           }
           .card-header-nct .logo-emblem {
-            width: 34px;
-            height: 34px;
-            background: #ffffff;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 50%;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2px;
             flex-shrink: 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
           }
           .card-header-nct .logo-emblem img {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            display: block;
           }
           .card-header-nct .title-box {
             flex: 1;
