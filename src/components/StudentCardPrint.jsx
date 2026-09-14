@@ -279,16 +279,16 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             print-color-adjust: exact;
           }
 
-          /* HEADER ZONE: Navy Blue Bar with Circular Emblem */
+          /* HEADER ZONE: Dark Green Bar with School Logo */
           .card-header-nct {
-            background: #0f1c3f;
+            background: #064e3b;
             color: #ffffff;
             padding: 8px 10px;
             display: flex;
             align-items: center;
             gap: 8px;
             min-height: 52px;
-            border-bottom: 2px solid #1e293b;
+            border-bottom: 2px solid #022c22;
           }
           .card-header-nct .logo-emblem {
             width: 36px;
@@ -312,7 +312,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           .card-header-nct .title-institution {
             font-size: 8px;
             font-weight: 700;
-            color: #94a3b8;
+            color: #a7f3d0;
             letter-spacing: 0.8px;
             text-transform: uppercase;
             line-height: 1.1;
@@ -329,7 +329,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           .card-header-nct .title-location {
             font-size: 6.5px;
             font-weight: 600;
-            color: #cbd5e1;
+            color: #6ee7b7;
             letter-spacing: 0.4px;
             text-transform: uppercase;
             line-height: 1.1;
@@ -359,7 +359,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             font-size: 7.5px;
             font-weight: 900;
             letter-spacing: 2px;
-            color: #475569;
+            color: #064e3b;
             text-transform: uppercase;
             white-space: nowrap;
           }
@@ -373,10 +373,10 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             width: 105px;
             height: 130px;
             border-radius: 8px;
-            border: 1.5px solid #0f1c3f;
+            border: 1.5px solid #064e3b;
             background: #f8fafc;
             overflow: hidden;
-            box-shadow: 0 3px 8px rgba(15, 28, 63, 0.12);
+            box-shadow: 0 3px 8px rgba(6, 78, 59, 0.15);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -394,7 +394,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             padding: 0 14px 10px 14px;
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 2.5px;
           }
           .info-dashed-row {
             display: flex;
@@ -419,33 +419,37 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           .value-navy {
             font-size: 8px;
             font-weight: 800;
-            color: #0f1c3f;
+            color: #064e3b;
             text-align: right;
             word-break: break-word;
-            line-height: 1.2;
-            max-width: 130px;
+            line-height: 1.25;
+            max-width: 135px;
           }
           .value-navy.value-name {
             font-size: 8.5px;
             font-weight: 900;
             text-transform: uppercase;
+            color: #042f24;
           }
 
-          /* BACK SIDE: Matching Navy Accent + Big Crisp QR */
+          /* BACK SIDE: Matching Dark Green Accent + Big Crisp QR */
           .back-header-nct {
-            background: #0f1c3f;
+            background: #064e3b;
             color: #ffffff;
-            padding: 8px 10px;
+            padding: 9px 10px;
             display: flex;
             align-items: center;
             justify-content: center;
+            text-align: center;
             font-family: Georgia, serif, 'Times New Roman';
             font-size: 9px;
             font-weight: 900;
-            letter-spacing: 1px;
+            letter-spacing: 0.8px;
             text-transform: uppercase;
-            min-height: 38px;
-            border-bottom: 2px solid #1e293b;
+            min-height: 42px;
+            border-bottom: 2px solid #022c22;
+            width: 100%;
+            box-sizing: border-box;
           }
           .back-body-nct {
             flex: 1;
@@ -453,16 +457,16 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 12px;
+            padding: 10px;
           }
           .back-qr-box {
-            width: 120px;
-            height: 120px;
+            width: 118px;
+            height: 118px;
             background: #ffffff;
-            border: 2px solid #0f1c3f;
+            border: 2px solid #064e3b;
             border-radius: 10px;
             padding: 6px;
-            box-shadow: 0 4px 10px rgba(15, 28, 63, 0.1);
+            box-shadow: 0 4px 10px rgba(6, 78, 59, 0.12);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -477,29 +481,43 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             font-family: 'Courier New', Courier, monospace;
             font-size: 7px;
             font-weight: 800;
-            color: #475569;
+            color: #064e3b;
             letter-spacing: 1.5px;
             text-transform: uppercase;
           }
           .back-rules-nct {
             background: #f8fafc;
-            border-top: 1px dashed #cbd5e1;
+            border-top: 1px dashed #94a3b8;
             padding: 8px 12px;
-            font-size: 6px;
-            line-height: 1.35;
-            color: #475569;
-          }
-          .back-rules-nct strong {
-            display: block;
-            font-family: 'Courier New', Courier, monospace;
             font-size: 6.5px;
-            color: #0f1c3f;
-            margin-bottom: 2px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
+            line-height: 1.4;
+            color: #334155;
+            box-sizing: border-box;
           }
-          .back-rules-nct ol {
-            padding-left: 12px;
+          .rules-header {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 7px;
+            font-weight: 900;
+            color: #064e3b;
+            margin-bottom: 3px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            text-align: center;
+          }
+          .rules-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+          }
+          .rules-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 4px;
+          }
+          .rules-num {
+            font-weight: 800;
+            color: #064e3b;
+            flex-shrink: 0;
           }
 
           /* PRINT MEDIA OPTIMIZATION */
@@ -537,15 +555,32 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         <div ref={cardRef} className="flex flex-wrap justify-center gap-6 sm:gap-8">
           {students.map((person) => {
             const isTeacher = type === "teacher" || person.nip !== undefined;
-            const ttl = [person.tempat_lahir, formatDate(person.tanggal_lahir)]
+
+            // Format Kelas: Directly show "X", "XI", "XII", "VII", etc. without "Kelas" prefix
+            const cleanKelas = person.kelas
+              ? String(person.kelas)
+                  .replace(/^kelas\s*/i, "")
+                  .trim() || "-"
+              : "-";
+
+            // Format TTL: Place of birth in Title Case + formatted date
+            const toTitleCase = (str) => {
+              if (!str) return "";
+              return str
+                .toLowerCase()
+                .split(" ")
+                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(" ");
+            };
+
+            const ttl = [toTitleCase(person.tempat_lahir), formatDate(person.tanggal_lahir)]
               .filter(Boolean)
               .join(", ");
 
-            const formattedKelas = person.kelas
-              ? person.kelas.toString().toLowerCase().startsWith("kelas")
-                ? person.kelas
-                : `Kelas ${person.kelas}`
-              : "-";
+            // Clean address string from duplicate whitespaces/newlines
+            const cleanAlamat = (person.alamat || "-")
+              .replace(/\s+/g, " ")
+              .trim();
 
             return (
               <div
@@ -554,9 +589,9 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                 data-uuid={person.uuid}
                 className="student-card-print id-card-wrapper"
               >
-                {/* FRONT SIDE (DESAIN NCT 127 STYLE) */}
+                {/* FRONT SIDE (DESAIN PREPPY ACADEMY STYLE) */}
                 <div className="id-card">
-                  {/* 1. Header Zone: Navy Block with Circular Logo */}
+                  {/* 1. Header Zone: Dark Green Bar with Clean School Logo */}
                   <div className="card-header-nct">
                     <div className="logo-emblem">
                       <img
@@ -627,10 +662,10 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                       </>
                     ) : (
                       <>
-                        {/* Row 2 Siswa: Kelas */}
+                        {/* Row 2 Siswa: Kelas (Langsung X, XI, XII tanpa kata 'Kelas') */}
                         <div className="info-dashed-row">
                           <span className="label-typewriter">KELAS</span>
-                          <span className="value-navy">{formattedKelas}</span>
+                          <span className="value-navy font-bold">{cleanKelas}</span>
                         </div>
                         {/* Row 3 Siswa: TTL */}
                         <div className="info-dashed-row">
@@ -640,7 +675,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                         {/* Row 4 Siswa: Alamat */}
                         <div className="info-dashed-row">
                           <span className="label-typewriter">ALAMAT</span>
-                          <span className="value-navy">{person.alamat || "-"}</span>
+                          <span className="value-navy">{cleanAlamat}</span>
                         </div>
                       </>
                     )}
@@ -650,7 +685,12 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                 {/* BACK SIDE (SISI BELAKANG: QR PRESENSI DIGITAL) */}
                 <div className="id-card">
                   <div className="back-header-nct">
-                    KARTU PRESENSI DIGITAL {isTeacher ? "GURU" : "SANTRI"}
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%" }}>
+                      <div>KARTU PRESENSI DIGITAL</div>
+                      <div style={{ fontSize: "8px", fontWeight: 800, letterSpacing: "1.2px", opacity: 0.95, marginTop: "1px" }}>
+                        {isTeacher ? "DEWAN GURU" : "SANTRI"}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="back-body-nct">
@@ -665,12 +705,21 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                   </div>
 
                   <div className="back-rules-nct">
-                    <strong>Ketentuan Kartu:</strong>
-                    <ol>
-                      <li>Kartu identitas resmi Raudhatul Yatama.</li>
-                      <li>Wajib dibawa untuk presensi kehadiran digital.</li>
-                      <li>Jika kartu hilang, segera lapor ke bagian administrasi.</li>
-                    </ol>
+                    <div className="rules-header">KETENTUAN KARTU</div>
+                    <div className="rules-list">
+                      <div className="rules-item">
+                        <span className="rules-num">1.</span>
+                        <span>Kartu identitas resmi Raudhatul Yatama.</span>
+                      </div>
+                      <div className="rules-item">
+                        <span className="rules-num">2.</span>
+                        <span>Wajib dibawa untuk presensi kehadiran digital.</span>
+                      </div>
+                      <div className="rules-item">
+                        <span className="rules-num">3.</span>
+                        <span>Jika kartu hilang, segera lapor ke bagian administrasi.</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
