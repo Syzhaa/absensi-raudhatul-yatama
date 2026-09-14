@@ -275,20 +275,20 @@ export default function TeacherForm({
             )}
           </div>
 
-          {/* Controls Container: Clean 2 columns with Tambah button underneath */}
-          <div className="bg-white p-3.5 border-2 border-gray-200 rounded-xl space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Controls Container: Clean Inline Row with Small Side Button */}
+          <div className="bg-white p-3 border-2 border-gray-200 rounded-xl space-y-2">
+            <div className="flex items-end gap-2">
               {/* 1. Pilih Kelas */}
-              <div>
+              <div className="w-1/3">
                 <label className="block text-[11px] font-black text-gray-700 uppercase tracking-wider mb-1">
-                  1. Pilih Tingkat / Kelas *
+                  Kelas *
                 </label>
                 <select
                   value={selectedKelas}
                   onChange={(e) => setSelectedKelas(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:outline-none cursor-pointer"
+                  className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:outline-none cursor-pointer"
                 >
-                  <option value="">-- Pilih Kelas --</option>
+                  <option value="">-- Kelas --</option>
                   {availableKelasList.map((k) => (
                     <option key={k} value={k}>
                       Kelas {k}
@@ -299,10 +299,10 @@ export default function TeacherForm({
               </div>
 
               {/* 2. Pilih Mata Pelajaran */}
-              <div>
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-[11px] font-black text-gray-700 uppercase tracking-wider">
-                    2. Pilih Mata Pelajaran *
+                    Mata Pelajaran *
                   </label>
                   {!isAddingCustomMapel && (
                     <button
@@ -310,34 +310,33 @@ export default function TeacherForm({
                       onClick={() => setIsAddingCustomMapel(true)}
                       className="text-[10px] font-black text-emerald-700 hover:text-emerald-900 hover:underline flex items-center gap-0.5 cursor-pointer"
                     >
-                      <span className="material-symbols-outlined text-xs">add_circle</span>
-                      <span>Mapel Baru</span>
+                      <span>+ Mapel Baru</span>
                     </button>
                   )}
                 </div>
 
                 {isAddingCustomMapel ? (
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-1">
                     <input
                       type="text"
                       value={customMapelInput}
                       onChange={(e) => setCustomMapelInput(e.target.value)}
-                      placeholder="Ketik mapel baru..."
+                      placeholder="Mapel baru..."
                       className="flex-1 px-3 py-2 bg-emerald-50 border-2 border-emerald-500 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:outline-none"
                       autoFocus
                     />
                     <button
                       type="button"
                       onClick={handleAddCustomMapel}
-                      className="px-3 py-2 bg-primary-green text-gray-900 font-black text-xs rounded-xl border-2 border-gray-900 hover:bg-emerald-400 cursor-pointer shadow-sm"
+                      className="px-2 py-2 bg-primary-green text-gray-900 font-black text-xs rounded-xl border-2 border-gray-900 hover:bg-emerald-400 cursor-pointer shadow-sm"
                       title="Simpan Mapel Baru"
                     >
-                      Simpan
+                      ✓
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsAddingCustomMapel(false)}
-                      className="px-2.5 py-2 bg-gray-200 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-300 cursor-pointer"
+                      className="px-2 py-2 bg-gray-200 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-300 cursor-pointer"
                       title="Batal"
                     >
                       ✕
@@ -347,7 +346,7 @@ export default function TeacherForm({
                   <select
                     value={selectedMapel}
                     onChange={(e) => setSelectedMapel(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:outline-none cursor-pointer"
+                    className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs sm:text-sm font-bold text-gray-900 focus:outline-none cursor-pointer"
                   >
                     <option value="">-- Pilih Mapel --</option>
                     {mapelList.map((m) => {
@@ -366,28 +365,28 @@ export default function TeacherForm({
                   </select>
                 )}
               </div>
+
+              {/* Small compact button at the side with icon + */}
+              <button
+                type="button"
+                onClick={handleAddAssignment}
+                disabled={!selectedKelas || !selectedMapel || !!checkConflict(selectedKelas, selectedMapel)}
+                className="h-[38px] px-3 bg-emerald-400 hover:bg-emerald-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:shadow-none text-gray-900 font-black text-xs rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 flex items-center justify-center gap-1 flex-shrink-0 cursor-pointer disabled:cursor-not-allowed"
+                title="Tambahkan Mapel"
+              >
+                <span className="material-symbols-outlined text-lg font-bold">add</span>
+              </button>
             </div>
 
             {/* Conflict Alert if any */}
             {selectedKelas && selectedMapel && checkConflict(selectedKelas, selectedMapel) && (
-              <p className="text-[11px] text-red-600 font-bold flex items-center gap-1.5 bg-red-50 p-2.5 rounded-xl border border-red-200">
+              <p className="text-[11px] text-red-600 font-bold flex items-center gap-1.5 bg-red-50 p-2 rounded-xl border border-red-200">
                 <span className="material-symbols-outlined text-base flex-shrink-0">error</span>
                 <span>
                   Mapel <strong>{selectedMapel}</strong> di <strong>Kelas {selectedKelas}</strong> sudah diampu oleh <strong>{checkConflict(selectedKelas, selectedMapel)}</strong>.
                 </span>
               </p>
             )}
-
-            {/* Dedicated Clean Tambah Button */}
-            <button
-              type="button"
-              onClick={handleAddAssignment}
-              disabled={!selectedKelas || !selectedMapel || !!checkConflict(selectedKelas, selectedMapel)}
-              className="w-full py-2.5 px-4 bg-emerald-400 hover:bg-emerald-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300 disabled:shadow-none text-gray-900 font-black text-xs sm:text-sm rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
-            >
-              <span className="material-symbols-outlined text-base font-bold">add_task</span>
-              <span>+ Tambahkan ke Daftar Mapel Diampu</span>
-            </button>
           </div>
 
           <input
