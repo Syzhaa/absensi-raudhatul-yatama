@@ -50,8 +50,7 @@ export default function Users() {
   const { data: usersData, isLoading } = useQuery({
     queryKey: ["users", userLembaga, userRole],
     queryFn: async () => {
-      // Super admin dengan lembaga yayasan jangan kirim parameter lembaga
-      const params = { per_page: 100 };
+      const params = { per_page: 150, module: "attendance" };
       if (userLembaga && userLembaga !== 'yayasan') {
         params.lembaga = userLembaga;
       }
@@ -118,13 +117,17 @@ export default function Users() {
     });
   }, [users, roleFilter, searchQuery, userLembaga]);
 
-  const canEdit = (user) => {
-    // Super admin yayasan bisa edit semua user
-    if (userLembaga === 'yayasan') return true;
-    // Admin MA hanya bisa edit MA
-    if (userLembaga === "ma" && user.lembaga !== "ma") return false;
-    // Admin MTS hanya bisa edit MTS
-    if (userLembaga === "mts" && user.lembaga !== "mts") return false;
+  const canEdit = (targetUser) => {
+    // Super admin bisa edit semua user kecuali akun yang lebih tinggi
+    if (userRole === 'super_admin') return true;
+    // Admin biasa tidak dapat mengedit akun super_admin atau admin_yayasan
+    if (targetUser.role === 'super_admin' || targetUser.role === 'admin_yayasan') return false;
+    // Admin MA hanya bisa edit user MA
+    if (userLembaga === "ma" && targetUser.lembaga !== "ma") return false;
+    // Admin MTS hanya bisa edit user MTS
+    if (userLembaga === "mts" && targetUser.lembaga !== "mts") return false;
+    // Admin Akademik hanya bisa edit guru dan siswa
+    if (userRole === "admin_akademik" && !["guru", "siswa"].includes(targetUser.role)) return false;
     return true;
   };
 
@@ -169,10 +172,10 @@ export default function Users() {
           </div>
           <div>
             <h1 className="font-black text-base sm:text-xl text-gray-900 tracking-tight leading-tight">
-              Manajemen Pengguna
+              Manajemen Pengguna Absen
             </h1>
             <p className="text-[11px] sm:text-xs text-gray-500 font-medium">
-              Total {filteredUsers.length} akun terdaftar • Kelola akun admin, guru, & siswa
+              Total {filteredUsers.length} akun • Khusus pengguna aplikasi absensi (Admin, Guru, & Siswa)
             </p>
           </div>
         </div>
@@ -222,8 +225,13 @@ export default function Users() {
           className="bg-gray-50 border-2 border-gray-300 focus:border-gray-900 rounded-xl py-1.5 px-3 font-bold text-xs text-gray-800 focus:outline-none cursor-pointer"
         >
           <option value="all">Semua Role</option>
-          <option value="admin_ma">Admin MA</option>
-          <option value="admin_mts">Admin MTS</option>
+          {(userRole === "super_admin" || userLembaga === "ma") && (
+            <option value="admin_ma">Admin MA</option>
+          )}
+          {(userRole === "super_admin" || userLembaga === "mts") && (
+            <option value="admin_mts">Admin MTs</option>
+          )}
+          <option value="admin_akademik">Admin Akademik</option>
           <option value="guru">Guru</option>
           <option value="siswa">Siswa</option>
         </select>
