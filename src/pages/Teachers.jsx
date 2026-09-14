@@ -60,8 +60,6 @@ export default function Teachers() {
     nama: "",
     nip: "",
     mata_pelajaran: "",
-    nomor_hp: "",
-    status: "aktif",
   });
 
   const queryClient = useQueryClient();
@@ -191,32 +189,28 @@ export default function Teachers() {
       nama: "",
       nip: "",
       mata_pelajaran: "",
-      nomor_hp: "",
-      status: "aktif",
     });
   };
 
   const handleEdit = (teacher) => {
     setEditingTeacher(teacher);
     setFormData({
-      lembaga: teacher.lembaga,
-      nama: teacher.nama,
+      lembaga: teacher.lembaga || effectiveLembaga || "MA",
+      nama: teacher.nama || "",
       nip: teacher.nip || "",
       mata_pelajaran: teacher.mata_pelajaran || "",
-      nomor_hp: teacher.nomor_hp || "",
-      status: teacher.status,
     });
     setShowForm(true);
   };
 
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleSubmit = async (photoFile) => {
+  const handleSubmit = async () => {
     setIsUploading(true);
     try {
-      let formattedLembaga = formData.lembaga;
-      if (formData.lembaga) {
-        const lower = formData.lembaga.toLowerCase();
+      let formattedLembaga = formData.lembaga || effectiveLembaga || "MA";
+      if (formattedLembaga) {
+        const lower = formattedLembaga.toLowerCase();
         if (lower === "ma") formattedLembaga = "MA";
         else if (lower === "mts") formattedLembaga = "MTs";
         else if (lower === "yayasan") formattedLembaga = "Yayasan";
@@ -225,30 +219,15 @@ export default function Teachers() {
       const payload = {
         ...formData,
         lembaga: formattedLembaga,
+        nama: (formData.nama || "").trim(),
+        nip: (formData.nip || "").trim() || null,
+        mata_pelajaran: formData.mata_pelajaran || "",
       };
 
       if (editingTeacher) {
         await updateMutation.mutateAsync({ id: editingTeacher.id, data: payload });
-        
-        if (photoFile) {
-          try {
-            await teacherService.uploadPhoto(editingTeacher.id, photoFile);
-            queryClient.invalidateQueries(["teachers"]);
-          } catch (error) {
-            showAlert("Error", "Gagal upload foto: " + (error.message || "Unknown error"));
-          }
-        }
       } else {
-        const newTeacher = await createMutation.mutateAsync(payload);
-        
-        if (photoFile && newTeacher?.data?.id) {
-          try {
-            await teacherService.uploadPhoto(newTeacher.data.id, photoFile);
-            queryClient.invalidateQueries(["teachers"]);
-          } catch (error) {
-            showAlert("Warning", "Guru berhasil ditambahkan, tapi foto gagal diupload");
-          }
-        }
+        await createMutation.mutateAsync(payload);
       }
     } finally {
       setIsUploading(false);
@@ -535,16 +514,14 @@ export default function Teachers() {
                   <tr>
                     <th className="p-3.5">Nama Guru</th>
                     <th className="p-3.5">NIP / NUPTK / NPK</th>
-                    <th className="p-3.5">Mata Pelajaran / Jabatan</th>
-                    <th className="p-3.5">No. WhatsApp</th>
-                    <th className="p-3.5 text-center">Status</th>
+                    <th className="p-3.5">Mata Pelajaran</th>
                     <th className="p-3.5 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <TableRowSkeleton cols={6} />
-                  <TableRowSkeleton cols={6} />
-                  <TableRowSkeleton cols={6} />
+                  <TableRowSkeleton cols={4} />
+                  <TableRowSkeleton cols={4} />
+                  <TableRowSkeleton cols={4} />
                 </tbody>
               </table>
             </div>
@@ -594,9 +571,6 @@ export default function Teachers() {
                       <th className="py-3 px-4">Nama Lengkap</th>
                       <th className="py-3 px-4">NIP / NUPTK / NPK</th>
                       <th className="py-3 px-4">Mata Pelajaran</th>
-                      <th className="py-3 px-4">Jabatan</th>
-                      <th className="py-3 px-4">No. HP</th>
-                      <th className="py-3 px-4 text-center">Status</th>
                       <th className="py-3 px-4 text-center">Aksi</th>
                     </tr>
                   </thead>
@@ -624,17 +598,6 @@ export default function Teachers() {
                           </td>
                           <td className="py-2.5 px-4 text-gray-800">
                             {teacher.mata_pelajaran || "-"}
-                          </td>
-                          <td className="py-2.5 px-4 text-gray-700">
-                            {teacher.jabatan || "-"}
-                          </td>
-                          <td className="py-2.5 px-4 font-mono text-xs text-gray-600">
-                            {teacher.nomor_hp || "-"}
-                          </td>
-                          <td className="py-2.5 px-4 text-center">
-                            <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${teacher.status === "aktif" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-gray-100 text-gray-600 border-gray-300"}`}>
-                              {teacher.status || "Aktif"}
-                            </span>
                           </td>
                           <td className="py-2.5 px-4 text-center">
                             <div className="flex items-center justify-center gap-1">
