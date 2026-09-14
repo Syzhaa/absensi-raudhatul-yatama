@@ -133,21 +133,21 @@ export default function WhatsappChannelsManager({ effectiveLembaga }) {
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-xl text-primary-green">hub</span>
             <h2 className="font-black text-sm sm:text-base text-gray-900">
-              Saluran Multi API Key (Routing Per Kelas & Guru)
+              API Key Terpisah per Kelas & Dewan Guru
             </h2>
           </div>
           <p className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5 max-w-2xl leading-relaxed">
-            Gunakan API Key berbeda untuk memisahkan pengiriman notifikasi ke grup masing-masing kelas (misal: Grup Kelas 10, Kelas 11, Kelas 12) atau grup dewan guru.
+            Pesan otomatis diarahkan ke API Key grup kelas masing-masing siswa (misal: Grup Kelas 10, Kelas 11, dsb) atau grup dewan guru.
           </p>
         </div>
 
         <button
           type="button"
           onClick={handleCreate}
-          className="px-4 py-2 bg-primary-green border-2 border-gray-900 rounded-xl font-black text-xs text-gray-900 shadow-neo hover:-translate-y-0.5 transition-all flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
+          className="px-4 py-2 bg-primary-green border-2 border-gray-900 rounded-xl font-black text-xs text-gray-900 shadow-neo hover:-translate-y-0.5 transition-all flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 cursor-pointer"
         >
           <span className="material-symbols-outlined text-base">add_circle</span>
-          <span>Tambah Saluran Baru</span>
+          <span>Tambah API Key Kelas</span>
         </button>
       </div>
 

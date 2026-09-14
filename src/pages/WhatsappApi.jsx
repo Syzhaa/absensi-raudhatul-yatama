@@ -13,7 +13,10 @@ export default function WhatsappApi() {
   // Settings state
   const [formData, setFormData] = useState({
     wa_api_key: "",
+    teacher_whatsapp_api_key: "",
+    admin_whatsapp_number: "",
     wa_target_type: "group", // "group" | "parent"
+    wa_multi_group: false,
     wa_is_active: false,
   });
   const [showKey, setShowKey] = useState(false);
@@ -71,8 +74,11 @@ export default function WhatsappApi() {
     if (settingsData?.data) {
       setFormData({
         wa_api_key: settingsData.data.wa_api_key || "",
+        teacher_whatsapp_api_key: settingsData.data.teacher_whatsapp_api_key || "",
+        admin_whatsapp_number: settingsData.data.admin_whatsapp_number || "",
         wa_target_type: settingsData.data.wa_target_type || "group",
-        wa_is_active: settingsData.data.wa_is_active || false,
+        wa_multi_group: Boolean(settingsData.data.wa_multi_group),
+        wa_is_active: Boolean(settingsData.data.wa_is_active),
       });
     }
   }, [settingsData]);
@@ -262,52 +268,39 @@ export default function WhatsappApi() {
       </div>
 
       {/* Modern Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b-2 border-gray-200 pb-1 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b-2 border-gray-200 pb-1">
         <button
           type="button"
           onClick={() => setActiveTab("settings")}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-black text-xs sm:text-sm border-2 transition-all whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm border-2 transition-all ${
             activeTab === "settings"
               ? "bg-white border-gray-900 text-gray-900 shadow-neo -translate-y-0.5"
               : "bg-gray-100 border-transparent text-gray-500 hover:text-gray-900"
           }`}
         >
           <span className="material-symbols-outlined text-base sm:text-lg">tune</span>
-          <span>1. Pengaturan Gateway</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("channels")}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-black text-xs sm:text-sm border-2 transition-all whitespace-nowrap ${
-            activeTab === "channels"
-              ? "bg-emerald-100 border-emerald-900 text-emerald-950 shadow-neo -translate-y-0.5"
-              : "bg-gray-100 border-transparent text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          <span className="material-symbols-outlined text-base sm:text-lg text-emerald-600">hub</span>
-          <span>2. Saluran Multi API Key ({channelsList.length})</span>
+          <span>1. Pengaturan WhatsApp</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab("simulator")}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-black text-xs sm:text-sm border-2 transition-all whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs sm:text-sm border-2 transition-all ${
             activeTab === "simulator"
               ? "bg-primary-green border-gray-900 text-gray-900 shadow-neo -translate-y-0.5"
               : "bg-gray-100 border-transparent text-gray-500 hover:text-gray-900"
           }`}
         >
           <span className="material-symbols-outlined text-base sm:text-lg">experiment</span>
-          <span>3. Simulator & Tes WA</span>
+          <span>2. Simulator & Tes WA</span>
         </button>
       </div>
 
-      {/* TAB 1: PENGATURAN GATEWAY */}
+      {/* TAB 1: PENGATURAN WHATSAPP */}
       {activeTab === "settings" && (
-        <form onSubmit={handleSave} className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 sm:p-5 shadow-neo space-y-4">
+        <form onSubmit={handleSave} className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 sm:p-5 shadow-neo space-y-5">
           {/* Toggle Notifikasi Status */}
-          <div className="flex items-center justify-between p-3 sm:p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl">
+          <div className="flex items-center justify-between p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl">
             <div className="pr-2">
               <div className="flex items-center gap-2">
                 <span className="font-black text-xs sm:text-sm text-gray-900">Aktifkan Notifikasi WhatsApp Otomatis</span>
@@ -316,7 +309,7 @@ export default function WhatsappApi() {
                 </span>
               </div>
               <p className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5">
-                Otomatis kirim pesan notifikasi saat siswa scan presensi masuk atau pulang
+                Otomatis kirim pesan notifikasi saat siswa / dewan guru melakukan presensi masuk atau pulang
               </p>
             </div>
 
@@ -338,7 +331,7 @@ export default function WhatsappApi() {
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <label
-                className={`flex items-start gap-2.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                className={`flex items-start gap-2.5 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
                   formData.wa_target_type === "group"
                     ? "bg-emerald-50/70 border-emerald-600 shadow-sm"
                     : "bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-600"
@@ -349,22 +342,22 @@ export default function WhatsappApi() {
                   name="wa_target_type"
                   value="group"
                   checked={formData.wa_target_type === "group"}
-                  onChange={(e) => setFormData({ ...formData, wa_target_type: e.target.value })}
+                  onChange={() => setFormData({ ...formData, wa_target_type: "group" })}
                   className="mt-0.5 text-primary-green focus:ring-primary-green"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-1.5 font-black text-xs text-gray-900">
                     <span className="material-symbols-outlined text-base text-emerald-600">groups</span>
-                    <span>Grup WhatsApp (Direkomendasikan)</span>
+                    <span>Mode Grup WhatsApp (Rekomendasi)</span>
                   </div>
                   <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-snug">
-                    Pesan presensi dikirim ke grup WhatsApp yang dipilih pada API Key di <strong className="text-gray-700">wa.tappdigital.id</strong>
+                    Pesan dikirim ke grup WhatsApp (bisa grup guru terpisah & grup siswa gabungan atau per kelas).
                   </p>
                 </div>
               </label>
 
               <label
-                className={`flex items-start gap-2.5 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                className={`flex items-start gap-2.5 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
                   formData.wa_target_type === "parent"
                     ? "bg-blue-50/70 border-blue-600 shadow-sm"
                     : "bg-gray-50 border-gray-200 hover:border-gray-300 text-gray-600"
@@ -375,73 +368,203 @@ export default function WhatsappApi() {
                   name="wa_target_type"
                   value="parent"
                   checked={formData.wa_target_type === "parent"}
-                  onChange={(e) => setFormData({ ...formData, wa_target_type: e.target.value })}
+                  onChange={() => setFormData({ ...formData, wa_target_type: "parent" })}
                   className="mt-0.5 text-blue-600 focus:ring-blue-500"
                 />
                 <div className="flex-1">
                   <div className="flex items-center gap-1.5 font-black text-xs text-gray-900">
                     <span className="material-symbols-outlined text-base text-blue-600">person</span>
-                    <span>WhatsApp Orang Tua (Pribadi)</span>
+                    <span>Mode Nomor Biasa (Pribadi)</span>
                   </div>
                   <p className="text-[11px] text-gray-500 font-medium mt-0.5 leading-snug">
-                    Pesan dikirim langsung ke nomor WhatsApp masing-masing orang tua siswa
+                    Siswa dikirim langsung ke nomor orang tua, guru dikirim ke nomor WhatsApp admin.
                   </p>
                 </div>
               </label>
             </div>
           </div>
 
-          {/* Input API Key */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-black uppercase tracking-wider text-gray-800">
-                API Key (X-Api-Key) *
-              </label>
-              <a
-                href="https://wa.tappdigital.id"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] text-blue-600 hover:text-blue-800 font-bold flex items-center gap-0.5"
-              >
-                <span>wa.tappdigital.id</span>
-                <span className="material-symbols-outlined text-xs">open_in_new</span>
-              </a>
-            </div>
+          {/* KONDISI 1: JIKA MODE NOMOR BIASA (PRIBADI) */}
+          {formData.wa_target_type === "parent" && (
+            <div className="p-4 bg-blue-50/50 border-2 border-blue-200 rounded-xl space-y-3.5">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg text-blue-700">chat</span>
+                <h3 className="font-black text-xs sm:text-sm text-blue-950 uppercase tracking-wide">
+                  Pengaturan Pengiriman Nomor Biasa (Pribadi)
+                </h3>
+              </div>
 
-            <div className="relative flex items-center">
-              <input
-                type={showKey ? "text" : "password"}
-                required={formData.wa_is_active}
-                value={formData.wa_api_key}
-                onChange={(e) => setFormData({ ...formData, wa_api_key: e.target.value })}
-                placeholder="Contoh: bacd84814bf8e3aec1eae755f65e675f..."
-                className="w-full pl-3.5 pr-20 py-2.5 sm:py-3 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl text-xs sm:text-sm font-mono text-gray-900 transition-all focus:outline-none"
-              />
-              <div className="absolute right-1.5 flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setShowKey(!showKey)}
-                  title={showKey ? "Sembunyikan" : "Tampilkan"}
-                  className="p-1.5 text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-base">
-                    {showKey ? "visibility_off" : "visibility"}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  title="Salin Key"
-                  disabled={!formData.wa_api_key}
-                  className="p-1.5 text-gray-500 hover:text-gray-900 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-30"
-                >
-                  <span className="material-symbols-outlined text-base">
-                    {copied ? "check" : "content_copy"}
-                  </span>
-                </button>
+              {/* API Key WhatsApp Personal */}
+              <div className="space-y-1">
+                <label className="text-xs font-black uppercase text-gray-800">
+                  API Key WhatsApp (Mode Personal) *
+                </label>
+                <input
+                  type={showKey ? "text" : "password"}
+                  value={formData.wa_api_key}
+                  onChange={(e) => setFormData({ ...formData, wa_api_key: e.target.value })}
+                  placeholder="Contoh: dde8bd906102751122b22d6c2930808241b55135..."
+                  className="w-full px-3.5 py-2.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-mono text-gray-900 focus:outline-none"
+                  required={formData.wa_is_active}
+                />
+                <p className="text-[10px] text-gray-500">
+                  API Key dari wa.tappdigital.id untuk mengirimkan pesan ke nomor pribadi langsung.
+                </p>
+              </div>
+
+              {/* Nomor WhatsApp Admin untuk Notifikasi Guru */}
+              <div className="space-y-1">
+                <label className="text-xs font-black uppercase text-gray-800">
+                  Nomor WhatsApp Admin (Penerima Absensi Dewan Guru)
+                </label>
+                <input
+                  type="tel"
+                  value={formData.admin_whatsapp_number}
+                  onChange={(e) => setFormData({ ...formData, admin_whatsapp_number: e.target.value })}
+                  placeholder="Contoh: 08123456789 atau 628123456789"
+                  className="w-full px-3.5 py-2.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-mono text-gray-900 focus:outline-none"
+                />
+                <p className="text-[10px] text-gray-500">
+                  Saat dewan guru/staf melakukan presensi, laporannya otomatis dikirimkan ke nomor WhatsApp admin ini.
+                </p>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* KONDISI 2: JIKA MODE GRUP WHATSAPP */}
+          {formData.wa_target_type === "group" && (
+            <div className="space-y-4">
+              {/* 2A. Pengaturan Absensi Guru ke Grup */}
+              <div className="p-4 bg-purple-50/60 border-2 border-purple-200 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-lg text-purple-700">badge</span>
+                    <h3 className="font-black text-xs sm:text-sm text-purple-950 uppercase tracking-wide">
+                      A. API Key Grup Dewan Guru
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-bold text-purple-800 bg-purple-100 px-2 py-0.5 rounded border border-purple-300">
+                    Grup Guru
+                  </span>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-black uppercase text-gray-800">
+                    API Key Grup WhatsApp Dewan Guru
+                  </label>
+                  <input
+                    type={showKey ? "text" : "password"}
+                    value={formData.teacher_whatsapp_api_key}
+                    onChange={(e) => setFormData({ ...formData, teacher_whatsapp_api_key: e.target.value })}
+                    placeholder="Paste API Key grup dewan guru di sini (misal: API Key 1)"
+                    className="w-full px-3.5 py-2.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-mono text-gray-900 focus:outline-none"
+                  />
+                  <p className="text-[10px] text-gray-500">
+                    Setiap guru/staf yang presensi, notifikasinya otomatis masuk ke grup WhatsApp dewan guru ini.
+                  </p>
+                </div>
+              </div>
+
+              {/* 2B. Pengaturan Absensi Siswa ke Grup (Gabung vs Multi Grup Kelas) */}
+              <div className="p-4 bg-emerald-50/60 border-2 border-emerald-300 rounded-xl space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-lg text-emerald-700">school</span>
+                    <h3 className="font-black text-xs sm:text-sm text-emerald-950 uppercase tracking-wide">
+                      B. Pengaturan Grup WhatsApp Siswa
+                    </h3>
+                  </div>
+                </div>
+
+                {/* Switch 1 Grup Gabungan vs Multi Grup */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white border-2 border-emerald-200 rounded-xl">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-xs text-gray-900">
+                        Pisahkan Grup Siswa per Kelas?
+                      </span>
+                      <span
+                        className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                          formData.wa_multi_group
+                            ? "bg-emerald-100 border-emerald-500 text-emerald-800"
+                            : "bg-gray-200 border-gray-400 text-gray-700"
+                        }`}
+                      >
+                        {formData.wa_multi_group ? "ON (Multi-Grup Per Kelas)" : "OFF (1 Grup Gabung)"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 font-medium mt-0.5">
+                      {formData.wa_multi_group
+                        ? "Aktif: Notifikasi per kelas diarahkan ke API Key grup kelas masing-masing."
+                        : "Nonaktif: Cukup 1 API Key saja untuk semua siswa semua kelas (1 grup gabungan)."}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        wa_multi_group: !prev.wa_multi_group,
+                      }))
+                    }
+                    className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-gray-900 transition-colors duration-200 ease-in-out focus:outline-none ${
+                      formData.wa_multi_group ? "bg-primary-green" : "bg-gray-300"
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white border-2 border-gray-900 shadow-sm transition duration-200 ease-in-out mt-0.5 ${
+                        formData.wa_multi_group ? "translate-x-6" : "translate-x-0.5"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* JIKA 1 GRUP GABUNGAN (OFF) */}
+                {!formData.wa_multi_group && (
+                  <div className="space-y-1 pt-1">
+                    <label className="text-xs font-black uppercase text-gray-800">
+                      API Key Grup WhatsApp Siswa (Semua Kelas) *
+                    </label>
+                    <input
+                      type={showKey ? "text" : "password"}
+                      value={formData.wa_api_key}
+                      onChange={(e) => setFormData({ ...formData, wa_api_key: e.target.value })}
+                      placeholder="Contoh: dde8bd906102751122b22d6c2930808241b55135..."
+                      className="w-full px-3.5 py-2.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-mono text-gray-900 focus:outline-none"
+                      required={formData.wa_is_active}
+                    />
+                    <p className="text-[10px] text-gray-500">
+                      Semua notifikasi presensi siswa otomatis masuk ke grup WhatsApp yang terhubung ke API Key ini.
+                    </p>
+                  </div>
+                )}
+
+                {/* JIKA MULTI GRUP (ON) */}
+                {formData.wa_multi_group && (
+                  <div className="space-y-3 pt-1">
+                    <div className="space-y-1">
+                      <label className="text-xs font-black uppercase text-gray-800">
+                        API Key Cadangan / Fallback (Jika Ada Kelas Belum Diatur) *
+                      </label>
+                      <input
+                        type={showKey ? "text" : "password"}
+                        value={formData.wa_api_key}
+                        onChange={(e) => setFormData({ ...formData, wa_api_key: e.target.value })}
+                        placeholder="API Key grup utama sebagai cadangan"
+                        className="w-full px-3.5 py-2.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-mono text-gray-900 focus:outline-none"
+                        required={formData.wa_is_active}
+                      />
+                    </div>
+
+                    <div className="pt-2 border-t border-emerald-200">
+                      <WhatsappChannelsManager effectiveLembaga={effectiveLembaga} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Section Uji Coba Cepat */}
           <div className="p-3.5 sm:p-4 bg-blue-50/60 border-2 border-blue-200 rounded-xl space-y-2.5">
@@ -465,7 +588,7 @@ export default function WhatsappApi() {
                 type="button"
                 onClick={handleTest}
                 disabled={testMutation.isPending || !formData.wa_api_key.trim()}
-                className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-900 font-black text-xs rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 disabled:opacity-40 flex items-center justify-center gap-1.5 flex-shrink-0"
+                className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-900 font-black text-xs rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 disabled:opacity-40 flex items-center justify-center gap-1.5 flex-shrink-0 cursor-pointer"
               >
                 {testMutation.isPending ? (
                   <>
@@ -502,7 +625,7 @@ export default function WhatsappApi() {
             <button
               type="submit"
               disabled={saveMutation.isPending}
-              className="w-full sm:w-auto px-6 py-2.5 sm:py-3 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black text-xs sm:text-sm rounded-xl border-2 md:border-3 border-gray-900 shadow-neo transition-all active:translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-7 py-3 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black text-xs sm:text-sm rounded-xl border-2 md:border-3 border-gray-900 shadow-neo transition-all active:translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {saveMutation.isPending ? (
                 <span className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></span>
@@ -515,12 +638,7 @@ export default function WhatsappApi() {
         </form>
       )}
 
-      {/* TAB 2: MULTI SALURAN / ROUTING PER KELAS & GURU */}
-      {activeTab === "channels" && (
-        <WhatsappChannelsManager effectiveLembaga={effectiveLembaga} />
-      )}
-
-      {/* TAB 3: SIMULATOR & TEST WA */}
+      {/* TAB 2: SIMULATOR & TEST WA */}
       {activeTab === "simulator" && (
         <form onSubmit={handleSimulate} className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 sm:p-5 shadow-neo space-y-5">
           {/* Info Banner Keamanan */}
