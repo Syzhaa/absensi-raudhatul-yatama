@@ -373,6 +373,27 @@ export default function Teachers() {
     openCardModal(selectedData);
   };
 
+  const handleBatchDelete = () => {
+    if (selectedTeachers.length === 0) return;
+    const count = selectedTeachers.length;
+    showConfirm(
+      "Hapus Banyak Guru",
+      `Yakin ingin menghapus ${count} data guru yang dipilih? Tindakan ini permanen.`,
+      async () => {
+        try {
+          await Promise.all(selectedTeachers.map((id) => teacherService.delete(id)));
+          queryClient.invalidateQueries(["teachers"]);
+          setSelectedTeachers([]);
+          showAlert("Berhasil", `${count} guru berhasil dihapus.`);
+        } catch (err) {
+          showAlert("Error", "Gagal menghapus sebagian guru: " + (err.message || "Unknown error"));
+          queryClient.invalidateQueries(["teachers"]);
+        }
+      },
+      true
+    );
+  };
+
   const handleDownloadSingleQR = async (teacher) => {
     try {
       const qrData = teacher.uuid;
@@ -433,14 +454,24 @@ export default function Teachers() {
           </div>
 
           {selectedTeachers.length > 0 && (
-            <button
-              onClick={handleBatchPrintQR}
-              className="py-2 px-3 bg-white text-gray-900 font-bold border-2 border-gray-900 rounded-xl hover:bg-gray-100 flex items-center gap-1.5 shadow-sm text-xs"
-              title="Cetak Kartu Massal"
-            >
-              <span className="material-symbols-outlined text-base">print</span>
-              <span>Cetak ({selectedTeachers.length})</span>
-            </button>
+            <>
+              <button
+                onClick={handleBatchPrintQR}
+                className="py-2 px-3 bg-white text-gray-900 font-bold border-2 border-gray-900 rounded-xl hover:bg-gray-100 flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
+                title="Cetak Kartu Massal"
+              >
+                <span className="material-symbols-outlined text-base">print</span>
+                <span>Cetak ({selectedTeachers.length})</span>
+              </button>
+              <button
+                onClick={handleBatchDelete}
+                className="py-2 px-3 bg-red-100 hover:bg-red-200 text-red-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo flex items-center gap-1.5 text-xs transition-all cursor-pointer"
+                title="Hapus Banyak Guru"
+              >
+                <span className="material-symbols-outlined text-base text-red-600">delete</span>
+                <span>Hapus ({selectedTeachers.length})</span>
+              </button>
+            </>
           )}
 
           {/* Import Excel Button */}

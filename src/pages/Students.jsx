@@ -333,6 +333,30 @@ export default function Students() {
     openCardModal(selectedData);
   };
 
+  const handleBatchDelete = () => {
+    if (selectedStudents.length === 0) return;
+    const count = selectedStudents.length;
+    if (
+      confirm(
+        `Yakin ingin menghapus ${count} data siswa yang dipilih? Tindakan ini permanen.`
+      )
+    ) {
+      Promise.all(selectedStudents.map((id) => studentService.delete(id)))
+        .then(() => {
+          queryClient.invalidateQueries(["students"]);
+          setSelectedStudents([]);
+          setSuccessModal({
+            isOpen: true,
+            message: `${count} siswa berhasil dihapus.`,
+          });
+        })
+        .catch((err) => {
+          alert("Gagal menghapus sebagian siswa: " + (err.message || "Unknown error"));
+          queryClient.invalidateQueries(["students"]);
+        });
+    }
+  };
+
   const handleDownloadSingleQR = async (student) => {
     try {
       const qrData = student.uuid;
@@ -408,6 +432,14 @@ export default function Students() {
               >
                 <span className="material-symbols-outlined text-base">school</span>
                 <span>Naik ({selectedStudents.length})</span>
+              </button>
+              <button
+                onClick={handleBatchDelete}
+                className="py-2 px-3 bg-red-100 hover:bg-red-200 text-red-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo flex items-center gap-1.5 text-xs transition-all cursor-pointer"
+                title="Hapus Banyak Siswa"
+              >
+                <span className="material-symbols-outlined text-base text-red-600">delete</span>
+                <span>Hapus ({selectedStudents.length})</span>
               </button>
             </>
           )}

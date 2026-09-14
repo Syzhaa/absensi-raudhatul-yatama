@@ -3,19 +3,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
 import { useAppStore } from "../store/useAppStore";
 import UserModal from "../components/UserModal";
-import PromoteModal from "../components/PromoteModal";
 import ConfirmModal from "../components/ConfirmModal";
-import { useKelasFormat } from "../hooks/useKelasFormat";
 import { CardSkeleton, TableRowSkeleton } from "../components/Skeleton";
 
 export default function Users() {
   const [showModal, setShowModal] = useState(false);
-  const { formatKelas } = useKelasFormat();
-  const [showPromoteModal, setShowPromoteModal] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [roleFilter, setRoleFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isDeletingBatch, setIsDeletingBatch] = useState(false);
 
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -51,7 +48,7 @@ export default function Users() {
     queryKey: ["users", userLembaga, userRole],
     queryFn: async () => {
       const params = { per_page: 150, module: "attendance" };
-      if (userLembaga && userLembaga !== 'yayasan') {
+      if (userLembaga && userLembaga !== "yayasan") {
         params.lembaga = userLembaga;
       }
       const res = await api.get("/admin/users", { params });
@@ -67,7 +64,8 @@ export default function Users() {
       setEditUser(null);
       showAlert("Berhasil", "User berhasil dibuat");
     },
-    onError: (err) => showAlert("Error", err.response?.data?.message || "Gagal membuat user"),
+    onError: (err) =>
+      showAlert("Error", err.response?.data?.message || "Gagal membuat user"),
   });
 
   const updateMutation = useMutation({
@@ -78,43 +76,49 @@ export default function Users() {
       setEditUser(null);
       showAlert("Berhasil", "User berhasil diupdate");
     },
-    onError: (err) => showAlert("Error", err.response?.data?.message || "Gagal update user"),
+    onError: (err) =>
+      showAlert("Error", err.response?.data?.message || "Gagal update user"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/admin/users/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      setSelectedUsers((prev) => prev.filter((u) => u.id !== confirmModal.targetId));
       showAlert("Berhasil", "User berhasil dihapus");
     },
-    onError: (err) => showAlert("Error", err.response?.data?.message || "Gagal menghapus user"),
-  });
-
-  const promoteMutation = useMutation({
-    mutationFn: ({ student_ids, new_kelas }) =>
-      api.post("/admin/students/promote", { student_ids, new_kelas }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      setShowPromoteModal(false);
-      setSelectedUsers([]);
-      showAlert("Berhasil", "Siswa berhasil dipromosikan");
-    },
-    onError: (err) => showAlert("Error", err.response?.data?.message || "Gagal promosi kelas"),
+    onError: (err) =>
+      showAlert("Error", err.response?.data?.message || "Gagal menghapus user"),
   });
 
   const users = usersData?.data || [];
+
+  const canEdit = (targetUser) => {
+    if (userRole === "super_admin") return true;
+    if (targetUser.role === "super_admin" || targetUser.role === "admin_yayasan")
+      return false;
+    const myLembaga = (userLembaga || "").toLowerCase();
+    const targetLembaga = (targetUser.lembaga || "").toLowerCase();
+    if (myLembaga && myLembaga !== "yayasan" && targetLembaga !== myLembaga)
+      return false;
+    if (userRole === "admin_akademik" && targetUser.role !== "guru") return false;
+    return true;
+  };
+
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
       if (roleFilter !== "all" && user.role !== roleFilter) return false;
       if (
         searchQuery &&
-        !user.name?.toLowerCase().includes(searchQuery.toLowerCase())
+        !user.name?.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        !user.email?.toLowerCase().includes(searchQuery.toLowerCase())
       )
         return false;
-      // Jangan filter lembaga di client jika super_admin atau yayasan
-      const isSuper = userRole === 'super_admin' || (userLembaga || '').toLowerCase() === 'yayasan';
+      const isSuper =
+        userRole === "super_admin" ||
+        (userLembaga || "").toLowerCase() === "yayasan";
       if (!isSuper && userLembaga) {
-        if ((user.lembaga || '').toLowerCase() !== (userLembaga || '').toLowerCase()) {
+        if ((user.lembaga || "").toLowerCase() !== (userLembaga || "").toLowerCase()) {
           return false;
         }
       }
@@ -122,25 +126,12 @@ export default function Users() {
     });
   }, [users, roleFilter, searchQuery, userLembaga, userRole]);
 
-  const canEdit = (targetUser) => {
-    // Super admin bisa edit semua user kecuali akun yang lebih tinggi
-    if (userRole === 'super_admin') return true;
-    // Admin biasa tidak dapat mengedit akun super_admin atau admin_yayasan
-    if (targetUser.role === 'super_admin' || targetUser.role === 'admin_yayasan') return false;
-    // Admin MA/MTs hanya bisa edit user di lembaganya
-    const myLembaga = (userLembaga || '').toLowerCase();
-    const targetLembaga = (targetUser.lembaga || '').toLowerCase();
-    if (myLembaga && myLembaga !== 'yayasan' && targetLembaga !== myLembaga) return false;
-    // Admin Akademik hanya bisa edit guru dan siswa
-    if (userRole === "admin_akademik" && !["guru", "siswa"].includes(targetUser.role)) return false;
-    return true;
-  };
+  const editableUsers = useMemo(() => {
+    return filteredUsers.filter((u) => canEdit(u));
+  }, [filteredUsers]);
 
   const handleSubmitUser = (formData) => {
     const data = { ...formData };
-    if (!data.kelas) delete data.kelas;
-    if (data.role !== "guru") delete data.kelas;
-
     if (editUser?.id) {
       updateMutation.mutate({ id: editUser.id, data });
     } else {
@@ -148,24 +139,64 @@ export default function Users() {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id, name) => {
+    setConfirmModal((prev) => ({ ...prev, targetId: id }));
     showConfirm(
-      "Hapus User",
-      "Yakin ingin menghapus user ini?",
+      "Hapus Pengguna",
+      `Yakin ingin menghapus akun '${name}'? Tindakan ini permanen.`,
       () => deleteMutation.mutate(id),
       true
     );
   };
 
-  const handlePromoteSubmit = (newKelas) => {
-    const studentIds = selectedUsers.map((u) => u.id);
-    promoteMutation.mutate({ student_ids: studentIds, new_kelas: newKelas });
+  const handleBatchDelete = () => {
+    if (selectedUsers.length === 0) return;
+    const count = selectedUsers.length;
+    showConfirm(
+      "Hapus Banyak Pengguna",
+      `Yakin ingin menghapus ${count} akun pengguna yang dipilih? Tindakan ini permanen dan tidak dapat dibatalkan.`,
+      async () => {
+        setIsDeletingBatch(true);
+        try {
+          await Promise.all(selectedUsers.map((u) => api.delete(`/admin/users/${u.id}`)));
+          queryClient.invalidateQueries({ queryKey: ["users"] });
+          setSelectedUsers([]);
+          showAlert("Berhasil", `${count} akun berhasil dihapus.`);
+        } catch (err) {
+          showAlert(
+            "Perhatian",
+            err.response?.data?.message || "Sebagian akun mungkin tidak dapat dihapus karena hak akses."
+          );
+          queryClient.invalidateQueries({ queryKey: ["users"] });
+        } finally {
+          setIsDeletingBatch(false);
+        }
+      },
+      true
+    );
   };
 
   const isSubmitting =
-    createMutation.isPending ||
-    updateMutation.isPending ||
-    promoteMutation.isPending;
+    createMutation.isPending || updateMutation.isPending || isDeletingBatch;
+
+  const getRoleBadge = (role) => {
+    switch (role) {
+      case "super_admin":
+        return { label: "Super Admin", color: "bg-red-100 text-red-900 border-red-300" };
+      case "admin_yayasan":
+        return { label: "Admin Yayasan", color: "bg-amber-100 text-amber-900 border-amber-300" };
+      case "admin_ma":
+        return { label: "Admin MA", color: "bg-emerald-100 text-emerald-900 border-emerald-300" };
+      case "admin_mts":
+        return { label: "Admin MTs", color: "bg-blue-100 text-blue-900 border-blue-300" };
+      case "admin_akademik":
+        return { label: "Admin Absensi", color: "bg-cyan-100 text-cyan-900 border-cyan-300" };
+      case "guru":
+        return { label: "Guru", color: "bg-purple-100 text-purple-900 border-purple-300" };
+      default:
+        return { label: role, color: "bg-gray-100 text-gray-800 border-gray-300" };
+    }
+  };
 
   return (
     <div className="w-full md:max-w-none max-w-6xl mx-auto space-y-4 animate-fade-in">
@@ -173,14 +204,16 @@ export default function Users() {
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-4 shadow-neo flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-emerald-100 border-2 border-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="material-symbols-outlined text-2xl text-emerald-900 font-bold">manage_accounts</span>
+            <span className="material-symbols-outlined text-2xl text-emerald-900 font-bold">
+              manage_accounts
+            </span>
           </div>
           <div>
             <h1 className="font-black text-base sm:text-xl text-gray-900 tracking-tight leading-tight">
               Manajemen Pengguna Absen
             </h1>
             <p className="text-[11px] sm:text-xs text-gray-500 font-medium">
-              Total {filteredUsers.length} akun • Khusus pengguna aplikasi absensi (Admin, Guru, & Siswa)
+              Total {filteredUsers.length} akun terdaftar • Khusus pengguna aplikasi absensi
             </p>
           </div>
         </div>
@@ -188,11 +221,12 @@ export default function Users() {
         <div className="flex items-center gap-2 flex-wrap justify-end">
           {selectedUsers.length > 0 && (
             <button
-              onClick={() => setShowPromoteModal(true)}
-              className="py-2 px-3 bg-amber-400 hover:bg-amber-500 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 flex items-center gap-1.5 text-xs sm:text-sm"
+              onClick={handleBatchDelete}
+              disabled={isDeletingBatch}
+              className="py-2 px-3.5 bg-red-500 hover:bg-red-600 text-white font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-base">trending_up</span>
-              <span>Naik Kelas ({selectedUsers.length})</span>
+              <span className="material-symbols-outlined text-base">delete</span>
+              <span>Hapus ({selectedUsers.length})</span>
             </button>
           )}
 
@@ -201,7 +235,7 @@ export default function Users() {
               setEditUser(null);
               setShowModal(true);
             }}
-            className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0"
+            className="flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0 cursor-pointer"
           >
             <span className="material-symbols-outlined text-base">add</span>
             <span>Tambah User</span>
@@ -217,7 +251,7 @@ export default function Users() {
           </span>
           <input
             type="text"
-            placeholder="Cari nama atau email user..."
+            placeholder="Cari nama atau email akun..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl text-xs sm:text-sm font-medium focus:outline-none transition-all"
@@ -236,9 +270,8 @@ export default function Users() {
           {(userRole === "super_admin" || userLembaga === "mts") && (
             <option value="admin_mts">Admin MTs</option>
           )}
-          <option value="admin_akademik">Admin Akademik</option>
+          <option value="admin_akademik">Admin Absensi</option>
           <option value="guru">Guru</option>
-          <option value="siswa">Siswa</option>
         </select>
       </div>
 
@@ -255,10 +288,10 @@ export default function Users() {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 text-xs uppercase tracking-wider font-black">
                   <tr>
+                    <th className="p-3.5 w-10 text-center">#</th>
                     <th className="p-3.5">Nama & Email</th>
                     <th className="p-3.5">Role</th>
                     <th className="p-3.5">Lembaga</th>
-                    <th className="p-3.5">Kelas</th>
                     <th className="p-3.5">Dibuat</th>
                     <th className="p-3.5 text-center">Aksi</th>
                   </tr>
@@ -278,11 +311,9 @@ export default function Users() {
                 person_off
               </span>
             </div>
-            <h3 className="font-bold text-base text-gray-800 mb-1">
-              Tidak Ada User
-            </h3>
+            <h3 className="font-bold text-base text-gray-800 mb-1">Tidak Ada User</h3>
             <p className="text-sm text-gray-500 max-w-xs leading-relaxed">
-              Tidak ditemukan user dengan filter ini.
+              Tidak ditemukan pengguna absensi dengan filter ini.
             </p>
           </div>
         ) : (
@@ -292,97 +323,55 @@ export default function Users() {
               {filteredUsers.map((user) => {
                 const editable = canEdit(user);
                 const isSelected = selectedUsers.some((su) => su.id === user.id);
-                const roleColor =
-                  user.role === "admin_ma"
-                    ? "bg-red-100 text-red-900 border-red-300"
-                    : user.role === "admin_mts"
-                      ? "bg-blue-100 text-blue-900 border-blue-300"
-                      : user.role === "guru"
-                        ? "bg-purple-100 text-purple-900 border-purple-300"
-                        : "bg-green-100 text-green-900 border-green-300";
+                const badge = getRoleBadge(user.role);
 
                 return (
                   <div
                     key={user.id}
                     className={`bg-white border-3 border-gray-900 rounded-2xl p-4 shadow-neo hover:clean-shadow-md transition-all relative ${
-                      isSelected ? "ring-2 ring-amber-400" : ""
+                      isSelected ? "ring-2 ring-emerald-500 bg-emerald-50/30" : ""
                     }`}
                   >
-                    {user.role === "siswa" && (
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => {
-                          if (isSelected) {
-                            setSelectedUsers((prev) =>
-                              prev.filter((su) => su.id !== user.id),
-                            );
-                          } else {
-                            setSelectedUsers((prev) => [...prev, user]);
-                          }
-                        }}
-                        className="absolute top-3 right-3 w-4 h-4 cursor-pointer"
-                      />
+                    {editable && (
+                      <div className="absolute top-4 right-4">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {
+                            if (isSelected) {
+                              setSelectedUsers((prev) =>
+                                prev.filter((su) => su.id !== user.id)
+                              );
+                            } else {
+                              setSelectedUsers((prev) => [...prev, user]);
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-2 border-gray-900 accent-emerald-500 cursor-pointer"
+                        />
+                      </div>
                     )}
 
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-10 h-10 bg-gray-100 border-2 border-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="material-symbols-outlined text-xl text-gray-900">
-                          person
-                        </span>
+                    <div className="space-y-1.5 pr-6">
+                      <div className="font-black text-base text-gray-900">
+                        {user.name}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-black text-base text-gray-900 truncate leading-snug">
-                          {user.name}
-                        </h3>
-                        <p className="text-xs text-gray-500 truncate">
-                          {user.email}
-                        </p>
+                      <div className="text-xs font-mono text-gray-600">
+                        {user.email}
                       </div>
-                      <span
-                        className={`px-2 py-1 text-xs font-bold rounded-md border ${roleColor}`}
-                      >
-                        {user.role === "admin_ma"
-                          ? "Admin MA"
-                          : user.role === "admin_mts"
-                            ? "Admin MTS"
-                            : user.role === "guru"
-                              ? "Guru"
-                              : "Siswa"}
-                      </span>
-                    </div>
 
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-gray-600 text-sm">
-                          school
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase border ${badge.color}`}
+                        >
+                          {badge.label}
                         </span>
-                        <span className="text-xs font-bold text-gray-700">
-                          Lembaga: {user.lembaga?.toUpperCase() || "MA"}
-                        </span>
-                      </div>
-                      {user.kelas && (
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-gray-600 text-sm">
-                            class
-                          </span>
-                          <span className="text-xs font-bold text-gray-700">
-                            Kelas: {formatKelas(user.kelas)}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-gray-600 text-sm">
-                          calendar_month
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          Dibuat:{" "}
-                          {new Date(user.created_at).toLocaleDateString("id-ID")}
+                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase bg-gray-100 text-gray-800 border border-gray-300">
+                          {user.lembaga?.toUpperCase() || "MA"}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex gap-2 pt-3 border-t border-gray-100">
+                    <div className="flex gap-2 pt-3 mt-3 border-t border-gray-100">
                       {editable ? (
                         <>
                           <button
@@ -390,27 +379,23 @@ export default function Users() {
                               setEditUser(user);
                               setShowModal(true);
                             }}
-                            className="flex-1 py-1.5 bg-gray-100 border border-gray-300 rounded-lg font-bold text-xs hover:bg-gray-200 transition-colors flex items-center justify-center gap-1"
+                            className="flex-1 py-1.5 bg-gray-100 border border-gray-300 rounded-lg font-bold text-xs hover:bg-gray-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
                           >
-                            <span className="material-symbols-outlined text-sm">
-                              edit
-                            </span>
-                            Edit
+                            <span className="material-symbols-outlined text-sm">edit</span>
+                            <span>Edit</span>
                           </button>
                           <button
-                            onClick={() => handleDelete(user.id)}
+                            onClick={() => handleDelete(user.id, user.name)}
                             disabled={deleteMutation.isPending}
-                            className="flex-1 py-1.5 bg-red-50 border border-red-300 rounded-lg font-bold text-xs text-red-800 hover:bg-red-100 transition-colors flex items-center justify-center gap-1"
+                            className="flex-1 py-1.5 bg-red-50 border border-red-300 rounded-lg font-bold text-xs text-red-800 hover:bg-red-100 transition-colors flex items-center justify-center gap-1 cursor-pointer"
                           >
-                            <span className="material-symbols-outlined text-sm">
-                              delete
-                            </span>
-                            Hapus
+                            <span className="material-symbols-outlined text-sm">delete</span>
+                            <span>Hapus</span>
                           </button>
                         </>
                       ) : (
                         <span className="text-xs text-gray-400 italic">
-                          Tidak dapat diedit
+                          Terkunci (Hak Akses Terbatas)
                         </span>
                       )}
                     </div>
@@ -430,11 +415,12 @@ export default function Users() {
                           type="checkbox"
                           checked={
                             selectedUsers.length > 0 &&
-                            selectedUsers.length === filteredUsers.filter((u) => u.role === "siswa").length
+                            selectedUsers.length === editableUsers.length &&
+                            editableUsers.length > 0
                           }
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedUsers(filteredUsers.filter((u) => u.role === "siswa"));
+                              setSelectedUsers(editableUsers);
                             } else {
                               setSelectedUsers([]);
                             }
@@ -446,7 +432,6 @@ export default function Users() {
                       <th className="py-3 px-4">Email / Akun</th>
                       <th className="py-3 px-4">Role</th>
                       <th className="py-3 px-3 text-center">Lembaga</th>
-                      <th className="py-3 px-4">Kelas</th>
                       <th className="py-3 px-4">Dibuat</th>
                       <th className="py-3 px-4 text-center">Aksi</th>
                     </tr>
@@ -455,28 +440,25 @@ export default function Users() {
                     {filteredUsers.map((user) => {
                       const editable = canEdit(user);
                       const isSelected = selectedUsers.some((su) => su.id === user.id);
-                      const roleColor =
-                        user.role === "admin_ma"
-                          ? "bg-red-100 text-red-900 border-red-300"
-                          : user.role === "admin_mts"
-                            ? "bg-blue-100 text-blue-900 border-blue-300"
-                            : user.role === "guru"
-                              ? "bg-purple-100 text-purple-900 border-purple-300"
-                              : "bg-green-100 text-green-900 border-green-300";
+                      const badge = getRoleBadge(user.role);
 
                       return (
                         <tr
                           key={user.id}
-                          className={`hover:bg-gray-50/80 transition-colors ${isSelected ? "bg-emerald-50/50" : ""}`}
+                          className={`hover:bg-gray-50/80 transition-colors ${
+                            isSelected ? "bg-emerald-50/50" : ""
+                          }`}
                         >
                           <td className="py-2.5 px-4 text-center">
-                            {user.role === "siswa" ? (
+                            {editable ? (
                               <input
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={() => {
                                   if (isSelected) {
-                                    setSelectedUsers((prev) => prev.filter((su) => su.id !== user.id));
+                                    setSelectedUsers((prev) =>
+                                      prev.filter((su) => su.id !== user.id)
+                                    );
                                   } else {
                                     setSelectedUsers((prev) => [...prev, user]);
                                   }
@@ -494,24 +476,19 @@ export default function Users() {
                             {user.email}
                           </td>
                           <td className="py-2.5 px-4">
-                            <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase border ${roleColor}`}>
-                              {user.role === "admin_ma"
-                                ? "Admin MA"
-                                : user.role === "admin_mts"
-                                  ? "Admin MTS"
-                                  : user.role === "guru"
-                                    ? "Guru"
-                                    : "Siswa"}
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase border ${badge.color}`}
+                            >
+                              {badge.label}
                             </span>
                           </td>
                           <td className="py-2.5 px-3 text-center font-bold text-gray-700">
                             {user.lembaga?.toUpperCase() || "MA"}
                           </td>
-                          <td className="py-2.5 px-4 text-gray-800 font-bold">
-                            {user.kelas ? formatKelas(user.kelas) : "-"}
-                          </td>
-                          <td className="py-2.5 px-4 text-xs text-gray-500">
-                            {new Date(user.created_at).toLocaleDateString("id-ID")}
+                          <td className="py-2.5 px-4 text-gray-500 text-xs">
+                            {user.created_at
+                              ? new Date(user.created_at).toLocaleDateString("id-ID")
+                              : "-"}
                           </td>
                           <td className="py-2.5 px-4 text-center">
                             <div className="flex items-center justify-center gap-1">
@@ -522,22 +499,27 @@ export default function Users() {
                                       setEditUser(user);
                                       setShowModal(true);
                                     }}
-                                    className="p-1 hover:bg-amber-50 text-amber-700 rounded border border-gray-300 transition-colors"
-                                    title="Edit"
+                                    className="p-1 hover:bg-gray-200 rounded border border-gray-300 transition-colors cursor-pointer"
+                                    title="Edit User"
                                   >
-                                    <span className="material-symbols-outlined text-sm">edit</span>
+                                    <span className="material-symbols-outlined text-sm">
+                                      edit
+                                    </span>
                                   </button>
                                   <button
-                                    onClick={() => handleDelete(user.id)}
-                                    disabled={deleteMutation.isPending}
-                                    className="p-1 hover:bg-red-50 text-red-700 rounded border border-gray-300 transition-colors"
-                                    title="Hapus"
+                                    onClick={() => handleDelete(user.id, user.name)}
+                                    className="p-1 hover:bg-red-50 text-red-600 rounded border border-gray-300 transition-colors cursor-pointer"
+                                    title="Hapus User"
                                   >
-                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                    <span className="material-symbols-outlined text-sm">
+                                      delete
+                                    </span>
                                   </button>
                                 </>
                               ) : (
-                                <span className="text-[11px] text-gray-400 italic">Terkunci</span>
+                                <span className="text-[10px] text-gray-400 italic">
+                                  Terkunci
+                                </span>
                               )}
                             </div>
                           </td>
@@ -552,40 +534,6 @@ export default function Users() {
         )}
       </div>
 
-      {/* Selected Info */}
-      {selectedUsers.length > 0 && (
-        <div className="fixed bottom-20 left-4 right-4 bg-amber-100 border-3 border-gray-900 rounded-2xl p-3 shadow-neo z-40">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-amber-700">
-                groups
-              </span>
-              <span className="font-bold text-sm text-amber-900">
-                {selectedUsers.length} siswa terpilih untuk naik kelas
-              </span>
-            </div>
-            <button
-              onClick={() => setSelectedUsers([])}
-              className="px-3 py-1 bg-amber-200 text-amber-900 font-bold text-xs border-2 border-amber-900 rounded-lg shadow-sm hover:bg-amber-300"
-            >
-              Batal
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Mobile FAB */}
-      <button
-        onClick={() => {
-          setEditUser(null);
-          setShowModal(true);
-        }}
-        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-neo flex items-center justify-center z-40 active:translate-y-1 transition-transform"
-      >
-        <span className="material-symbols-outlined text-3xl font-black">add</span>
-      </button>
-
-      {/* Modals */}
       <UserModal
         isOpen={showModal}
         onClose={() => {
@@ -596,16 +544,9 @@ export default function Users() {
         onSubmit={handleSubmitUser}
         isSubmitting={isSubmitting}
       />
-      <PromoteModal
-        isOpen={showPromoteModal}
-        onClose={() => setShowPromoteModal(false)}
-        selectedUsers={selectedUsers}
-        onSubmit={handlePromoteSubmit}
-        isSubmitting={isSubmitting}
-      />
+
       <ConfirmModal
         isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
         title={confirmModal.title}
         message={confirmModal.message}
         type={confirmModal.type}
@@ -613,6 +554,7 @@ export default function Users() {
           if (confirmModal.onConfirm) confirmModal.onConfirm();
           setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         }}
+        onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

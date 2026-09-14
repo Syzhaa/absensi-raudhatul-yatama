@@ -8,10 +8,10 @@ const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
   const isSuperAdmin = currentUserRole === "super_admin" || currentUserLembaga === "yayasan";
 
   // Role hierarchy for Attendance System:
-  // Super admin -> Admin MA, Admin MTs, Admin Akademik, Guru, Siswa
-  // Admin MA -> Admin MA, Admin Akademik, Guru, Siswa (locked to MA)
-  // Admin MTs -> Admin MTs, Admin Akademik, Guru, Siswa (locked to MTs)
-  // Admin Akademik -> Guru, Siswa
+  // Super admin -> Admin MA, Admin MTs, Admin Akademik, Guru
+  // Admin MA -> Admin MA, Admin Akademik, Guru (locked to MA)
+  // Admin MTs -> Admin MTs, Admin Akademik, Guru (locked to MTs)
+  // Admin Akademik -> Guru
   const availableRoles = useMemo(() => {
     if (isSuperAdmin) {
       return [
@@ -19,7 +19,6 @@ const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
         { value: "admin_mts", label: "Admin MTs", defaultLembaga: "mts" },
         { value: "admin_akademik", label: "Admin Akademik", defaultLembaga: "ma" },
         { value: "guru", label: "Guru" },
-        { value: "siswa", label: "Siswa" },
       ];
     }
     if (currentUserRole === "admin_ma" || currentUserLembaga === "ma") {
@@ -27,7 +26,6 @@ const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
         { value: "admin_ma", label: "Admin MA" },
         { value: "admin_akademik", label: "Admin Akademik" },
         { value: "guru", label: "Guru" },
-        { value: "siswa", label: "Siswa" },
       ];
     }
     if (currentUserRole === "admin_mts" || currentUserLembaga === "mts") {
@@ -35,18 +33,15 @@ const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
         { value: "admin_mts", label: "Admin MTs" },
         { value: "admin_akademik", label: "Admin Akademik" },
         { value: "guru", label: "Guru" },
-        { value: "siswa", label: "Siswa" },
       ];
     }
     if (currentUserRole === "admin_akademik") {
       return [
         { value: "guru", label: "Guru" },
-        { value: "siswa", label: "Siswa" },
       ];
     }
     return [
       { value: "guru", label: "Guru" },
-      { value: "siswa", label: "Siswa" },
     ];
   }, [isSuperAdmin, currentUserRole, currentUserLembaga]);
 
@@ -225,22 +220,6 @@ const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
               <span className="font-black uppercase px-2 py-0.5 bg-white border border-gray-400 rounded-md">
                 {defaultLembaga.toUpperCase()}
               </span>
-            </div>
-          )}
-
-          {/* Kelas (Khusus Siswa) */}
-          {formData.role === "siswa" && (
-            <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-gray-800 mb-1">
-                Kelas (Khusus Siswa)
-              </label>
-              <input
-                type="text"
-                placeholder="Contoh: 10, 11, 12, 7, 8, 9"
-                value={formData.kelas || ""}
-                onChange={(e) => setFormData({ ...formData, kelas: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 rounded-xl font-medium text-xs sm:text-sm text-gray-900 focus:outline-none"
-              />
             </div>
           )}
 
