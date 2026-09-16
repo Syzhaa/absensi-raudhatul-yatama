@@ -133,6 +133,10 @@ export default function LocationPickerMap({
       const newLng = parseFloat(lng.toFixed(8));
       circle.setLatLng([newLat, newLng]);
       onChangeCoordinates(newLat, newLng);
+      setGpsStatus({
+        success: true,
+        message: `Titik madrasah digeser ke koordinat: ${newLat}, ${newLng}. Klik 'Simpan Pengaturan' di bawah untuk menetapkannya.`,
+      });
     });
 
     // Event Klik Peta untuk Pindahkan Titik
@@ -143,6 +147,10 @@ export default function LocationPickerMap({
       marker.setLatLng([newLat, newLng]);
       circle.setLatLng([newLat, newLng]);
       onChangeCoordinates(newLat, newLng);
+      setGpsStatus({
+        success: true,
+        message: `Titik madrasah dipasang di: ${newLat}, ${newLng}. Klik 'Simpan Pengaturan' di bawah untuk menetapkannya.`,
+      });
     });
 
     markerRef.current = marker;
@@ -170,7 +178,7 @@ export default function LocationPickerMap({
     }
   }, [latNum, lonNum, radiusNum]);
 
-  // Handler: Ambil GPS Saat Ini (dengan fallback & deteksi blokir izin)
+  // Handler: Ambil GPS Saat Ini (Cepat & Kompatibel untuk Mobile & PC)
   const handleGetCurrentGPS = async () => {
     if (!navigator.geolocation) {
       setGpsStatus({
@@ -201,25 +209,10 @@ export default function LocationPickerMap({
     setIsGettingGPS(true);
     setGpsStatus({
       success: null,
-      message: "Sedang menghubungkan sensor GPS perangkat... (Beri izin jika muncul pop-up)",
+      message: "Sedang membaca koordinat GPS perangkat...",
     });
 
-    // Safety timeout jika browser tidak merespon dalam 12 detik
-    const safetyTimer = setTimeout(() => {
-      setIsGettingGPS((current) => {
-        if (current) {
-          setGpsStatus({
-            success: false,
-            message: "Waktu deteksi lokasi habis. Jika Anda menggunakan PC/Laptop tanpa GPS fisik, Anda dapat menggeser pin di peta atau klik tombol 'Pasang Koordinat Resmi Yatama'.",
-          });
-          return false;
-        }
-        return false;
-      });
-    }, 12000);
-
     const onPosSuccess = (pos) => {
-      clearTimeout(safetyTimer);
       const myLat = parseFloat(pos.coords.latitude.toFixed(8));
       const myLon = parseFloat(pos.coords.longitude.toFixed(8));
       const accuracy = Math.round(pos.coords.accuracy);
@@ -227,7 +220,7 @@ export default function LocationPickerMap({
       setIsGettingGPS(false);
       setGpsStatus({
         success: true,
-        message: `Koordinat GPS berhasil diperoleh! Akurasi: ±${accuracy}m`,
+        message: `Koordinat GPS berhasil diperoleh! Akurasi: ±${accuracy}m. Klik 'Simpan Pengaturan' di bawah untuk menjadikannya standar sekolah.`,
       });
 
       setUserLocation({ lat: myLat, lon: myLon, accuracy });
@@ -241,38 +234,33 @@ export default function LocationPickerMap({
     };
 
     const onPosError = (err) => {
-      // Jika high accuracy gagal/timeout di PC, coba standard accuracy sekali lagi
-      navigator.geolocation.getCurrentPosition(
-        onPosSuccess,
-        (secondErr) => {
-          clearTimeout(safetyTimer);
-          setIsGettingGPS(false);
-          if (secondErr.code === 1 || err.code === 1) {
-            setGpsStatus({
-              success: false,
-              blocked: true,
-              message: "Izin lokasi GPS ditolak oleh browser Anda.",
-            });
-          } else if (secondErr.code === 2) {
-            setGpsStatus({
-              success: false,
-              message: "Sinyal GPS tidak ditemukan. Pastikan layanan lokasi di perangkat Anda aktif.",
-            });
-          } else {
-            setGpsStatus({
-              success: false,
-              message: "Tidak dapat mendeteksi koordinat GPS perangkat. Silakan geser pin di peta secara manual.",
-            });
-          }
-        },
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
-      );
+      setIsGettingGPS(false);
+      if (err.code === 1) {
+        setGpsStatus({
+          success: false,
+          blocked: true,
+          message: "Izin lokasi GPS ditolak oleh browser Anda.",
+        });
+      } else {
+        setGpsStatus({
+          success: false,
+          message: "Perangkat ini tidak memiliki sinyal satelit GPS (komputer/laptop tanpa sensor GPS). Silakan langsung KLIK pada peta atau GESER pin 🏫 ke lokasi madrasah.",
+        });
+      }
     };
 
+    // Gunakan konfigurasi standar terlebih dahulu agar cepat dan tidak freeze di PC/laptop
     navigator.geolocation.getCurrentPosition(
       onPosSuccess,
-      onPosError,
-      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+      () => {
+        // Fallback coba high accuracy singkat
+        navigator.geolocation.getCurrentPosition(
+          onPosSuccess,
+          onPosError,
+          { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+        );
+      },
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
     );
   };
 
