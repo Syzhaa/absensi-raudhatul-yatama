@@ -54,7 +54,7 @@ export default function ScanResultModal({ result, scanType, handleCloseModal }) 
             {/* Judul */}
             <h2 className="font-black text-xl text-gray-900 text-center mb-5 tracking-tight uppercase">
               {result.manual
-                ? "BERHASIL DISIMPAN"
+                ? (result.message?.includes("PC") || result.message?.includes("Lokasi") ? "LOKASI TERSINKRON" : "BERHASIL DISIMPAN")
                 : `BERHASIL ABSEN ${isResultCheckIn ? "MASUK" : "PULANG"}`}
             </h2>
 
@@ -120,7 +120,9 @@ export default function ScanResultModal({ result, scanType, handleCloseModal }) 
             </div>
 
             <h2 className="font-black text-xl text-gray-900 text-center mb-3 tracking-tight uppercase">
-              ABSEN GAGAL
+              {result.manual || result.message?.includes("Sinkron") || result.message?.includes("Akses Ditolak")
+                ? "SINKRONISASI DITOLAK"
+                : "ABSEN GAGAL"}
             </h2>
 
             <p className="text-sm font-semibold text-red-600 mb-6 bg-red-50 p-3 rounded-xl border border-red-200">

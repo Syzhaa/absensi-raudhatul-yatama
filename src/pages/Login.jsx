@@ -38,6 +38,9 @@ export default function Login({ onLogin }) {
 
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
   const setUserRole = useAppStore((state) => state.setUserRole);
+  const setUserId = useAppStore((state) => state.setUserId);
+  const setUserName = useAppStore((state) => state.setUserName);
+  const setUserEmail = useAppStore((state) => state.setUserEmail);
   const setUserPermissions = useAppStore((state) => state.setUserPermissions);
 
   useEffect(() => {
@@ -99,6 +102,10 @@ export default function Login({ onLogin }) {
         localStorage.setItem("auth_token", token);
         if (lembaga) setUserLembaga(lembaga);
         if (role) setUserRole(role);
+        const userData = response.data?.user || response.data?.data?.user;
+        if (userData?.id) setUserId(userData.id);
+        if (userData?.name) setUserName(userData.name);
+        if (userData?.email) setUserEmail(userData.email);
         const permissions = response.data?.user?.permissions || response.data?.data?.user?.permissions;
         if (permissions && setUserPermissions) setUserPermissions(permissions);
       } else {

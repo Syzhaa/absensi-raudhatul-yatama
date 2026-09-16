@@ -33,6 +33,9 @@ function App() {
   const userRole = useAppStore((state) => state.userRole);
   const userPermissions = useAppStore((state) => state.userPermissions);
   const setUserRole = useAppStore((state) => state.setUserRole);
+  const setUserId = useAppStore((state) => state.setUserId);
+  const setUserName = useAppStore((state) => state.setUserName);
+  const setUserEmail = useAppStore((state) => state.setUserEmail);
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
   const setUserPermissions = useAppStore((state) => state.setUserPermissions);
 
@@ -73,6 +76,9 @@ function App() {
           const { data } = await api.get("/auth/me");
           setUserRole(data.data.role);
           setUserLembaga(data.data.lembaga);
+          setUserId(data.data.id);
+          setUserName(data.data.name);
+          setUserEmail(data.data.email);
           if (data.data.permissions) {
             setUserPermissions(data.data.permissions);
           }

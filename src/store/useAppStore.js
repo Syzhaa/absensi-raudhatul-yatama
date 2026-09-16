@@ -4,11 +4,17 @@ import { persist } from "zustand/middleware";
 export const useAppStore = create(
   persist(
     (set) => ({
+      userId: null,
+      userName: null,
+      userEmail: null,
       userLembaga: null,
       userRole: null,
       userPermissions: null,
       selectedKelas: null,
       superAdminLembaga: "MA", // Super Admin lembaga override (MA or MTs)
+      setUserId: (id) => set({ userId: id }),
+      setUserName: (name) => set({ userName: name }),
+      setUserEmail: (email) => set({ userEmail: email }),
       setUserLembaga: (lembaga) => set({ userLembaga: lembaga }),
       setUserRole: (role) => set({ userRole: role }),
       setUserPermissions: (permissions) => set({ userPermissions: permissions }),
@@ -20,3 +26,5 @@ export const useAppStore = create(
     },
   ),
 );
+
+export default useAppStore;

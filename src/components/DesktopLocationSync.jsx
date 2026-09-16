@@ -8,53 +8,53 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
   const [sessionId] = useState(() => uuidv4());
   const [status, setStatus] = useState("connecting"); // connecting, listening, success, error
   const [syncUrl, setSyncUrl] = useState("");
-  const [currentUser, setCurrentUser] = useState(null);
-  const [loadingUser, setLoadingUser] = useState(true);
 
+  const userIdStore = useAppStore((state) => state.userId);
+  const userNameStore = useAppStore((state) => state.userName);
   const userRoleStore = useAppStore((state) => state.userRole);
-  const userLembagaStore = useAppStore((state) => state.userLembaga);
+  const userEmailStore = useAppStore((state) => state.userEmail);
 
-  // 1. Fetch current logged-in user on this PC
+  const [currentUser, setCurrentUser] = useState({
+    id: userIdStore,
+    name: userNameStore,
+    role: userRoleStore,
+    email: userEmailStore,
+  });
+
+  // Background fetch fresh user data if store is missing id
   useEffect(() => {
     let isMounted = true;
-    api.get("/auth/me")
-      .then((res) => {
-        if (isMounted && res.data?.data) {
-          setCurrentUser(res.data.data);
-        }
-      })
-      .catch(() => {
-        // Fallback to store if offline or error
-        if (isMounted) {
-          setCurrentUser({
-            role: userRoleStore || "guru",
-            lembaga: userLembagaStore || "MA",
-          });
-        }
-      })
-      .finally(() => {
-        if (isMounted) setLoadingUser(false);
-      });
-
+    if (!currentUser.id) {
+      api.get("/auth/me")
+        .then((res) => {
+          if (isMounted && res.data?.data) {
+            setCurrentUser(res.data.data);
+          }
+        })
+        .catch(() => {});
+    }
     return () => {
       isMounted = false;
     };
-  }, [userRoleStore, userLembagaStore]);
+  }, [currentUser.id]);
 
-  // 2. Generate Sync URL with PC user metadata
+  // Generate Sync URL with PC user metadata immediately
   useEffect(() => {
     const baseUrl = window.location.origin;
     const params = new URLSearchParams();
-    if (currentUser?.id) params.set("uid", currentUser.id);
-    if (currentUser?.role) params.set("role", currentUser.role);
-    if (currentUser?.nama || currentUser?.name) {
-      params.set("name", currentUser.nama || currentUser.name);
-    }
+    const activeUid = currentUser.id || userIdStore;
+    const activeRole = currentUser.role || userRoleStore;
+    const activeName = currentUser.name || currentUser.nama || userNameStore;
+
+    if (activeUid) params.set("uid", activeUid);
+    if (activeRole) params.set("role", activeRole);
+    if (activeName) params.set("name", activeName);
+
     const url = `${baseUrl}/sync/${sessionId}?${params.toString()}`;
     setSyncUrl(url);
-  }, [sessionId, currentUser]);
+  }, [sessionId, currentUser, userIdStore, userRoleStore, userNameStore]);
 
-  // 3. Listen to SSE Stream
+  // Listen to SSE Stream
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL || "https://api.raudhatulyatama.sch.id/api/v1";
     const sse = new EventSource(`${apiUrl}/location-sync/stream/${sessionId}`);
@@ -89,9 +89,7 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
       sse.close();
     });
 
-    sse.onerror = () => {
-      // Retrying automatically
-    };
+    sse.onerror = () => {};
 
     return () => {
       sse.close();
@@ -102,6 +100,10 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
     window.location.reload();
   };
 
+  const activeRole = currentUser.role || userRoleStore;
+  const activeName = currentUser.name || currentUser.nama || userNameStore || "Pengguna PC";
+  const activeEmail = currentUser.email || userEmailStore || "-";
+
   const isAdmin = [
     "super_admin",
     "admin_yayasan",
@@ -109,13 +111,13 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
     "admin_mts",
     "admin_akademik",
     "petugas_absen",
-  ].includes(currentUser?.role);
+  ].includes(activeRole);
 
   return (
-    <div className="w-full max-w-none bg-white border-2 border-gray-900 rounded-2xl md:rounded-3xl p-6 sm:p-8 md:p-10 shadow-sm animate-fade-in">
+    <div className="w-full max-w-3xl mx-auto bg-white border-3 sm:border-4 border-gray-900 rounded-3xl p-6 sm:p-8 shadow-neo-lg animate-fade-in">
       {status === "success" ? (
         <div className="py-12 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 bg-emerald-100 border-2 border-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-sm animate-bounce">
+          <div className="w-20 h-20 bg-emerald-100 border-3 border-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-sm animate-bounce">
             <span className="material-symbols-outlined text-5xl text-emerald-700">check_circle</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-emerald-950 mb-2">
@@ -129,11 +131,11 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-10 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
           {/* Kolom Kiri: Informasi & Petunjuk RBAC */}
-          <div className="md:col-span-7 lg:col-span-8 flex flex-col justify-between space-y-4">
+          <div className="md:col-span-7 flex flex-col justify-between space-y-4">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 border-2 border-gray-900 rounded-full text-xs font-black text-amber-950 mb-3 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 border-2 border-gray-900 rounded-full text-xs font-black text-amber-950 mb-3 shadow-xs">
                 <span className="material-symbols-outlined text-sm">satellite_alt</span>
                 SINKRONISASI GPS PC (3 JAM)
               </div>
@@ -146,7 +148,7 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
             </div>
 
             {/* Identitas Akun Login PC */}
-            <div className="p-4 bg-slate-50 border-2 border-gray-900 rounded-2xl shadow-sm space-y-2.5">
+            <div className="p-4 bg-slate-50 border-2 border-gray-900 rounded-2xl shadow-xs space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-black uppercase text-gray-500 tracking-wider">
                   Akun Terhubung di PC
@@ -154,27 +156,27 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
                 <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border border-gray-900 ${
                   isAdmin ? "bg-amber-300 text-amber-950" : "bg-blue-300 text-blue-950"
                 }`}>
-                  {currentUser?.role ? currentUser.role.replace("_", " ") : "MEMUAT..."}
+                  {activeRole ? activeRole.replace("_", " ") : "MEMUAT..."}
                 </span>
               </div>
 
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-white border-2 border-gray-900 flex items-center justify-center font-black text-sm text-gray-800 shadow-sm">
-                  {currentUser?.nama ? currentUser.nama.charAt(0).toUpperCase() : "U"}
+                <div className="w-9 h-9 rounded-xl bg-white border-2 border-gray-900 flex items-center justify-center font-black text-sm text-gray-800 shadow-xs">
+                  {activeName.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-black text-sm text-gray-900 truncate">
-                    {currentUser?.nama || currentUser?.name || "Pengguna PC"}
+                    {activeName}
                   </div>
                   <div className="text-[11px] text-gray-500 font-mono truncate">
-                    {currentUser?.email || (loadingUser ? "Memuat data user..." : "-")}
+                    {activeEmail}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Aturan Keamanan / RBAC Note */}
-            <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-950 font-medium flex items-start gap-2 shadow-sm">
+            <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-950 font-medium flex items-start gap-2">
               <span className="material-symbols-outlined text-base text-emerald-700 flex-shrink-0 mt-0.5">
                 verified_user
               </span>
@@ -197,9 +199,9 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
           </div>
 
           {/* Kolom Kanan: QR Code & Status */}
-          <div className="md:col-span-5 lg:col-span-4 flex flex-col items-center justify-center bg-gray-50 p-6 rounded-2xl border-2 border-gray-300 shadow-sm">
+          <div className="md:col-span-5 flex flex-col items-center justify-center bg-gray-50 p-5 rounded-2xl border-2 border-gray-300">
             {syncUrl ? (
-              <div className="p-3 bg-white border-2 border-gray-900 rounded-2xl shadow-sm mb-3 flex items-center justify-center">
+              <div className="p-3 bg-white border-3 border-gray-900 rounded-2xl shadow-neo mb-3 flex items-center justify-center">
                 <QRCodeSVG 
                   value={syncUrl} 
                   size={200}
@@ -216,7 +218,7 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
 
             <div className="flex items-center gap-2 mb-2">
               {status === "listening" ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border-2 border-emerald-500 shadow-sm">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border-2 border-emerald-500 shadow-xs">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                   Menunggu Scan HP...
                 </span>
