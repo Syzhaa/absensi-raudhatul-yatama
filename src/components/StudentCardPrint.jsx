@@ -14,7 +14,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     }
     return 1.35;
   });
-  const [noGap, setNoGap] = useState(false);
+  const [noGap, setNoGap] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {
@@ -253,21 +253,21 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           <button
             type="button"
             onClick={() => setNoGap(!noGap)}
-            className={`px-2.5 py-1.5 rounded-xl border-2 border-gray-900 text-xs font-black flex items-center gap-1 shadow-sm transition-all cursor-pointer ${
+            className={`px-2.5 py-1.5 rounded-xl border-2 text-xs font-black flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ${
               noGap
-                ? "bg-amber-300 text-gray-900 shadow-neo"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                ? "bg-emerald-100 text-emerald-950 border-emerald-600 shadow-xs"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-900"
             }`}
             title="Ubah celah pemisah antara kartu depan & belakang"
           >
-            <span className="material-symbols-outlined text-sm">
+            <span className={`material-symbols-outlined text-sm ${noGap ? "text-emerald-700" : "text-gray-600"}`}>
               {noGap ? "splitscreen" : "space_bar"}
             </span>
-            <span>{noGap ? "Tanpa Celah (0mm)" : "Berjarak (16px)"}</span>
+            <span>{noGap ? "Tanpa Celah (0mm - Lipat)" : "Berjarak (16px - Pisah)"}</span>
           </button>
 
           {/* Zoom Toolbar */}
-          <div className="flex items-center bg-gray-100 border-2 border-gray-900 rounded-xl p-0.5 gap-0.5">
+          <div className="flex items-center bg-gray-100 border-2 border-gray-900 rounded-xl p-0.5 gap-0.5 shadow-xs">
             <button
               type="button"
               onClick={() => setZoom((z) => Math.max(0.7, Math.round((z - 0.1) * 10) / 10))}
@@ -301,7 +301,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border-2 border-gray-900 rounded-xl shadow-sm transition-all cursor-pointer hidden sm:flex items-center justify-center"
+            className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border-2 border-gray-900 rounded-xl shadow-xs transition-all cursor-pointer hidden sm:flex items-center justify-center"
             title={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh (Full Screen)"}
           >
             <span className="material-symbols-outlined text-base">
@@ -313,7 +313,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           <button
             onClick={handleDownloadPNG}
             disabled={isDownloading}
-            className="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+            className="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
             title="Unduh file gambar PNG beresolusi tinggi"
           >
             <span className="material-symbols-outlined text-base">
@@ -326,7 +326,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           {/* Print Card */}
           <button
             onClick={handlePrint}
-            className="py-1.5 px-3.5 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs font-black rounded-xl border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1 cursor-pointer"
+            className="py-1.5 px-3.5 bg-primary-green hover:bg-lime-400 text-gray-900 text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1 cursor-pointer"
             title="Buka dialog cetak printer"
           >
             <span className="material-symbols-outlined text-base">print</span>
@@ -361,21 +361,14 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           }
           .id-card-wrapper {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
+            justify-content: center;
             gap: 16px;
             margin-bottom: 24px;
             page-break-inside: avoid;
             flex-shrink: 0;
             transition: gap 0.2s ease;
-          }
-          @media (min-width: 640px) {
-            .id-card-wrapper {
-              flex-direction: row;
-              align-items: center;
-              justify-content: center;
-              gap: 16px;
-            }
           }
           .id-card-wrapper.no-gap {
             gap: 0px !important;
@@ -383,7 +376,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           .id-card-wrapper.no-gap .id-card:first-child {
             border-top-right-radius: 0px !important;
             border-bottom-right-radius: 0px !important;
-            border-right: 1.5px dashed #064e3b !important;
+            border-right: 1.5px dashed #475569 !important;
           }
           .id-card-wrapper.no-gap .id-card:last-child {
             border-top-left-radius: 0px !important;
@@ -711,7 +704,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             .id-card-wrapper.no-gap .id-card:first-child {
               border-top-right-radius: 0 !important;
               border-bottom-right-radius: 0 !important;
-              border-right: 1px dashed #064e3b !important;
+              border-right: 1px dashed #475569 !important;
             }
             .id-card-wrapper.no-gap .id-card:last-child {
               border-top-left-radius: 0 !important;
