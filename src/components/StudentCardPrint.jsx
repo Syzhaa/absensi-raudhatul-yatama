@@ -44,6 +44,19 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     };
   }, []);
 
+  // Keyboard shortcut: Esc to close
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
   const handleFitScreen = () => {
     if (typeof window === "undefined") return;
     const availH = window.innerHeight - 120;
@@ -258,73 +271,13 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           </button>
         </div>
 
-        {/* Action Toolbar */}
-        <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 justify-end">
-          {/* Celah Toggle (No-Gap) */}
-          <button
-            type="button"
-            onClick={() => setNoGap(!noGap)}
-            className={`px-2.5 py-1.5 rounded-xl border-2 text-xs font-black flex items-center gap-1.5 shadow-xs transition-all cursor-pointer ${
-              noGap
-                ? "bg-emerald-100 text-emerald-950 border-emerald-600 shadow-xs"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-900"
-            }`}
-            title="Ubah celah pemisah antara kartu depan & belakang"
-          >
-            <span className={`material-symbols-outlined text-sm ${noGap ? "text-emerald-700" : "text-gray-600"}`}>
-              {noGap ? "splitscreen" : "space_bar"}
-            </span>
-            <span>{noGap ? "Tanpa Celah (0mm - Lipat)" : "Berjarak (16px - Pisah)"}</span>
-          </button>
-
-          {/* Zoom Toolbar */}
-          <div className="flex items-center bg-gray-100 border-2 border-gray-900 rounded-xl p-0.5 gap-0.5 shadow-xs">
-            <button
-              type="button"
-              onClick={() => setZoom((z) => Math.max(0.7, Math.round((z - 0.1) * 10) / 10))}
-              className="px-2 py-1 hover:bg-gray-200 rounded-lg text-xs font-black text-gray-800 transition-colors cursor-pointer"
-              title="Perkecil (-)"
-            >
-              -
-            </button>
-            <span className="px-1.5 text-[11px] font-mono font-black text-gray-900 min-w-[42px] text-center select-none">
-              {Math.round(zoom * 100)}%
-            </span>
-            <button
-              type="button"
-              onClick={() => setZoom((z) => Math.min(2.0, Math.round((z + 0.1) * 10) / 10))}
-              className="px-2 py-1 hover:bg-gray-200 rounded-lg text-xs font-black text-gray-800 transition-colors cursor-pointer"
-              title="Perbesar (+)"
-            >
-              +
-            </button>
-            <button
-              type="button"
-              onClick={handleFitScreen}
-              className="px-2 py-1 bg-white hover:bg-emerald-50 border border-gray-400 rounded-lg text-[10px] font-black text-emerald-800 transition-colors cursor-pointer"
-              title="Sesuaikan ke Ukuran Layar Penuh"
-            >
-              Fit
-            </button>
-          </div>
-
-          {/* Fullscreen Button */}
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border-2 border-gray-900 rounded-xl shadow-xs transition-all cursor-pointer hidden sm:flex items-center justify-center"
-            title={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh (Full Screen)"}
-          >
-            <span className="material-symbols-outlined text-base">
-              {isFullscreen ? "fullscreen_exit" : "fullscreen"}
-            </span>
-          </button>
-
+        {/* Action Toolbar - Bersih & Fokus: Hanya Unduh PNG, Cetak Kartu & Tutup */}
+        <div className="flex items-center gap-2 justify-end">
           {/* Download PNG */}
           <button
             onClick={handleDownloadPNG}
             disabled={isDownloading}
-            className="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+            className="py-2 px-3 sm:px-3.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
             title="Unduh file gambar PNG beresolusi tinggi"
           >
             <span className="material-symbols-outlined text-base">
@@ -337,7 +290,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           {/* Print Card */}
           <button
             onClick={handlePrint}
-            className="py-1.5 px-3.5 bg-primary-green hover:bg-lime-400 text-gray-900 text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1 cursor-pointer"
+            className="py-2 px-3.5 sm:px-4 bg-primary-green hover:bg-lime-400 text-gray-900 text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             title="Buka dialog cetak printer"
           >
             <span className="material-symbols-outlined text-base">print</span>
@@ -347,9 +300,11 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           {/* Close */}
           <button
             onClick={onClose}
-            className="hidden md:inline-flex px-3 py-1.5 font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-xs border border-gray-300 cursor-pointer"
+            className="py-2 px-3 font-bold text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition-colors text-xs border border-gray-300 cursor-pointer flex items-center justify-center gap-1"
+            title="Tutup Pratinjau (Esc)"
           >
-            Tutup
+            <span className="material-symbols-outlined text-base">close</span>
+            <span className="hidden sm:inline">Tutup</span>
           </button>
         </div>
       </div>
