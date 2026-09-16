@@ -113,6 +113,14 @@ export default function ScanQR() {
   };
 
   const detectLocation = () => {
+    // Jika PC sudah terverifikasi (via QR sync HP atau stasiun resmi), jangan memindai GPS lagi, langsung aktif!
+    if (coords?.isPcVerified || cachedLoc?.isPcVerified) {
+      setIsLocating(false);
+      setLocationError(null);
+      setIsDesktopBlocked(false);
+      return;
+    }
+
     if (isDesktop && !coords?.isPcVerified) {
       setIsDesktopBlocked(true);
       setIsLocating(false);
@@ -159,7 +167,13 @@ export default function ScanQR() {
 
   useEffect(() => {
     if (isLocationRequired) {
-      detectLocation();
+      if (coords?.isPcVerified || cachedLoc?.isPcVerified) {
+        setIsLocating(false);
+        setLocationError(null);
+        setIsDesktopBlocked(false);
+      } else {
+        detectLocation();
+      }
     }
   }, [isLocationRequired, effectiveLembaga]);
 
@@ -419,7 +433,9 @@ export default function ScanQR() {
             ) : isLocationRequired ? (
               <div
                 className={`p-3 rounded-2xl border-2 border-gray-900 flex items-center justify-between shadow-sm transition-all ${
-                  isLocating
+                  coords?.isPcVerified
+                    ? "bg-emerald-50"
+                    : isLocating
                     ? "bg-amber-50"
                     : locationError
                     ? "bg-red-50"
@@ -431,7 +447,9 @@ export default function ScanQR() {
                 <div className="flex items-center gap-2.5 min-w-0 pr-2">
                   <div
                     className={`w-9 h-9 rounded-xl border-2 border-gray-900 flex items-center justify-center flex-shrink-0 shadow-sm ${
-                      isLocating
+                      coords?.isPcVerified
+                        ? "bg-primary-green text-gray-900"
+                        : isLocating
                         ? "bg-amber-200 text-amber-900"
                         : locationError
                         ? "bg-red-200 text-red-900"
@@ -441,16 +459,16 @@ export default function ScanQR() {
                     }`}
                   >
                     <span className="material-symbols-outlined text-xl">
-                      {isLocating ? "radar" : isWithinRadius ? "pin_drop" : "location_off"}
+                      {coords?.isPcVerified ? "verified_user" : isLocating ? "radar" : isWithinRadius ? "pin_drop" : "location_off"}
                     </span>
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="font-black text-xs sm:text-sm text-gray-900">
-                        {isLocating
+                        {coords?.isPcVerified
+                          ? "Lokasi Sah: PC Terverifikasi"
+                          : isLocating
                           ? "Mendeteksi Lokasi GPS..."
-                          : coords?.isPcVerified
-                          ? "Lokasi Sah: Komputer Resmi Madrasah"
                           : locationError
                           ? "Izin Lokasi GPS Diperlukan"
                           : isWithinRadius
@@ -466,10 +484,10 @@ export default function ScanQR() {
                       )}
                     </div>
                     <p className="text-[11px] text-gray-600 font-medium truncate mt-0.5">
-                      {isLocating
+                      {coords?.isPcVerified
+                        ? `Akses pemindaian presensi disetujui dari stasiun PC madrasah (${effectiveLembaga?.toUpperCase() || "MA"})`
+                        : isLocating
                         ? "Menghubungkan sensor koordinat perangkat..."
-                        : coords?.isPcVerified
-                        ? `Akses pemindaian disetujui dari stasiun komputer madrasah (${effectiveLembaga?.toUpperCase() || "MA"})`
                         : locationError || (isWithinRadius
                             ? `Jarak ${currentDistance !== null ? Math.round(currentDistance) : 0}m dari titik pusat (${effectiveLembaga?.toUpperCase() || "MA"})`
                             : `Jarak ${Math.round(currentDistance || 0)}m melebihi batas toleransi radius ${radiusMax}m.`)}
@@ -478,19 +496,25 @@ export default function ScanQR() {
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  
-                  <button
-                    type="button"
-                    onClick={detectLocation}
-                    disabled={isLocating}
-                    className="p-1.5 sm:px-2.5 sm:py-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-xs flex items-center gap-1 shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
-                    title="Perbarui koordinat GPS sekarang"
-                  >
-                    <span className={`material-symbols-outlined text-base ${isLocating ? "animate-spin" : ""}`}>
-                      refresh
-                    </span>
-                    <span className="hidden sm:inline">{isLocating ? "Mencari..." : "Cek GPS"}</span>
-                  </button>
+                  {coords?.isPcVerified ? (
+                    <div className="px-2.5 py-1.5 bg-emerald-100 border-2 border-emerald-600 text-emerald-950 font-black text-xs rounded-xl flex items-center gap-1 shadow-xs">
+                      <span className="material-symbols-outlined text-base text-emerald-700">verified</span>
+                      <span>Siap Scan</span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={detectLocation}
+                      disabled={isLocating}
+                      className="p-1.5 sm:px-2.5 sm:py-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-xs flex items-center gap-1 shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                      title="Perbarui koordinat GPS sekarang"
+                    >
+                      <span className={`material-symbols-outlined text-base ${isLocating ? "animate-spin" : ""}`}>
+                        refresh
+                      </span>
+                      <span className="hidden sm:inline">{isLocating ? "Mencari..." : "Cek GPS"}</span>
+                    </button>
+                  )}
                   {coords && (
                     <a
                       href={`https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`}
