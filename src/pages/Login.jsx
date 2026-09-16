@@ -69,58 +69,6 @@ export default function Login({ onLogin }) {
     }
   }, []);
 
-  // Inisialisasi Cloudflare Turnstile dengan proteksi timeout ketat
-  useEffect(() => {
-    let timeoutId;
-    let fallbackTimer;
-
-    const tryRender = () => {
-      if (typeof window !== "undefined" && window.turnstile && turnstileSlotRef.current) {
-        try {
-          window.turnstile.render(turnstileSlotRef.current, {
-            sitekey: "0x4AAAAAAExJEjLWiMHh678K",
-            theme: "light",
-            callback: (token) => {
-              setTurnstileToken(token);
-              setIsTurnstileReady(true);
-            },
-            "error-callback": () => {
-              // Jika domain belum terdaftar (110200), langsung aktifkan mode bypass siap login
-              setIsTurnstileReady(true);
-            },
-            "timeout-callback": () => {
-              setIsTurnstileReady(true);
-            },
-          });
-        } catch (e) {
-          setIsTurnstileReady(true);
-        }
-      }
-    };
-
-    if (window.turnstile) {
-      tryRender();
-    } else {
-      const interval = setInterval(() => {
-        if (window.turnstile) {
-          clearInterval(interval);
-          tryRender();
-        }
-      }, 100);
-      timeoutId = setTimeout(() => clearInterval(interval), 1500);
-    }
-
-    // Fail-safe: Jangan biarkan kotak verifikasi kosong/menggantung lebih dari 800ms
-    fallbackTimer = setTimeout(() => {
-      setIsTurnstileReady(true);
-    }, 800);
-
-    return () => {
-      clearTimeout(timeoutId);
-      clearTimeout(fallbackTimer);
-    };
-  }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
