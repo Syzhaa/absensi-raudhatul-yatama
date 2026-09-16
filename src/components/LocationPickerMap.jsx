@@ -170,22 +170,6 @@ export default function LocationPickerMap({
     }
   }, [latNum, lonNum, radiusNum]);
 
-  // Handler: Pasang Titik Resmi Yatama
-  const handleSetOfficialYatama = () => {
-    const offLat = -3.37550000;
-    const offLon = 114.64690000;
-    onChangeCoordinates(offLat, offLon);
-    if (mapInstanceRef.current && markerRef.current && circleRef.current) {
-      markerRef.current.setLatLng([offLat, offLon]);
-      circleRef.current.setLatLng([offLat, offLon]);
-      mapInstanceRef.current.setView([offLat, offLon], 18, { animate: true });
-    }
-    setGpsStatus({
-      success: true,
-      message: "Titik koordinat resmi Raudhatul Yatama (Km. 10 Sungai Lakum) berhasil dipasang!",
-    });
-  };
-
   // Handler: Ambil GPS Saat Ini (dengan fallback & deteksi blokir izin)
   const handleGetCurrentGPS = async () => {
     if (!navigator.geolocation) {
@@ -335,16 +319,39 @@ export default function LocationPickerMap({
     );
   };
 
-  // Handler: Cari Alamat via Nominatim
+  // Handler: Cari Alamat atau Koordinat Paste
   const handleSearchLocation = async (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+    const query = searchQuery.trim();
+    if (!query) return;
+
+    // 1. Cek apakah query adalah format koordinat "lat, lon" langsung (misal dari Google Maps)
+    const coordMatch = query.match(/(-?\d+(\.\d+)?)[,\s]+(-?\d+(\.\d+)?)/);
+    if (coordMatch) {
+      const pLat = parseFloat(coordMatch[1]);
+      const pLon = parseFloat(coordMatch[3]);
+      if (!isNaN(pLat) && !isNaN(pLon) && Math.abs(pLat) <= 90 && Math.abs(pLon) <= 180) {
+        const newLat = parseFloat(pLat.toFixed(8));
+        const newLng = parseFloat(pLon.toFixed(8));
+        onChangeCoordinates(newLat, newLng);
+        if (mapInstanceRef.current && markerRef.current && circleRef.current) {
+          markerRef.current.setLatLng([newLat, newLng]);
+          circleRef.current.setLatLng([newLat, newLng]);
+          mapInstanceRef.current.setView([newLat, newLng], 18, { animate: true });
+        }
+        setGpsStatus({
+          success: true,
+          message: `Koordinat berhasil dipasang: ${newLat}, ${newLng}`,
+        });
+        return;
+      }
+    }
 
     setIsSearching(true);
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          searchQuery
+          query
         )}&countrycodes=id&limit=1`
       );
       const data = await res.json();
@@ -367,7 +374,7 @@ export default function LocationPickerMap({
       } else {
         setGpsStatus({
           success: false,
-          message: "Lokasi tidak ditemukan. Coba ketik kata kunci yang lebih spesifik.",
+          message: "Lokasi tidak ditemukan. Coba ketik nama daerah/jalan atau paste langsung format koordinat (-3.xxxx, 114.xxxx).",
         });
       }
     } catch (err) {
@@ -391,7 +398,7 @@ export default function LocationPickerMap({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari lokasi/alamat madrasah di peta..."
+              placeholder="Cari nama tempat, jalan, atau paste koordinat (mis: -3.3755, 114.6469)..."
               className="w-full pl-8 pr-3 py-2 bg-white border-2 border-gray-900 rounded-xl text-xs font-bold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-green"
             />
             <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-base">
@@ -401,12 +408,12 @@ export default function LocationPickerMap({
           <button
             type="submit"
             disabled={isSearching}
-            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 border-2 border-gray-900 rounded-xl text-xs font-black text-gray-900 shadow-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 border-2 border-gray-900 rounded-xl text-xs font-black text-gray-900 shadow-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
           >
             {isSearching ? (
               <span className="w-3.5 h-3.5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></span>
             ) : (
-              <span>Cari</span>
+              <span>Cari Lokasi</span>
             )}
           </button>
         </form>
@@ -415,20 +422,10 @@ export default function LocationPickerMap({
         <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
           <button
             type="button"
-            onClick={handleSetOfficialYatama}
-            className="px-3 py-2 bg-amber-100 hover:bg-amber-200 border-2 border-gray-900 rounded-xl text-xs font-black text-gray-900 shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-            title="Langsung pasang titik koordinat resmi Raudhatul Yatama di Jl. A. Yani Km. 10"
-          >
-            <span className="material-symbols-outlined text-base text-amber-800">school</span>
-            <span>Titik Resmi Yatama (Km. 10)</span>
-          </button>
-
-          <button
-            type="button"
             onClick={handleGetCurrentGPS}
             disabled={isGettingGPS}
-            className="flex-1 sm:flex-initial px-3 py-2 bg-primary-green hover:bg-emerald-400 border-2 border-gray-900 rounded-xl text-xs font-black text-gray-900 shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
-            title="Deteksi koordinat lokasi fisik Anda saat ini dan jadikan titik sekolah"
+            className="flex-1 sm:flex-initial px-3.5 py-2 bg-primary-green hover:bg-emerald-400 border-2 border-gray-900 rounded-xl text-xs font-black text-gray-900 shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+            title="Deteksi koordinat lokasi fisik Anda saat ini dan pasang sebagai titik sekolah"
           >
             {isGettingGPS ? (
               <span className="w-3.5 h-3.5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></span>
@@ -471,23 +468,14 @@ export default function LocationPickerMap({
             Kotak persetujuan lokasi tidak muncul karena browser Anda menyetel izin situs ini ke <strong>&quot;Diblokir&quot;</strong> sebelumnya.
           </p>
           <div className="bg-white p-3 rounded-xl border border-red-200 text-[11px] space-y-1.5 text-gray-800">
-            <p className="font-black text-gray-900">Cara Mengaktifkan Izin Lokasi:</p>
-            <p>1. Lihat bilah alamat atas browser Anda (tepat di sebelah kiri alamat <code>absen.raudhatulyatama.sch.id</code>).</p>
+            <p className="font-black text-gray-900">Cara Mengaktifkan Izin Lokasi di Browser:</p>
+            <p>1. Lihat bilah alamat atas browser Anda (tepat di sebelah kiri tulisan <code>absen.raudhatulyatama.sch.id</code>).</p>
             <p>2. Klik ikon <strong>Gembok (🔒)</strong> atau ikon <strong>Setelan Situs (tune / slider)</strong>.</p>
             <p>3. Pada bagian <strong>Lokasi (Location)</strong>, ubah dari &quot;Diblokir&quot; menjadi <strong>&quot;Izinkan&quot; (Allow)</strong>.</p>
-            <p>4. Muat ulang / Refresh halaman ini (F5 / tarik ke bawah di HP).</p>
+            <p>4. Muat ulang / Refresh halaman ini (F5 / tarik layar ke bawah di HP).</p>
           </div>
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-[11px] text-gray-600 font-semibold">
-              💡 Alternatif: Anda dapat langsung klik tombol <strong>&quot;Titik Resmi Yatama (Km. 10)&quot;</strong> atau klik langsung di peta tanpa perlu GPS.
-            </span>
-            <button
-              type="button"
-              onClick={handleSetOfficialYatama}
-              className="px-2.5 py-1 bg-emerald-600 text-white font-black text-[11px] rounded-lg hover:bg-emerald-700 cursor-pointer flex-shrink-0 ml-2"
-            >
-              Pasang Titik Resmi Saja
-            </button>
+          <div className="pt-1 text-[11px] text-gray-600 font-semibold">
+            💡 Alternatif Tanpa GPS: Anda dapat langsung <strong>klik titik mana saja di peta</strong>, <strong>geser pin 🏫</strong>, atau <strong>paste koordinat</strong> di kolom pencarian lalu klik <strong>Simpan Pengaturan Lokasi & GPS</strong>.
           </div>
         </div>
       )}
