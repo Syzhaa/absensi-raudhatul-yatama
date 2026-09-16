@@ -4,9 +4,51 @@ import { toPng } from "html-to-image";
 
 export default function StudentCardPrint({ students = [], onClose, type = "student" }) {
   const cardRef = useRef(null);
+  const containerRef = useRef(null);
   const [qrCodes, setQrCodes] = useState({});
   const [logoUrl, setLogoUrl] = useState("/logo.png");
   const [isDownloading, setIsDownloading] = useState(false);
+  const [zoom, setZoom] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth >= 1024 ? 1.4 : (window.innerWidth >= 640 ? 1.15 : 0.95);
+    }
+    return 1.35;
+  });
+  const [noGap, setNoGap] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      if (containerRef.current?.requestFullscreen) {
+        containerRef.current.requestFullscreen();
+      } else if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      }
+      setIsFullscreen(true);
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  const handleFitScreen = () => {
+    if (typeof window === "undefined") return;
+    const availH = window.innerHeight - 120;
+    const fitScale = Math.min(1.85, Math.max(0.75, availH / 360));
+    setZoom(Math.round(fitScale * 20) / 20);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -181,48 +223,120 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col z-[100] overflow-hidden animate-fade-in">
+    <div
+      ref={containerRef}
+      className="fixed inset-0 bg-slate-900/85 backdrop-blur-sm flex flex-col z-[100] overflow-hidden animate-fade-in"
+    >
       {/* Top Action Header */}
-      <div className="bg-white border-b-2 border-gray-900 shadow-md p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 z-10 shrink-0">
+      <div className="bg-white border-b-2 border-gray-900 shadow-md p-2.5 sm:p-3.5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2.5 z-10 shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base sm:text-lg font-black text-gray-900 leading-tight">
+            <h2 className="text-sm sm:text-base font-black text-gray-900 leading-tight">
               Preview Kartu {type === "teacher" ? "Guru & Pendidik" : "Pelajar & Santri"}
             </h2>
-            <p className="text-xs text-gray-500 font-medium">
+            <p className="text-[11px] text-gray-500 font-medium">
               {students.length} Kartu siap cetak atau unduh format PNG
             </p>
           </div>
           <button
             onClick={onClose}
-            className="sm:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+            className="md:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
             title="Tutup"
           >
             <span className="material-symbols-outlined text-xl">close</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Action Toolbar */}
+        <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 justify-end">
+          {/* Celah Toggle (No-Gap) */}
+          <button
+            type="button"
+            onClick={() => setNoGap(!noGap)}
+            className={`px-2.5 py-1.5 rounded-xl border-2 border-gray-900 text-xs font-black flex items-center gap-1 shadow-sm transition-all cursor-pointer ${
+              noGap
+                ? "bg-amber-300 text-gray-900 shadow-neo"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+            title="Ubah celah pemisah antara kartu depan & belakang"
+          >
+            <span className="material-symbols-outlined text-sm">
+              {noGap ? "splitscreen" : "space_bar"}
+            </span>
+            <span>{noGap ? "Tanpa Celah (0mm)" : "Berjarak (16px)"}</span>
+          </button>
+
+          {/* Zoom Toolbar */}
+          <div className="flex items-center bg-gray-100 border-2 border-gray-900 rounded-xl p-0.5 gap-0.5">
+            <button
+              type="button"
+              onClick={() => setZoom((z) => Math.max(0.7, Math.round((z - 0.1) * 10) / 10))}
+              className="px-2 py-1 hover:bg-gray-200 rounded-lg text-xs font-black text-gray-800 transition-colors cursor-pointer"
+              title="Perkecil (-)"
+            >
+              -
+            </button>
+            <span className="px-1.5 text-[11px] font-mono font-black text-gray-900 min-w-[42px] text-center select-none">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={() => setZoom((z) => Math.min(2.0, Math.round((z + 0.1) * 10) / 10))}
+              className="px-2 py-1 hover:bg-gray-200 rounded-lg text-xs font-black text-gray-800 transition-colors cursor-pointer"
+              title="Perbesar (+)"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={handleFitScreen}
+              className="px-2 py-1 bg-white hover:bg-emerald-50 border border-gray-400 rounded-lg text-[10px] font-black text-emerald-800 transition-colors cursor-pointer"
+              title="Sesuaikan ke Ukuran Layar Penuh"
+            >
+              Fit
+            </button>
+          </div>
+
+          {/* Fullscreen Button */}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border-2 border-gray-900 rounded-xl shadow-sm transition-all cursor-pointer hidden sm:flex items-center justify-center"
+            title={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh (Full Screen)"}
+          >
+            <span className="material-symbols-outlined text-base">
+              {isFullscreen ? "fullscreen_exit" : "fullscreen"}
+            </span>
+          </button>
+
+          {/* Download PNG */}
           <button
             onClick={handleDownloadPNG}
             disabled={isDownloading}
-            className="flex-1 sm:flex-initial py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-black rounded-xl border-2 border-gray-900 shadow-neo hover:shadow-neo-lg active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="py-1.5 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+            title="Unduh file gambar PNG beresolusi tinggi"
           >
             <span className="material-symbols-outlined text-base">
               {isDownloading ? "hourglass_empty" : "download"}
             </span>
-            <span>{isDownloading ? "Memproses..." : "Unduh PNG"}</span>
+            <span className="hidden sm:inline">{isDownloading ? "Memproses..." : "Unduh PNG"}</span>
+            <span className="sm:hidden">PNG</span>
           </button>
+
+          {/* Print Card */}
           <button
             onClick={handlePrint}
-            className="flex-1 sm:flex-initial py-2 px-4 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs sm:text-sm font-black rounded-xl border-2 border-gray-900 shadow-neo hover:shadow-neo-lg active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            className="py-1.5 px-3.5 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs font-black rounded-xl border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1 cursor-pointer"
+            title="Buka dialog cetak printer"
           >
             <span className="material-symbols-outlined text-base">print</span>
             <span>Cetak Kartu</span>
           </button>
+
+          {/* Close */}
           <button
             onClick={onClose}
-            className="hidden sm:inline-flex px-4 py-2 font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-xs sm:text-sm border border-gray-300 cursor-pointer"
+            className="hidden md:inline-flex px-3 py-1.5 font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors text-xs border border-gray-300 cursor-pointer"
           >
             Tutup
           </button>
@@ -230,7 +344,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       </div>
 
       {/* Main Preview Container */}
-      <div className="flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-8 bg-slate-200 flex flex-col items-center">
+      <div className="flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6 bg-slate-200/90 flex flex-col items-center justify-center min-h-0">
         <style id="id-card-styles">{`
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
@@ -253,13 +367,28 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             margin-bottom: 24px;
             page-break-inside: avoid;
             flex-shrink: 0;
+            transition: gap 0.2s ease;
           }
           @media (min-width: 640px) {
             .id-card-wrapper {
               flex-direction: row;
-              align-items: flex-start;
+              align-items: center;
+              justify-content: center;
               gap: 16px;
             }
+          }
+          .id-card-wrapper.no-gap {
+            gap: 0px !important;
+          }
+          .id-card-wrapper.no-gap .id-card:first-child {
+            border-top-right-radius: 0px !important;
+            border-bottom-right-radius: 0px !important;
+            border-right: 1.5px dashed #064e3b !important;
+          }
+          .id-card-wrapper.no-gap .id-card:last-child {
+            border-top-left-radius: 0px !important;
+            border-bottom-left-radius: 0px !important;
+            border-left: none !important;
           }
 
           /* CR80 Card Dimensions (Standard ID Card) */
@@ -538,37 +667,67 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
 
           /* PRINT MEDIA OPTIMIZATION */
           @media print {
+            @page {
+              margin: 8mm;
+              size: auto;
+            }
             body {
-              background: #ffffff;
-              padding: 0;
+              background: #ffffff !important;
+              padding: 0 !important;
+              margin: 0 !important;
             }
             .print-container {
-              display: block;
-              gap: 0;
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: center !important;
+              justify-content: flex-start !important;
+              gap: 8mm !important;
+              padding: 0 !important;
+              margin: 0 auto !important;
             }
             .id-card-wrapper {
-              display: block;
-              margin: 0;
-              padding: 0;
+              display: flex !important;
+              flex-direction: row !important;
+              align-items: center !important;
+              justify-content: center !important;
+              gap: 6mm !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              margin-bottom: 8mm !important;
+            }
+            .id-card-wrapper.no-gap {
+              gap: 0mm !important;
             }
             .id-card {
               width: 54mm !important;
               height: 85.6mm !important;
               box-shadow: none !important;
-              border: 1px solid #cbd5e1 !important;
-              page-break-after: always;
-              page-break-inside: avoid;
-              border-radius: 4mm !important;
-              margin: 0;
+              border: 1px solid #94a3b8 !important;
+              border-radius: 3.5mm !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              margin: 0 !important;
             }
-            @page {
-              margin: 0;
-              size: 54mm 85.6mm;
+            .id-card-wrapper.no-gap .id-card:first-child {
+              border-top-right-radius: 0 !important;
+              border-bottom-right-radius: 0 !important;
+              border-right: 1px dashed #064e3b !important;
+            }
+            .id-card-wrapper.no-gap .id-card:last-child {
+              border-top-left-radius: 0 !important;
+              border-bottom-left-radius: 0 !important;
+              border-left: none !important;
             }
           }
         `}</style>
 
-        <div ref={cardRef} className="flex flex-wrap justify-center gap-6 sm:gap-8">
+        <div
+          ref={cardRef}
+          className="flex flex-wrap justify-center items-center gap-6 sm:gap-8 my-auto p-2 sm:p-4"
+          style={{
+            zoom: zoom,
+          }}
+        >
           {students.map((person) => {
             const isTeacher = type === "teacher" || person.nip !== undefined;
 
@@ -605,7 +764,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                 key={person.id}
                 data-id={person.id}
                 data-uuid={person.uuid}
-                className="student-card-print id-card-wrapper"
+                className={`student-card-print id-card-wrapper ${noGap ? "no-gap" : ""}`}
               >
                 {/* FRONT SIDE (DESAIN PREPPY ACADEMY STYLE) */}
                 <div className="id-card">
