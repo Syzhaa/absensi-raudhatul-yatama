@@ -15,7 +15,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     }
     return 1.35;
   });
-  const [noGap, setNoGap] = useState(true);
+  const [noGap, setNoGap] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {
@@ -330,7 +330,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             flex-direction: row;
             align-items: center;
             justify-content: center;
-            gap: 16px;
+            gap: 20px;
             margin-bottom: 24px;
             page-break-inside: avoid;
             flex-shrink: 0;
@@ -649,7 +649,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               flex-direction: row !important;
               align-items: center !important;
               justify-content: center !important;
-              gap: 6mm !important;
+              gap: 8mm !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
               margin-bottom: 8mm !important;
