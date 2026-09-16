@@ -16,11 +16,13 @@ export default function CredentialsModal({
   const defaultEmailSuggestion = () => {
     if (credentials?.email) return credentials.email;
     if (!teacher?.nama) return "";
-    const clean = teacher.nama
+    const withoutSuffix = teacher.nama.split(",")[0];
+    const withoutPrefix = withoutSuffix.replace(/^(dr|prof|ust|ustadz|h|hj)\.?\s+/i, "");
+    const clean = withoutPrefix
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "")
-      .slice(0, 15);
-    return `${clean || "guru" + teacher.id}@yatama.sch.id`;
+      .slice(0, 20);
+    return `${clean || "guru" + teacher.id}@raudhatulyatama.sch.id`;
   };
 
   const [email, setEmail] = useState("");
@@ -31,11 +33,11 @@ export default function CredentialsModal({
 
   useEffect(() => {
     setEmail(defaultEmailSuggestion());
-    // Default password suggestion for quick creation
+    // Default password Yatama10
     if (!isExistingAccount) {
-      setPassword(`yatama${new Date().getFullYear()}`);
+      setPassword("Yatama10");
     } else {
-      setPassword(credentials?.password || "");
+      setPassword(credentials?.password || "Yatama10");
     }
   }, [teacher, credentials, isExistingAccount]);
 
@@ -49,12 +51,13 @@ export default function CredentialsModal({
   };
 
   const handleCopyFormatted = () => {
-    const textToCopy = `*KREDENSIAL LOGIN ABSENSI YATAMA*\n\n` +
+    const textToCopy = `*KREDENSIAL RESMI GURU RAUDHATUL YATAMA*\n\n` +
       `👤 *Nama:* ${teacher?.nama || credentials?.name}\n` +
       `📧 *Email:* ${email}\n` +
-      `🔑 *Password:* ${password || "(Tetap sama)"}\n` +
-      `🌐 *URL Login:* ${window.location.origin}/login\n\n` +
-      `_Harap simpan kredensial ini dan ganti kata sandi secara berkala._`;
+      `🔑 *Password:* ${password || "Yatama10"}\n\n` +
+      `🌐 *Webmail:* https://mail.raudhatulyatama.sch.id\n` +
+      `📱 *Presensi:* https://absen.raudhatulyatama.sch.id/login\n\n` +
+      `_Akun ini otomatis terhubung ke Webmail Madrasah dan Aplikasi Presensi Digital._`;
 
     navigator.clipboard.writeText(textToCopy).then(() => {
       setCopyFeedback(true);
@@ -107,10 +110,10 @@ export default function CredentialsModal({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-gray-900 leading-tight">
-                {isExistingAccount ? "Kelola Kredensial Login" : "Buat Akun & Password Guru"}
+                {isExistingAccount ? "Kelola Kredensial Login" : "Buat Akun Login & Webmail Guru"}
               </h2>
-              <p className="text-[11px] text-gray-500 font-semibold">
-                Sistem Absensi Digital Raudhatul Yatama
+              <p className="text-[11px] text-emerald-800 font-bold">
+                Terhubung ke mail.raudhatulyatama.sch.id & Absensi
               </p>
             </div>
           </div>
@@ -156,18 +159,18 @@ export default function CredentialsModal({
           {/* Email Input */}
           <div className="space-y-1">
             <label className="block text-xs font-black uppercase text-gray-800 tracking-wider">
-              Email Login *
+              Email Resmi Guru *
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="nama.guru@yatama.sch.id"
+              placeholder="nama@raudhatulyatama.sch.id"
               className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl font-mono text-xs sm:text-sm font-bold text-gray-900 focus:outline-none transition-all"
             />
             <p className="text-[10px] text-gray-500 font-medium">
-              Alamat surel unik untuk masuk ke sistem absensi
+              Alamat email resmi di subdomain mail.raudhatulyatama.sch.id & akun login absen
             </p>
           </div>
 
