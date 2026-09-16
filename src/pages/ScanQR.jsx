@@ -94,46 +94,38 @@ export default function ScanQR() {
   const detectLocation = () => {
     const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 
+    // Langsung bypass jika menggunakan Desktop/PC untuk mencegah loading terus menerus (bug browser)
+    if (isDesktop || isAdminRole) {
+      setPcSchoolLocation();
+      return;
+    }
+
     if (!navigator.geolocation) {
-      if (isAdminRole || isDesktop) {
-        setPcSchoolLocation();
-        return;
-      }
       setLocationError("Browser tidak mendukung sensor GPS.");
       return;
     }
+    
     setIsLocating(true);
     setLocationError(null);
 
     const onPosSuccess = (pos) => {
-      // Jika di desktop dan akurasi jelek (IP based), anggap valid sebagai PC sekolah
-      if (isDesktop && pos.coords.accuracy > 200) {
-        setPcSchoolLocation();
-        return;
-      }
-      const c = {
+      setCoords({
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
         accuracy: pos.coords.accuracy,
-      };
-      setCoords(c);
-      coordsRef.current = c;
+      });
+      coordsRef.current = { latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy };
       setIsLocating(false);
     };
 
-    // Coba standard accuracy terlebih dahulu agar cepat di laptop/PC Wi-Fi
     navigator.geolocation.getCurrentPosition(
       onPosSuccess,
       () => {
-        // Jika gagal, coba high accuracy singkat (khusus ponsel/HP)
         navigator.geolocation.getCurrentPosition(
           onPosSuccess,
           (err) => {
             setIsLocating(false);
-            if (isAdminRole || isDesktop) {
-              // Jika ini akun Admin/Petugas atau Desktop, otomatis verifikasi sebagai Komputer Sekolah
-              setPcSchoolLocation();
-            } else if (err.code === 1) {
+            if (err.code === 1) {
               setLocationError("Izin lokasi ditolak. Silakan izinkan akses lokasi (GPS) di browser Anda.");
             } else {
               setLocationError("Perangkat tidak memiliki sensor GPS satelit.");
