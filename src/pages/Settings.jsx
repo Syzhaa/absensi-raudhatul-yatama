@@ -7,6 +7,7 @@ import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { PageHeaderSkeleton, FormCardSkeleton } from "../components/Skeleton";
 import { AVAILABLE_PAGES, DEFAULT_PERMISSIONS } from "../auth/accessPolicy";
 import LocationPickerMap from "../components/LocationPickerMap";
+import { useNoticeStore } from "../store/useNoticeStore";
 
 // TimeInput Helper
 function TimeInput({ label, value, onChange, description, required = true }) {
@@ -208,7 +209,7 @@ export default function Settings() {
       queryClient.invalidateQueries();
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
-      alert("Pengaturan berhasil disimpan!");
+      useNoticeStore.getState().showSuccess("Pengaturan sistem & geofencing berhasil disimpan.");
     },
     onError: (error) => {
       const resData = error.response?.data;
@@ -217,7 +218,7 @@ export default function Settings() {
         const errorDetails = Object.values(resData.errors).flat().join(" | ");
         errorMsg += ": " + errorDetails;
       }
-      alert("Gagal menyimpan: " + errorMsg);
+      useNoticeStore.getState().showError("Gagal menyimpan pengaturan: " + errorMsg);
     },
   });
 
@@ -234,9 +235,9 @@ export default function Settings() {
       });
       setShowClearAllModal(false);
       queryClient.invalidateQueries();
-      alert("Semua data absensi berhasil dikosongkan.");
+      useNoticeStore.getState().showSuccess("Semua data riwayat absensi berhasil dikosongkan.");
     } catch (err) {
-      alert("Gagal menghapus data: " + (err.response?.data?.message || err.message));
+      useNoticeStore.getState().showError("Gagal menghapus data: " + (err.response?.data?.message || err.message));
     } finally {
       setIsClearingAll(false);
     }

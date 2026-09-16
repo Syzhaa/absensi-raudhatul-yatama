@@ -4,6 +4,7 @@ import api from "../services/api";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { PageHeaderSkeleton, FormCardSkeleton } from "../components/Skeleton";
 import WhatsappChannelsManager from "../components/WhatsappChannelsManager";
+import { useNoticeStore } from "../store/useNoticeStore";
 
 export default function WhatsappApi() {
   const queryClient = useQueryClient();
@@ -102,10 +103,10 @@ export default function WhatsappApi() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(["whatsapp_settings", effectiveLembaga]);
-      alert("Pengaturan WhatsApp API berhasil disimpan.");
+      useNoticeStore.getState().showSuccess("Pengaturan WhatsApp API berhasil disimpan.");
     },
     onError: (err) => {
-      alert(err.response?.data?.message || "Gagal menyimpan pengaturan WhatsApp.");
+      useNoticeStore.getState().showError(err.response?.data?.message || "Gagal menyimpan pengaturan WhatsApp.");
     },
   });
 
@@ -177,7 +178,7 @@ export default function WhatsappApi() {
   const handleTest = (e) => {
     e.preventDefault();
     if (!formData.wa_api_key.trim()) {
-      alert("Masukkan API Key terlebih dahulu.");
+      useNoticeStore.getState().showWarning("Masukkan API Key terlebih dahulu.");
       return;
     }
     setTestResult(null);
@@ -192,11 +193,11 @@ export default function WhatsappApi() {
     e.preventDefault();
     const isGroup = formData.wa_target_type === "group";
     if (!isGroup && !customPhone.trim()) {
-      alert("Masukkan atau pilih nomor WhatsApp tujuan simulasi.");
+      useNoticeStore.getState().showWarning("Masukkan atau pilih nomor WhatsApp tujuan simulasi.");
       return;
     }
     if (!isGroup && saveAsNewRecipient && !newRecipientName.trim()) {
-      alert("Masukkan nama label untuk nomor tester baru.");
+      useNoticeStore.getState().showWarning("Masukkan nama label untuk nomor tester baru.");
       return;
     }
 

@@ -9,6 +9,7 @@ import StudentCardPrint from "../components/StudentCardPrint";
 import PromoteClassModal from "../components/PromoteClassModal";
 import ExcelImportModal from "../components/ExcelImportModal";
 import Modal from "../components/Modal";
+import { useNoticeStore } from "../store/useNoticeStore";
 import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -75,12 +76,13 @@ export default function Students() {
     onSuccess: () => {
       queryClient.invalidateQueries(["students"]);
       resetForm();
-      setSuccessModal({ isOpen: true, message: "Siswa berhasil ditambahkan" });
+      useNoticeStore.getState().showSuccess("Data siswa berhasil ditambahkan ke sistem.");
     },
     onError: (error) => {
       const msg = error.response?.data?.message || error.message || "Unknown error";
       const errors = error.response?.data?.errors;
-      alert(`Gagal menambah siswa: ${msg}\n${errors ? JSON.stringify(errors, null, 2) : ""}`);
+      const details = errors ? Object.values(errors).flat().join("\n") : "";
+      useNoticeStore.getState().showError(`Gagal menambah siswa: ${msg}${details ? "\n\n" + details : ""}`);
     },
   });
 
@@ -89,12 +91,13 @@ export default function Students() {
     onSuccess: () => {
       queryClient.invalidateQueries(["students"]);
       resetForm();
-      setSuccessModal({ isOpen: true, message: "Siswa berhasil diupdate" });
+      useNoticeStore.getState().showSuccess("Data siswa berhasil diperbarui.");
     },
     onError: (error) => {
       const msg = error.response?.data?.message || error.message || "Unknown error";
       const errors = error.response?.data?.errors;
-      alert(`Gagal update siswa: ${msg}\n${errors ? JSON.stringify(errors, null, 2) : ""}`);
+      const details = errors ? Object.values(errors).flat().join("\n") : "";
+      useNoticeStore.getState().showError(`Gagal update siswa: ${msg}${details ? "\n\n" + details : ""}`);
     },
   });
 
@@ -102,10 +105,10 @@ export default function Students() {
     mutationFn: studentService.delete,
     onSuccess: () => {
       queryClient.invalidateQueries(["students"]);
-      setSuccessModal({ isOpen: true, message: "Siswa berhasil dihapus" });
+      useNoticeStore.getState().showSuccess("Data siswa berhasil dihapus.");
     },
     onError: (error) => {
-      alert("Gagal menghapus siswa: " + (error.message || "Unknown error"));
+      useNoticeStore.getState().showError("Gagal menghapus siswa: " + (error.message || "Unknown error"));
     },
   });
 
@@ -123,13 +126,12 @@ export default function Students() {
       setSelectedStudents([]);
       setShowPromoteModal(false);
       setTargetKelas("");
-      setSuccessModal({
-        isOpen: true,
-        message: data.message || `Berhasil menaikkan ${data.data.count} siswa ke kelas ${data.data.target_kelas}`,
-      });
+      useNoticeStore.getState().showSuccess(
+        data.message || `Berhasil menaikkan ${data.data.count} siswa ke kelas ${data.data.target_kelas}`
+      );
     },
     onError: (error) => {
-      alert(error.response?.data?.message || "Gagal menaikkan kelas siswa");
+      useNoticeStore.getState().showError(error.response?.data?.message || "Gagal menaikkan kelas siswa");
     },
   });
 
@@ -232,7 +234,7 @@ export default function Students() {
 
   const handlePromoteClass = () => {
     if (selectedStudents.length === 0) {
-      alert("Pilih siswa terlebih dahulu");
+      useNoticeStore.getState().showWarning("Pilih minimal satu siswa terlebih dahulu.");
       return;
     }
     setShowPromoteModal(true);
@@ -240,7 +242,7 @@ export default function Students() {
 
   const handleSubmitPromote = () => {
     if (!targetKelas) {
-      alert("Pilih kelas tujuan terlebih dahulu");
+      useNoticeStore.getState().showWarning("Pilih kelas tujuan kenaikan kelas.");
       return;
     }
 
@@ -324,7 +326,7 @@ export default function Students() {
 
   const handleBatchPrintQR = () => {
     if (selectedStudents.length === 0) {
-      alert("Pilih siswa terlebih dahulu");
+      useNoticeStore.getState().showWarning("Pilih minimal satu siswa terlebih dahulu.");
       return;
     }
     const selectedData = students.filter((s) =>
@@ -345,13 +347,10 @@ export default function Students() {
         .then(() => {
           queryClient.invalidateQueries(["students"]);
           setSelectedStudents([]);
-          setSuccessModal({
-            isOpen: true,
-            message: `${count} siswa berhasil dihapus.`,
-          });
+          useNoticeStore.getState().showSuccess(`${count} siswa berhasil dihapus.`);
         })
         .catch((err) => {
-          alert("Gagal menghapus sebagian siswa: " + (err.message || "Unknown error"));
+          useNoticeStore.getState().showError("Gagal menghapus sebagian siswa: " + (err.message || "Unknown error"));
           queryClient.invalidateQueries(["students"]);
         });
     }
@@ -368,7 +367,7 @@ export default function Students() {
       link.href = canvas.toDataURL();
       link.click();
     } catch (error) {
-      alert("Gagal download QR: " + error.message);
+      useNoticeStore.getState().showError("Gagal download QR: " + error.message);
     }
   };
 

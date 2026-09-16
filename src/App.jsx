@@ -11,6 +11,7 @@ import { useAppStore } from "./store/useAppStore";
 import { canAccessPath, getFirstAllowedPath } from "./auth/accessPolicy";
 import WhatsappApi from "./pages/WhatsappApi";
 import { CardSkeleton, PageHeaderSkeleton } from "./components/Skeleton";
+import GlobalNoticeModal from "./components/GlobalNoticeModal";
 
 // Lazy load heavy components
 const ScanQR = lazy(() => import("./pages/ScanQR"));
@@ -147,116 +148,122 @@ function App() {
 
   if (!isAuthenticated) {
     return (
-      <Suspense fallback={<div className="p-8 text-center font-bold text-gray-500">Memuat...</div>}>
-        <Routes>
-          <Route
-            path="/login"
-            element={<Login onLogin={() => setIsAuthenticated(true)} />}
-          />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Suspense>
+      <>
+        <Suspense fallback={<div className="p-8 text-center font-bold text-gray-500">Memuat...</div>}>
+          <Routes>
+            <Route
+              path="/login"
+              element={<Login onLogin={() => setIsAuthenticated(true)} />}
+            />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Suspense>
+        <GlobalNoticeModal />
+      </>
     );
   }
 
   return (
-    <Layout>
-      <Suspense
-        fallback={
-          <div className="w-full space-y-4 animate-fade-in p-4 sm:p-6">
-            <PageHeaderSkeleton />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              <CardSkeleton />
-              <CardSkeleton />
-              <CardSkeleton />
+    <>
+      <Layout>
+        <Suspense
+          fallback={
+            <div className="w-full space-y-4 animate-fade-in p-4 sm:p-6">
+              <PageHeaderSkeleton />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <CardSkeleton />
+                <CardSkeleton />
+                <CardSkeleton />
+              </div>
             </div>
-          </div>
-        }
-      >
-        <Routes>
-          <Route
-            path="/"
-            element={
-              canAccessPath(userRole, "/", userPermissions)
-                ? <Dashboard />
-                : <Navigate to={getFirstAllowedPath(userRole, userPermissions)} replace />
-            }
-          />
-          <Route
-            path="/scan"
-            element={
-              canAccessPath(userRole, "/scan", userPermissions)
-                ? <ScanQR />
-                : <Navigate to="/" replace />
-            }
-          />
-          <Route
-            path="/students"
-            element={canAccessPath(userRole, "/students", userPermissions) ? <Students /> : <Navigate to="/" replace />}
-          />
-          <Route
-            path="/teachers"
-            element={canAccessPath(userRole, "/teachers", userPermissions) ? <Teachers /> : <Navigate to="/" replace />}
-          />
-          <Route
-            path="/attendance"
-            element={
-              canAccessPath(userRole, "/attendance", userPermissions)
-                ? (userRole === "guru" ? <GuruAttendance /> : <Attendance />)
-                : <Navigate to="/" replace />
-            }
-          />
-          <Route
-            path="/holidays"
-            element={canAccessPath(userRole, "/holidays", userPermissions) ? <Holidays /> : <Navigate to="/" replace />}
-          />
-          <Route
-            path="/users"
-            element={canAccessPath(userRole, "/users", userPermissions) ? <Users /> : <Navigate to="/" replace />}
-          />
-          <Route
-            path="/profile"
-            element={<Profile />}
-          />
-          <Route
-            path="/settings"
-            element={
-              canAccessPath(userRole, "/settings", userPermissions)
-                ? <Settings onLogout={() => setIsAuthenticated(false)} />
-                : <Navigate to="/" replace />
-            }
-          />
-          <Route
-            path="/whatsapp-api"
-            element={
-              canAccessPath(userRole, "/whatsapp-api", userPermissions)
-                ? <WhatsappApi />
-                : <Navigate to="/" replace />
-            }
-          />
-          <Route
-            path="/whatsapp-templates"
-            element={
-              canAccessPath(userRole, "/whatsapp-templates", userPermissions)
-                ? <WhatsappTemplates />
-                : <Navigate to="/" replace />
-            }
-          />
-          <Route
-            path="/report"
-            element={canAccessPath(userRole, "/report", userPermissions) ? <Report /> : <Navigate to="/" replace />}
-          />
-          <Route
-            path="/guide"
-            element={canAccessPath(userRole, "/guide", userPermissions) ? <Guide /> : <Navigate to="/" replace />}
-          />
-          <Route
-            path="*"
-            element={<Navigate to={canAccessPath(userRole, "/", userPermissions) ? "/" : getFirstAllowedPath(userRole, userPermissions)} replace />}
-          />
-        </Routes>
-      </Suspense>
-    </Layout>
+          }
+        >
+          <Routes>
+            <Route
+              path="/"
+              element={
+                canAccessPath(userRole, "/", userPermissions)
+                  ? <Dashboard />
+                  : <Navigate to={getFirstAllowedPath(userRole, userPermissions)} replace />
+              }
+            />
+            <Route
+              path="/scan"
+              element={
+                canAccessPath(userRole, "/scan", userPermissions)
+                  ? <ScanQR />
+                  : <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/students"
+              element={canAccessPath(userRole, "/students", userPermissions) ? <Students /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/teachers"
+              element={canAccessPath(userRole, "/teachers", userPermissions) ? <Teachers /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/attendance"
+              element={
+                canAccessPath(userRole, "/attendance", userPermissions)
+                  ? (userRole === "guru" ? <GuruAttendance /> : <Attendance />)
+                  : <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/holidays"
+              element={canAccessPath(userRole, "/holidays", userPermissions) ? <Holidays /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/users"
+              element={canAccessPath(userRole, "/users", userPermissions) ? <Users /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/profile"
+              element={<Profile />}
+            />
+            <Route
+              path="/settings"
+              element={
+                canAccessPath(userRole, "/settings", userPermissions)
+                  ? <Settings onLogout={() => setIsAuthenticated(false)} />
+                  : <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/whatsapp-api"
+              element={
+                canAccessPath(userRole, "/whatsapp-api", userPermissions)
+                  ? <WhatsappApi />
+                  : <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/whatsapp-templates"
+              element={
+                canAccessPath(userRole, "/whatsapp-templates", userPermissions)
+                  ? <WhatsappTemplates />
+                  : <Navigate to="/" replace />
+              }
+            />
+            <Route
+              path="/report"
+              element={canAccessPath(userRole, "/report", userPermissions) ? <Report /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="/guide"
+              element={canAccessPath(userRole, "/guide", userPermissions) ? <Guide /> : <Navigate to="/" replace />}
+            />
+            <Route
+              path="*"
+              element={<Navigate to={canAccessPath(userRole, "/", userPermissions) ? "/" : getFirstAllowedPath(userRole, userPermissions)} replace />}
+            />
+          </Routes>
+        </Suspense>
+      </Layout>
+      <GlobalNoticeModal />
+    </>
   );
 }
 

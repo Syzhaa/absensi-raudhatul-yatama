@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import whatsappChannelsService from "../services/whatsappChannels";
 import WhatsappChannelForm from "./WhatsappChannelForm";
+import { useNoticeStore } from "../store/useNoticeStore";
 
 export default function WhatsappChannelsManager({ effectiveLembaga }) {
   const queryClient = useQueryClient();
@@ -28,10 +29,10 @@ export default function WhatsappChannelsManager({ effectiveLembaga }) {
       queryClient.invalidateQueries(["whatsapp-channels", effectiveLembaga]);
       setIsFormOpen(false);
       setSelectedChannel(null);
-      alert("Saluran WhatsApp berhasil ditambahkan.");
+      useNoticeStore.getState().showSuccess("Saluran WhatsApp berhasil ditambahkan.");
     },
     onError: (err) => {
-      alert(err.response?.data?.message || "Gagal menambahkan saluran WhatsApp.");
+      useNoticeStore.getState().showError(err.response?.data?.message || "Gagal menambahkan saluran WhatsApp.");
     },
   });
 
@@ -41,10 +42,10 @@ export default function WhatsappChannelsManager({ effectiveLembaga }) {
       queryClient.invalidateQueries(["whatsapp-channels", effectiveLembaga]);
       setIsFormOpen(false);
       setSelectedChannel(null);
-      alert("Saluran WhatsApp berhasil diperbarui.");
+      useNoticeStore.getState().showSuccess("Saluran WhatsApp berhasil diperbarui.");
     },
     onError: (err) => {
-      alert(err.response?.data?.message || "Gagal memperbarui saluran WhatsApp.");
+      useNoticeStore.getState().showError(err.response?.data?.message || "Gagal memperbarui saluran WhatsApp.");
     },
   });
 
@@ -52,10 +53,10 @@ export default function WhatsappChannelsManager({ effectiveLembaga }) {
     mutationFn: (id) => whatsappChannelsService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries(["whatsapp-channels", effectiveLembaga]);
-      alert("Saluran WhatsApp berhasil dihapus.");
+      useNoticeStore.getState().showSuccess("Saluran WhatsApp berhasil dihapus.");
     },
     onError: (err) => {
-      alert(err.response?.data?.message || "Gagal menghapus saluran WhatsApp.");
+      useNoticeStore.getState().showError(err.response?.data?.message || "Gagal menghapus saluran WhatsApp.");
     },
   });
 
@@ -65,7 +66,7 @@ export default function WhatsappChannelsManager({ effectiveLembaga }) {
       queryClient.invalidateQueries(["whatsapp-channels", effectiveLembaga]);
     },
     onError: (err) => {
-      alert(err.response?.data?.message || "Gagal memperbarui status saluran.");
+      useNoticeStore.getState().showError(err.response?.data?.message || "Gagal memperbarui status saluran.");
     },
   });
 
