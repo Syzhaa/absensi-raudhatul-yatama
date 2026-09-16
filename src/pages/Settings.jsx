@@ -339,7 +339,7 @@ export default function Settings() {
             }`}
           >
             <span className="material-symbols-outlined text-sm">pin_drop</span>
-            <span>Lokasi & Guru</span>
+            <span>Lokasi & GPS</span>
           </button>
           <button
             type="button"
@@ -553,107 +553,19 @@ export default function Settings() {
         </form>
       )}
 
-      {/* TAB: Lokasi GPS & Presensi Guru */}
+      {/* TAB: Lokasi GPS & Maps */}
       {activeTab === "lokasi" && (
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Card 1: Link Presensi Mandiri Guru */}
-          <div className="bg-emerald-50/70 border-2 md:border-3 border-emerald-600 rounded-2xl p-4 md:p-5 shadow-neo space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center flex-shrink-0 border-2 border-gray-900 shadow-sm">
-                  <span className="material-symbols-outlined text-2xl">link</span>
-                </div>
-                <div>
-                  <h3 className="font-black text-sm md:text-base text-gray-900">
-                    Tautan Khusus Presensi Mandiri Guru ({effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA"})
-                  </h3>
-                  <p className="text-xs text-gray-600 font-medium mt-0.5 leading-relaxed">
-                    Bagikan tautan ini kepada dewan guru. Guru cukup membuka link ini di HP mereka untuk melakukan presensi mandiri (scan QR atau NIP / NUPTK / NPK) tanpa harus login akun.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={handleCopyPortalLink}
-                  className="px-3.5 py-2 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-xs text-gray-900 shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-base text-emerald-600">
-                    {copiedLink ? "check_circle" : "content_copy"}
-                  </span>
-                  <span>{copiedLink ? "Tersalin!" : "Salin Link Guru"}</span>
-                </button>
-
-                <a
-                  href={teacherPortalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3.5 py-2 bg-primary-green hover:bg-emerald-400 border-2 border-gray-900 rounded-xl font-black text-xs text-gray-900 shadow-sm flex items-center gap-1.5 transition-all"
-                >
-                  <span className="material-symbols-outlined text-base">open_in_new</span>
-                  <span>Buka Link</span>
-                </a>
-              </div>
-            </div>
-
-            <div className="p-2.5 bg-white border-2 border-emerald-300 rounded-xl font-mono text-xs text-gray-800 break-all select-all">
-              {teacherPortalUrl}
-            </div>
-          </div>
-
-          {/* Card 2: Aturan Akses Guru (Toggle ON/OFF per Lembaga) */}
+          {/* Card 1: Aturan Validasi Lokasi GPS di Halaman Scan */}
           <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-5 shadow-neo space-y-4">
             <div className="flex items-center gap-2.5 border-b border-gray-200 pb-3">
-              <span className="material-symbols-outlined text-xl text-primary-green">toggle_on</span>
+              <span className="material-symbols-outlined text-xl text-primary-green">radar</span>
               <h3 className="font-black text-sm md:text-base text-gray-900">
-                Aturan Akses Presensi Guru ({effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA"})
+                Aturan Validasi Lokasi GPS Presensi (/scan) • {effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA"}
               </h3>
             </div>
 
-            {/* Toggle 1: Izinkan Guru Presensi Mandiri via Link */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl">
-              <div className="pr-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-black text-xs sm:text-sm text-gray-900">
-                    Izinkan Presensi Mandiri Guru via Link
-                  </span>
-                  <span
-                    className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
-                      formData.enable_teacher_self_scan
-                        ? "bg-emerald-100 border-emerald-500 text-emerald-800"
-                        : "bg-red-100 border-red-500 text-red-800"
-                    }`}
-                  >
-                    {formData.enable_teacher_self_scan ? "DIIZINKAN (ON)" : "DITUTUP (OFF)"}
-                  </span>
-                </div>
-                <p className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5 leading-relaxed">
-                  Jika dimatikan (OFF), guru yang membuka link presensi tidak dapat melakukan presensi mandiri dan akan muncul peringatan bahwa akses sedang ditutup oleh Admin sekolah.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    enable_teacher_self_scan: !prev.enable_teacher_self_scan,
-                  }))
-                }
-                className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-gray-900 transition-colors duration-200 ease-in-out focus:outline-none ${
-                  formData.enable_teacher_self_scan ? "bg-primary-green" : "bg-gray-300"
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white border-2 border-gray-900 shadow-sm transition duration-200 ease-in-out mt-0.5 ${
-                    formData.enable_teacher_self_scan ? "translate-x-6" : "translate-x-0.5"
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* Toggle 2: Wajibkan Validasi Lokasi GPS (Geofencing) */}
+            {/* Toggle: Wajibkan Validasi Lokasi GPS (Geofencing) */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl">
               <div className="pr-2">
                 <div className="flex items-center gap-2">
@@ -671,7 +583,7 @@ export default function Settings() {
                   </span>
                 </div>
                 <p className="text-[11px] sm:text-xs text-gray-500 font-medium mt-0.5 leading-relaxed">
-                  Jika aktif (ON), browser HP guru wajib mendeteksi lokasi GPS dan hanya dapat presensi jika berada di dalam radius sekolah yang ditentukan.
+                  Jika aktif (ON), saat membuka halaman /scan perangkat wajib mendeteksi lokasi GPS dan pemindaian hanya sah jika berada di dalam radius madrasah.
                 </p>
               </div>
 

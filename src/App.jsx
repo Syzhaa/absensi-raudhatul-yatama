@@ -24,7 +24,6 @@ const Profile = lazy(() => import("./pages/Profile"));
 const WhatsappTemplates = lazy(() => import("./pages/WhatsappTemplates"));
 const Report = lazy(() => import("./pages/Report"));
 const Guide = lazy(() => import("./pages/Guide"));
-const ScanGuru = lazy(() => import("./pages/ScanGuru"));
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -148,7 +147,6 @@ function App() {
             path="/login"
             element={<Login onLogin={() => setIsAuthenticated(true)} />}
           />
-          <Route path="/scan-guru" element={<ScanGuru />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Suspense>
@@ -245,10 +243,6 @@ function App() {
           <Route
             path="/guide"
             element={canAccessPath(userRole, "/guide", userPermissions) ? <Guide /> : <Navigate to="/" replace />}
-          />
-          <Route
-            path="/scan-guru"
-            element={<ScanGuru />}
           />
           <Route
             path="*"

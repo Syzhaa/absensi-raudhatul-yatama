@@ -10,6 +10,7 @@ export function useScanner({
   setScanning,
   setResult,
   setCameraError,
+  onBeforeScan,
 }) {
   const startScanning = async () => {
     setCameraError(null);
@@ -40,6 +41,23 @@ export function useScanner({
               )
                 return;
               lastScannedRef.current = decodedText;
+
+              if (onBeforeScan) {
+                const check = onBeforeScan();
+                if (check && !check.valid) {
+                  setResult({
+                    success: false,
+                    message: check.message || "Lokasi Anda di luar jangkauan sekolah.",
+                  });
+                  playErrorSound();
+                  setTimeout(() => {
+                    if (lastScannedRef.current === decodedText) {
+                      lastScannedRef.current = null;
+                    }
+                  }, 3000);
+                  return;
+                }
+              }
 
               if (!navigator.onLine) {
                 // Offline fallback

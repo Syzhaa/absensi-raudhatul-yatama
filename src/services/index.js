@@ -82,7 +82,7 @@ export const attendanceService = {
   },
 
   // New: Auto-detect scan (student or teacher) with Anti-Bypass Signature
-  scan: async (uuid, scanType = null) => {
+  scan: async (uuid, scanType = null, coords = null) => {
     const timestamp = Date.now();
     const secret = import.meta.env.VITE_SCAN_SECRET;
     
@@ -98,12 +98,18 @@ export const attendanceService = {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    const response = await api.post("/attendance/scan", {
+    const payload = {
       uuid,
       scan_type: scanType,
       timestamp,
       signature,
-    });
+    };
+    if (coords?.latitude && coords?.longitude) {
+      payload.latitude = coords.latitude;
+      payload.longitude = coords.longitude;
+    }
+
+    const response = await api.post("/attendance/scan", payload);
     return response.data;
   },
 

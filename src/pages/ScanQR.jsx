@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import api from "../services/api";
 import { attendanceService } from "../services";
 import { useAppStore } from "../store/useAppStore";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
@@ -9,6 +10,21 @@ import ScanResultModal from "../components/ScanResultModal";
 import ManualAttendanceForm from "../components/ManualAttendanceForm";
 import RecentScanLogs from "../components/RecentScanLogs";
 import { playSuccessSound, playErrorSound, playCheckoutSound } from "../utils/scanAudio";
+
+// Formula Haversine: Hitung jarak akurat antar titik koordinat dalam satuan meter
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 export default function ScanQR() {
   const [scanning, setScanning] = useState(false);
@@ -27,6 +43,77 @@ export default function ScanQR() {
   const scanTypeRef = useRef("check_in");
   const queryClient = useQueryClient();
   const { effectiveLembaga } = useEffectiveLembaga();
+
+  // Fetch school settings (GPS coordinates & radius)
+  const { data: settingsData } = useQuery({
+    queryKey: ["attendance-settings", effectiveLembaga],
+    queryFn: () =>
+      api
+        .get("/attendance/settings", {
+          params: effectiveLembaga ? { lembaga: effectiveLembaga } : {},
+        })
+        .then((r) => r.data),
+    staleTime: 5 * 60 * 1000,
+  });
+  const settings = settingsData?.data || {};
+
+  // GPS Location states & detection
+  const [coords, setCoords] = useState(null);
+  const [locationError, setLocationError] = useState(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const coordsRef = useRef(null);
+
+  const isLocationRequired = Boolean(settings.enable_location_check);
+  const schoolLat = settings.latitude ? parseFloat(settings.latitude) : -3.37651;
+  const schoolLon = settings.longitude ? parseFloat(settings.longitude) : 114.64682;
+  const radiusMax = settings.radius_meters ? parseInt(settings.radius_meters, 10) : 100;
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Browser tidak mendukung sensor GPS.");
+      return;
+    }
+    setIsLocating(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const c = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        };
+        setCoords(c);
+        coordsRef.current = c;
+        setIsLocating(false);
+      },
+      (err) => {
+        setIsLocating(false);
+        if (err.code === 1) {
+          setLocationError("Izin lokasi ditolak. Silakan izinkan akses lokasi (GPS) di browser Anda.");
+        } else if (err.code === 2) {
+          setLocationError("Sinyal GPS tidak ditemukan. Pastikan GPS perangkat aktif.");
+        } else {
+          setLocationError("Waktu deteksi lokasi GPS habis. Silakan coba kembali.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+    );
+  };
+
+  useEffect(() => {
+    if (isLocationRequired) {
+      detectLocation();
+    }
+  }, [isLocationRequired, effectiveLembaga]);
+
+  const currentDistance =
+    coords && schoolLat && schoolLon
+      ? getDistance(coords.latitude, coords.longitude, schoolLat, schoolLon)
+      : null;
+
+  const isWithinRadius =
+    !isLocationRequired ||
+    (currentDistance !== null && currentDistance <= radiusMax);
 
   // Fetch recent logs
   const { data: recentLogs } = useQuery({
@@ -55,7 +142,7 @@ export default function ScanQR() {
   }, [queryClient]);
 
   const scanMutation = useMutation({
-    mutationFn: (uuid) => attendanceService.scan(uuid, scanTypeRef.current),
+    mutationFn: (uuid) => attendanceService.scan(uuid, scanTypeRef.current, coordsRef.current),
     onSuccess: (data) => {
       const activeScanType = scanTypeRef.current;
       setResult({
@@ -128,6 +215,24 @@ export default function ScanQR() {
     },
   });
 
+  const onBeforeScan = () => {
+    if (isLocationRequired) {
+      if (!coordsRef.current) {
+        return {
+          valid: false,
+          message: "Lokasi GPS belum terdeteksi. Silakan klik tombol 'Refresh GPS' di atas kamera.",
+        };
+      }
+      if (currentDistance !== null && currentDistance > radiusMax) {
+        return {
+          valid: false,
+          message: `Di luar jangkauan sekolah (${Math.round(currentDistance)}m). Presensi hanya sah di lingkungan sekolah (maks ${radiusMax}m).`,
+        };
+      }
+    }
+    return { valid: true };
+  };
+
   const { startScanning, stopScanning } = useScanner({
     html5QrCodeRef,
     lastScannedRef,
@@ -136,6 +241,7 @@ export default function ScanQR() {
     setScanning,
     setResult,
     setCameraError,
+    onBeforeScan,
   });
 
   useEffect(() => {
@@ -210,6 +316,102 @@ export default function ScanQR() {
               <span className="material-symbols-outlined text-lg">logout</span>
               <span>PULANG</span>
             </button>
+          </div>
+
+          {/* GPS Location Status Banner */}
+          <div className="mb-3.5">
+            {isLocationRequired ? (
+              <div
+                className={`p-3 rounded-2xl border-2 md:border-3 border-gray-900 flex items-center justify-between shadow-neo transition-all ${
+                  isLocating
+                    ? "bg-amber-50"
+                    : locationError
+                    ? "bg-red-50"
+                    : isWithinRadius
+                    ? "bg-emerald-50"
+                    : "bg-red-50"
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                  <div
+                    className={`w-9 h-9 rounded-xl border-2 border-gray-900 flex items-center justify-center flex-shrink-0 shadow-sm ${
+                      isLocating
+                        ? "bg-amber-200 text-amber-900"
+                        : locationError
+                        ? "bg-red-200 text-red-900"
+                        : isWithinRadius
+                        ? "bg-primary-green text-gray-900"
+                        : "bg-red-200 text-red-900"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-xl">
+                      {isLocating ? "radar" : isWithinRadius ? "pin_drop" : "location_off"}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-black text-xs sm:text-sm text-gray-900">
+                        {isLocating
+                          ? "Mendeteksi Lokasi GPS..."
+                          : locationError
+                          ? "Izin Lokasi GPS Diperlukan"
+                          : isWithinRadius
+                          ? "Lokasi Sah: Di Lingkungan Sekolah"
+                          : "Di Luar Jangkauan Sekolah"}
+                      </span>
+                      {coords && (
+                        <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded border ${
+                          isWithinRadius ? "bg-emerald-100 border-emerald-400 text-emerald-900" : "bg-red-100 border-red-400 text-red-900"
+                        }`}>
+                          {currentDistance !== null ? `${Math.round(currentDistance)}m` : ""} / Maks {radiusMax}m
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-600 font-medium truncate mt-0.5">
+                      {isLocating
+                        ? "Menghubungkan sensor koordinat perangkat..."
+                        : locationError || (isWithinRadius
+                            ? `Jarak ${currentDistance !== null ? Math.round(currentDistance) : 0}m dari titik pusat (${effectiveLembaga?.toUpperCase() || "MA"})`
+                            : `Jarak ${Math.round(currentDistance || 0)}m melebihi batas toleransi radius ${radiusMax}m.`)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={detectLocation}
+                    disabled={isLocating}
+                    className="p-1.5 sm:px-2.5 sm:py-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-xs flex items-center gap-1 shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                    title="Perbarui koordinat GPS sekarang"
+                  >
+                    <span className={`material-symbols-outlined text-base ${isLocating ? "animate-spin" : ""}`}>
+                      refresh
+                    </span>
+                    <span className="hidden sm:inline">{isLocating ? "Mencari..." : "Cek GPS"}</span>
+                  </button>
+                  {coords && (
+                    <a
+                      href={`https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-xs flex items-center shadow-sm transition-colors text-blue-700"
+                      title="Buka titik koordinat saya di Google Maps"
+                    >
+                      <span className="material-symbols-outlined text-base">map</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-2.5 bg-gray-50 border-2 border-gray-300 rounded-2xl flex items-center justify-between text-xs text-gray-600">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base text-gray-500">public</span>
+                  <span className="font-bold">Validasi Radius GPS: Nonaktif (Bebas Lokasi)</span>
+                </div>
+                <span className="text-[10px] font-mono text-gray-400">Pengaturan Sekolah</span>
+              </div>
+            )}
           </div>
 
           {/* 2. Area Kamera (Viewfinder) - Hidden when manual form active */}
