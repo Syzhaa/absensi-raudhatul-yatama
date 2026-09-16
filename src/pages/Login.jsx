@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from "react";
-import { Turnstile } from "@marsidev/react-turnstile";
+import { useState, useEffect } from "react";
 import { authService } from "../services";
 
 import { useAppStore } from "../store/useAppStore";
@@ -32,9 +31,7 @@ export default function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState("");
   const [logoUrl, setLogoUrl] = useState("/logo.png");
-  const turnstileRef = useRef(null);
 
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
   const setUserRole = useAppStore((state) => state.setUserRole);
@@ -72,22 +69,10 @@ export default function Login({ onLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    // Bypass Turnstile for localhost/testing environments
-    const isTestEnv = window.location.hostname === 'localhost' || 
-                      window.location.hostname.includes('sylink.my.id') ||
-                      window.location.hostname.includes('putyzy');
-
-    if (!isTestEnv && !turnstileToken) {
-      setError("Verifikasi Turnstile gagal. Silakan coba lagi.");
-      if (turnstileRef.current) turnstileRef.current.reset();
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const response = await authService.login(email, password, getDeviceId(), turnstileToken || 'bypass');
+      const response = await authService.login(email, password, getDeviceId(), "bypass");
       const token =
         response.data?.token || response.token || response.data?.data?.token;
       const lembaga =
@@ -96,8 +81,6 @@ export default function Login({ onLogin }) {
 
       if (role === "siswa") {
         setError("Akun siswa/santri tidak diizinkan masuk ke Sistem Presensi. Silakan akses Portal Siswa di raudhatulyatama.sch.id.");
-        setTurnstileToken("");
-        if (turnstileRef.current) turnstileRef.current.reset();
         setLoading(false);
         return;
       }
@@ -105,8 +88,6 @@ export default function Login({ onLogin }) {
       const allowedRoles = ["super_admin", "admin_yayasan", "admin_ma", "admin_mts", "admin_akademik", "petugas_absen", "guru"];
       if (role && !allowedRoles.includes(role)) {
         setError("Akun ini tidak memiliki hak akses ke Sistem Presensi & Absensi.");
-        setTurnstileToken("");
-        if (turnstileRef.current) turnstileRef.current.reset();
         setLoading(false);
         return;
       }
@@ -133,8 +114,6 @@ export default function Login({ onLogin }) {
       setError(
         err.response?.data?.message || "Login gagal. Silakan coba lagi.",
       );
-      setTurnstileToken("");
-      if (turnstileRef.current) turnstileRef.current.reset();
     } finally {
       setLoading(false);
     }
@@ -287,22 +266,6 @@ export default function Login({ onLogin }) {
                   </label>
                 </div>
               </div>
-
-              {/* Cloudflare Turnstile - Skip for localhost/testing */}
-              {!(window.location.hostname === 'localhost' || 
-                 window.location.hostname.includes('sylink.my.id') ||
-                 window.location.hostname.includes('putyzy')) && (
-                <div className="flex justify-center">
-                  <Turnstile
-                    ref={turnstileRef}
-                    siteKey="0x4AAAAAAExJEjLWiMHh678K"
-                    onSuccess={(token) => setTurnstileToken(token)}
-                    onError={() => { setTurnstileToken(""); }}
-                    onExpire={() => { setTurnstileToken(""); }}
-                    options={{ theme: "light", language: "id" }}
-                  />
-                </div>
-              )}
 
               {/* Submit Button */}
               <button

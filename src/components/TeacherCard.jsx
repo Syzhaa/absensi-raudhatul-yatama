@@ -9,9 +9,7 @@ export default function TeacherCard({
   teacher,
   isSelected,
   onSelect,
-  onActivateAccess,
-  onViewAccess,
-  onShowCard,
+  onOpenCredentials,
   onEdit,
   onDelete,
   isActivatePending,
@@ -96,35 +94,24 @@ export default function TeacherCard({
           <div className="hidden md:flex items-center gap-1.5">
             {!teacher.user_id ? (
               <button
-                onClick={() => onActivateAccess(teacher)}
+                onClick={() => onOpenCredentials(teacher)}
                 disabled={isActivatePending}
-                className="p-1.5 md:p-2 bg-emerald-100 text-emerald-700 border-2 border-gray-900 rounded-lg hover:bg-emerald-200 transition-colors shadow-sm disabled:opacity-50"
-                title="Aktifkan Akses Login"
+                className="px-2.5 py-1.5 bg-emerald-100 text-emerald-800 border-2 border-gray-900 rounded-xl hover:bg-emerald-200 font-bold text-xs flex items-center gap-1 shadow-sm disabled:opacity-50"
+                title="Buat Akun & Sandi Login Guru"
               >
-                <span className="material-symbols-outlined text-lg">
-                  lock_open
-                </span>
+                <span className="material-symbols-outlined text-sm">key</span>
+                <span>Buat Akun</span>
               </button>
             ) : (
               <button
-                onClick={() => onViewAccess(teacher)}
-                className="p-1.5 md:p-2 bg-cyan-100 text-cyan-700 border-2 border-gray-900 rounded-lg hover:bg-cyan-200 transition-colors shadow-sm"
-                title="Lihat Akun Login"
+                onClick={() => onOpenCredentials(teacher)}
+                className="px-2.5 py-1.5 bg-cyan-100 text-cyan-800 border-2 border-gray-900 rounded-xl hover:bg-cyan-200 font-bold text-xs flex items-center gap-1 shadow-sm"
+                title="Kelola Akun & Ubah Password"
               >
-                <span className="material-symbols-outlined text-lg">
-                  visibility
-                </span>
+                <span className="material-symbols-outlined text-sm">manage_accounts</span>
+                <span>Kredensial</span>
               </button>
             )}
-            <button
-              onClick={() => onShowCard(teacher)}
-              className="p-1.5 md:p-2 bg-blue-100 text-blue-700 border-2 border-gray-900 rounded-lg hover:bg-blue-200 transition-colors shadow-sm"
-              title="Lihat Kartu"
-            >
-              <span className="material-symbols-outlined text-lg">
-                badge
-              </span>
-            </button>
             <button
               onClick={() => onEdit(teacher)}
               className="p-1.5 md:p-2 bg-amber-100 text-amber-900 border-2 border-gray-900 rounded-lg hover:bg-amber-200 transition-colors shadow-sm"
@@ -156,49 +143,35 @@ export default function TeacherCard({
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 top-full mt-1 w-40 bg-white border-2 border-gray-900 rounded-xl shadow-neo z-10 overflow-hidden">
+              <div className="absolute right-0 top-full mt-1 w-44 bg-white border-2 border-gray-900 rounded-xl shadow-neo z-10 overflow-hidden">
                 {!teacher.user_id ? (
                   <button
                     onClick={() => {
-                      onActivateAccess(teacher);
+                      onOpenCredentials(teacher);
                       closeDropdown();
                     }}
                     disabled={isActivatePending}
                     className={`${menuItemClass} text-emerald-700 hover:bg-emerald-50 border-b border-gray-100`}
                   >
                     <span className="material-symbols-outlined text-[18px]">
-                      lock_open
+                      key
                     </span>
-                    Aktifkan Akses
+                    Buat Akun Login
                   </button>
                 ) : (
                   <button
                     onClick={() => {
-                      onViewAccess(teacher);
+                      onOpenCredentials(teacher);
                       closeDropdown();
                     }}
                     className={`${menuItemClass} text-cyan-700 hover:bg-cyan-50 border-b border-gray-100`}
                   >
                     <span className="material-symbols-outlined text-[18px]">
-                      visibility
+                      manage_accounts
                     </span>
-                    Lihat Akun
+                    Kelola Kredensial
                   </button>
                 )}
-                <button
-                  onClick={() => {
-                    if (onShowCard) {
-                      onShowCard(teacher);
-                    }
-                    closeDropdown();
-                  }}
-                  className={`${menuItemClass} text-blue-700 hover:bg-blue-50 border-b border-gray-100`}
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    badge
-                  </span>
-                  Lihat Kartu
-                </button>
                 <button
                   onClick={() => {
                     onEdit(teacher);

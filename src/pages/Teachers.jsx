@@ -7,7 +7,6 @@ import TeacherCard from "../components/TeacherCard";
 import CredentialsModal from "../components/CredentialsModal";
 import ConfirmModal from "../components/ConfirmModal";
 import ExcelImportModal from "../components/ExcelImportModal";
-import StudentCardPrint from "../components/StudentCardPrint";
 import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -115,10 +114,11 @@ export default function Teachers() {
   });
 
   const activateAccessMutation = useMutation({
-    mutationFn: async (teacherId) => {
+    mutationFn: async ({ teacherId, data }) => {
       const api = await import("../services/api").then((m) => m.default);
       const response = await api.post(
         `/attendance/teachers/${teacherId}/activate-access`,
+        data || {},
       );
       return response.data;
     },
@@ -126,21 +126,22 @@ export default function Teachers() {
       queryClient.invalidateQueries(["teachers"]);
       setGeneratedCredentials(data.data.credentials);
       setCredentialsTeacher(data.data.teacher);
-      setShowCredentialsModal(true);
+      showAlert("Berhasil", "Akun login guru berhasil dibuat!");
     },
     onError: (error) => {
       showAlert(
         "Error",
-        error.response?.data?.message || "Gagal mengaktifkan akses guru",
+        error.response?.data?.message || "Gagal membuat akun login guru",
       );
     },
   });
 
   const resetPasswordMutation = useMutation({
-    mutationFn: async (teacherId) => {
+    mutationFn: async ({ teacherId, data }) => {
       const api = await import("../services/api").then((m) => m.default);
       const response = await api.post(
         `/attendance/teachers/${teacherId}/reset-password`,
+        data || {},
       );
       return response.data;
     },
@@ -148,12 +149,12 @@ export default function Teachers() {
       queryClient.invalidateQueries(["teachers"]);
       setGeneratedCredentials(data.data.credentials);
       setCredentialsTeacher(data.data.teacher);
-      setShowCredentialsModal(true);
+      showAlert("Berhasil", "Kredensial login guru berhasil diperbarui!");
     },
     onError: (error) => {
       showAlert(
         "Error",
-        error.response?.data?.message || "Gagal mereset password guru",
+        error.response?.data?.message || "Gagal memperbarui kredensial guru",
       );
     },
   });
@@ -243,57 +244,22 @@ export default function Teachers() {
     );
   };
 
-  const handleActivateAccess = (teacher) => {
+  const handleOpenCredentials = async (teacher) => {
+    setCredentialsTeacher(teacher);
     if (teacher.user_id) {
-      showAlert("Peringatan", "Guru ini sudah memiliki akun aktif");
-      return;
+      try {
+        const api = await import("../services/api").then((m) => m.default);
+        const response = await api.get(
+          `/attendance/teachers/${teacher.id}/account-info`,
+        );
+        setGeneratedCredentials(response.data.data.credentials);
+      } catch (error) {
+        setGeneratedCredentials(null);
+      }
+    } else {
+      setGeneratedCredentials(null);
     }
-
-    showConfirm(
-      "Aktifkan Akses",
-      `Aktifkan akses login untuk ${teacher.nama}?\n\nSistem akan membuat akun otomatis dengan kredensial default.`,
-      () => activateAccessMutation.mutate(teacher.id),
-    );
-  };
-
-  const handleResetPassword = (teacher) => {
-    if (!teacher.user_id) {
-      showAlert(
-        "Peringatan",
-        "Guru ini belum memiliki akun. Gunakan fitur Aktifkan Akses terlebih dahulu.",
-      );
-      return;
-    }
-
-    showConfirm(
-      "Reset Password",
-      `Reset password untuk ${teacher.nama}?\n\nPassword akan direset ke default dan semua sesi login aktif akan diakhiri.`,
-      () => resetPasswordMutation.mutate(teacher.id),
-      true,
-    );
-  };
-
-  const handleViewAccess = async (teacher) => {
-    try {
-      const api = await import("../services/api").then((m) => m.default);
-      const response = await api.get(
-        `/attendance/teachers/${teacher.id}/account-info`,
-      );
-      setGeneratedCredentials(response.data.data.credentials);
-      setCredentialsTeacher(teacher);
-      setShowCredentialsModal(true);
-    } catch (error) {
-      showAlert(
-        "Error",
-        error.response?.data?.message || "Gagal membuka informasi akun guru",
-      );
-    }
-  };
-
-  const handleCopyCredentials = (text) => {
-    navigator.clipboard.writeText(text).then(() => {
-      showAlert("Berhasil", "Kredensial berhasil disalin!");
-    });
+    setShowCredentialsModal(true);
   };
 
   const handleSelectAll = (e) => {
@@ -314,65 +280,6 @@ export default function Teachers() {
 
   const allTeachers = data?.data || [];
 
-  // Restore print modal state from sessionStorage on reload/refresh
-  useEffect(() => {
-    try {
-      const cached = sessionStorage.getItem("yatama_print_teachers");
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setSelectedCardTeachers(parsed);
-          setShowCardModal(true);
-        }
-      }
-    } catch (e) {}
-  }, []);
-
-  // Update cached teacher details when fresh API data arrives
-  useEffect(() => {
-    if (showCardModal && selectedCardTeachers.length > 0 && allTeachers.length > 0) {
-      const currentIds = selectedCardTeachers.map((t) => t.id);
-      const updated = allTeachers.filter((t) => currentIds.includes(t.id));
-      if (updated.length > 0) {
-        setSelectedCardTeachers(updated);
-        try {
-          sessionStorage.setItem("yatama_print_teachers", JSON.stringify(updated));
-        } catch (e) {}
-      }
-    }
-  }, [allTeachers]);
-
-  const openCardModal = (teachersList) => {
-    if (!teachersList || teachersList.length === 0) return;
-    setSelectedCardTeachers(teachersList);
-    setShowCardModal(true);
-    try {
-      sessionStorage.setItem("yatama_print_teachers", JSON.stringify(teachersList));
-    } catch (e) {}
-  };
-
-  const closeCardModal = () => {
-    setShowCardModal(false);
-    setSelectedCardTeachers([]);
-    try {
-      sessionStorage.removeItem("yatama_print_teachers");
-    } catch (e) {}
-    if (selectedCardTeachers.length > 1) {
-      setSelectedTeachers([]);
-    }
-  };
-
-  const handleBatchPrintQR = () => {
-    if (selectedTeachers.length === 0) {
-      alert("Pilih guru terlebih dahulu");
-      return;
-    }
-    const selectedData = teachers.filter((t) =>
-      selectedTeachers.includes(t.id),
-    );
-    openCardModal(selectedData);
-  };
-
   const handleBatchDelete = () => {
     if (selectedTeachers.length === 0) return;
     const count = selectedTeachers.length;
@@ -392,21 +299,6 @@ export default function Teachers() {
       },
       true
     );
-  };
-
-  const handleDownloadSingleQR = async (teacher) => {
-    try {
-      const qrData = teacher.uuid;
-      const canvas = document.createElement("canvas");
-      await QRCode.toCanvas(canvas, qrData, { width: 300, margin: 2 });
-
-      const link = document.createElement("a");
-      link.download = `guru-${teacher.nama.replace(/\s+/g, "-")}.png`;
-      link.href = canvas.toDataURL();
-      link.click();
-    } catch (error) {
-      showAlert("Error", "Gagal download QR: " + error.message);
-    }
   };
 
   const teachers = allTeachers.filter((t) =>
@@ -454,24 +346,14 @@ export default function Teachers() {
           </div>
 
           {selectedTeachers.length > 0 && (
-            <>
-              <button
-                onClick={handleBatchPrintQR}
-                className="py-2 px-3 bg-white text-gray-900 font-bold border-2 border-gray-900 rounded-xl hover:bg-gray-100 flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
-                title="Cetak Kartu Massal"
-              >
-                <span className="material-symbols-outlined text-base">print</span>
-                <span>Cetak ({selectedTeachers.length})</span>
-              </button>
-              <button
-                onClick={handleBatchDelete}
-                className="py-2 px-3 bg-red-100 hover:bg-red-200 text-red-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo flex items-center gap-1.5 text-xs transition-all cursor-pointer"
-                title="Hapus Banyak Guru"
-              >
-                <span className="material-symbols-outlined text-base text-red-600">delete</span>
-                <span>Hapus ({selectedTeachers.length})</span>
-              </button>
-            </>
+            <button
+              onClick={handleBatchDelete}
+              className="py-2 px-3 bg-red-100 hover:bg-red-200 text-red-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo flex items-center gap-1.5 text-xs transition-all cursor-pointer"
+              title="Hapus Banyak Guru"
+            >
+              <span className="material-symbols-outlined text-base text-red-600">delete</span>
+              <span>Hapus ({selectedTeachers.length})</span>
+            </button>
           )}
 
           {/* Import Excel Button */}
@@ -571,10 +453,7 @@ export default function Teachers() {
                   teacher={teacher}
                   isSelected={selectedTeachers.includes(teacher.id)}
                   onSelect={handleSelectTeacher}
-                  onActivateAccess={handleActivateAccess}
-                  onViewAccess={handleViewAccess}
-                  onDownloadQR={handleDownloadSingleQR}
-                  onShowCard={(t) => openCardModal([t])}
+                  onOpenCredentials={handleOpenCredentials}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   isActivatePending={activateAccessMutation.isPending}
@@ -631,21 +510,26 @@ export default function Teachers() {
                             {teacher.mata_pelajaran || "-"}
                           </td>
                           <td className="py-2.5 px-4 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <button
-                                onClick={() => openCardModal([teacher])}
-                                className="p-1 hover:bg-blue-50 text-blue-700 rounded border border-gray-300 transition-colors"
-                                title="Cetak Kartu"
-                              >
-                                <span className="material-symbols-outlined text-sm">badge</span>
-                              </button>
-                              <button
-                                onClick={() => handleDownloadSingleQR(teacher)}
-                                className="p-1 hover:bg-emerald-50 text-emerald-700 rounded border border-gray-300 transition-colors"
-                                title="Unduh QR"
-                              >
-                                <span className="material-symbols-outlined text-sm">qr_code</span>
-                              </button>
+                            <div className="flex items-center justify-center gap-1.5">
+                              {!teacher.user_id ? (
+                                <button
+                                  onClick={() => handleOpenCredentials(teacher)}
+                                  className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-400 rounded-lg font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                                  title="Buat Akun & Password Login Guru"
+                                >
+                                  <span className="material-symbols-outlined text-sm text-emerald-600">key</span>
+                                  <span>Buat Akun</span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleOpenCredentials(teacher)}
+                                  className="px-2 py-1 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-400 rounded-lg font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                                  title="Kelola Akun & Ubah Password"
+                                >
+                                  <span className="material-symbols-outlined text-sm text-cyan-600">manage_accounts</span>
+                                  <span>Kredensial</span>
+                                </button>
+                              )}
                               <button
                                 onClick={() => handleEdit(teacher)}
                                 className="p-1 hover:bg-amber-50 text-amber-700 rounded border border-gray-300 transition-colors"
@@ -738,62 +622,28 @@ export default function Teachers() {
         </span>
       </button>
 
-      {/* QR/Card Modal */}
-      {showCardModal && selectedCardTeachers?.length > 0 && (
-        <StudentCardPrint
-          students={selectedCardTeachers}
-          type="teacher"
-          onClose={closeCardModal}
-        />
-      )}
-
-      {/* Download ZIP Success Modal */}
-      {downloadSuccessModal.isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/50 animate-fade-in"
-            onClick={() => setDownloadSuccessModal({ isOpen: false, count: 0 })}
-          />
-          <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-6 max-w-sm w-full space-y-4 z-10 animate-slide-up text-center">
-            <div className="w-14 h-14 bg-emerald-100 border-2 border-gray-900 rounded-full flex items-center justify-center text-emerald-600 mx-auto">
-              <span className="material-symbols-outlined text-3xl font-black">
-                folder_zip
-              </span>
-            </div>
-            <h2 className="text-xl font-black text-gray-900">
-              Download Berhasil!
-            </h2>
-            <p className="text-sm text-gray-600 font-medium leading-relaxed">
-              Berhasil mengunduh{" "}
-              <span className="font-bold text-gray-900">
-                {downloadSuccessModal.count} QR Code
-              </span>{" "}
-              guru ke dalam berkas ZIP.
-            </p>
-            <button
-              type="button"
-              onClick={() =>
-                setDownloadSuccessModal({ isOpen: false, count: 0 })
-              }
-              className="w-full py-3 px-4 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all"
-            >
-              Selesai
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Credentials Modal - Show generated login credentials */}
+      {/* Credentials Modal - Buat & Kelola Kredensial Login Guru */}
       {showCredentialsModal && (
         <CredentialsModal
+          teacher={credentialsTeacher}
           credentials={generatedCredentials}
           onClose={() => {
             setShowCredentialsModal(false);
             setGeneratedCredentials(null);
             setCredentialsTeacher(null);
           }}
-          onCopy={handleCopyCredentials}
-          onResetPassword={() => handleResetPassword(credentialsTeacher)}
+          onActivate={(payload) =>
+            activateAccessMutation.mutate({
+              teacherId: credentialsTeacher.id,
+              data: payload,
+            })
+          }
+          onResetPassword={(payload) =>
+            resetPasswordMutation.mutate({
+              teacherId: credentialsTeacher.id,
+              data: payload,
+            })
+          }
           onDeactivateAccess={() =>
             showConfirm(
               "Nonaktifkan Akses",
@@ -802,6 +652,7 @@ export default function Teachers() {
               true,
             )
           }
+          isActivatePending={activateAccessMutation.isPending}
           isResetPending={resetPasswordMutation.isPending}
           isDeactivatePending={deactivateAccessMutation.isPending}
         />
