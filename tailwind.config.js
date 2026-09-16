@@ -10,12 +10,12 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        'neo': '2px 2px 0px 0px rgba(0, 0, 0, 1)',
-        'neo-lg': '3px 3px 0px 0px rgba(0, 0, 0, 1)',
-        'neo-xl': '4px 4px 0px 0px rgba(0, 0, 0, 1)',
-        'neo-sm': '1px 1px 0px 0px rgba(0, 0, 0, 1)',
-        'clean-sm': '1.5px 1.5px 0px 0px rgba(26, 32, 44, 0.8)',
-        'clean-md': '2px 2px 0px 0px rgba(26, 32, 44, 0.8)',
+        'neo': '1px 1px 0px 0px rgba(0, 0, 0, 0.7)',
+        'neo-lg': '1.5px 1.5px 0px 0px rgba(0, 0, 0, 0.7)',
+        'neo-xl': '2px 2px 0px 0px rgba(0, 0, 0, 0.7)',
+        'neo-sm': '0.75px 0.75px 0px 0px rgba(0, 0, 0, 0.5)',
+        'clean-sm': '1px 1px 0px 0px rgba(26, 32, 44, 0.5)',
+        'clean-md': '1.5px 1.5px 0px 0px rgba(26, 32, 44, 0.5)',
       },
       borderWidth: {
         '3': '3px',

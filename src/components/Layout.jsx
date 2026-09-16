@@ -150,8 +150,8 @@ export default function Layout({ children }) {
               className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
               onClick={() => setIsSidebarOpen(false)}
             />
-            <aside className="relative w-64 h-full bg-white border-l-3 border-gray-900 shadow-neo-xl flex flex-col animate-[slideInRight_0.3s_ease-out]">
-              <div className="p-4 border-b-3 border-gray-900 flex items-center justify-between">
+            <aside className="relative w-64 h-full bg-white border-l-2 border-gray-900 shadow-lg flex flex-col animate-[slideInRight_0.3s_ease-out]">
+              <div className="p-4 border-b-2 border-gray-900 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-white border-2 border-gray-900 rounded-full overflow-hidden flex items-center justify-center">
                     <img fetchpriority="high" loading="eager" src={logoUrl} alt="Logo" className="w-full h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src = "/logo.png"; }} />
@@ -166,7 +166,7 @@ export default function Layout({ children }) {
                 </button>
               </div>
               <div className="pt-2"></div>
-              <nav className="p-4 space-y-3 overflow-y-auto flex-1 bg-gray-50/50">
+              <nav className="p-4 space-y-2.5 overflow-y-auto flex-1 bg-gray-50/50">
                 {menuItems.map((item) => {
                   const isActive = location.pathname === item.path;
                   return (
@@ -174,8 +174,8 @@ export default function Layout({ children }) {
                       key={item.path}
                       to={item.path}
                       onClick={() => setIsSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-3 border-2 border-gray-900 rounded-xl transition-all ${
-                        isActive ? 'bg-primary-green text-gray-900 font-black shadow-neo' : 'bg-white text-gray-700 font-bold hover:bg-gray-100'
+                      className={`flex items-center gap-3 px-3 py-2.5 border-2 border-gray-900 rounded-xl transition-all ${
+                        isActive ? 'bg-primary-green text-gray-900 font-black shadow-xs' : 'bg-white text-gray-700 font-bold hover:bg-gray-100'
                       }`}
                     >
                       <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
@@ -207,7 +207,7 @@ export default function Layout({ children }) {
                   key={item.path}
                   to={item.path}
                   className={`flex items-center gap-2.5 px-3 py-2 font-bold text-xs border-2 border-gray-900 rounded-xl transition-all ${
-                    isActive ? 'bg-primary-green text-gray-900 shadow-neo' : 'bg-white text-gray-800 hover:bg-gray-50 shadow-neo'
+                    isActive ? 'bg-primary-green text-gray-900 font-black shadow-xs' : 'bg-white text-gray-800 hover:bg-gray-50 shadow-xs'
                   }`}
                 >
                   <span className="material-symbols-outlined text-xl">{item.icon}</span>
@@ -219,7 +219,7 @@ export default function Layout({ children }) {
         </aside>
 
         <main className="flex-1 p-3 sm:p-4 md:p-6 portrait:pb-28 landscape:pb-6 md:pb-6 min-w-0 bg-[#fdfaf5]">
-          <header className="flex bg-white border-2 md:border-3 border-gray-900 px-3 py-2 sm:px-4 sm:py-3 items-center justify-between mb-3 md:mb-6 shadow-neo rounded-2xl gap-2">
+          <header className="flex bg-white border-2 border-gray-900 px-3 py-2 sm:px-4 sm:py-3 items-center justify-between mb-3 md:mb-6 shadow-xs sm:shadow-sm rounded-2xl gap-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <button 
                 onClick={() => setIsSidebarOpen(true)}
@@ -262,7 +262,7 @@ export default function Layout({ children }) {
 
       {/* Mobile Bottom Nav */}
       <nav className="hidden md:!hidden fixed bottom-4 left-0 w-full z-40 portrait:flex landscape:hidden justify-center px-4 pointer-events-none">
-        <div className="bg-white border-3 border-gray-900 rounded-2xl shadow-neo overflow-hidden pointer-events-auto max-w-full">
+        <div className="bg-white border-2 border-gray-900 rounded-2xl shadow-sm overflow-hidden pointer-events-auto max-w-full">
           <div className="flex overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {menuItems.map((item) => {
               const isActive = location.pathname === item.path;

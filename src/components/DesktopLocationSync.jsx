@@ -114,10 +114,10 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
   ].includes(activeRole);
 
   return (
-    <div className="w-full max-w-3xl mx-auto bg-white border-3 sm:border-4 border-gray-900 rounded-3xl p-6 sm:p-8 shadow-neo-lg animate-fade-in">
+    <div className="w-full max-w-none bg-white border-2 border-gray-900 rounded-2xl md:rounded-3xl p-6 sm:p-8 md:p-10 shadow-xs sm:shadow-sm animate-fade-in">
       {status === "success" ? (
         <div className="py-12 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 bg-emerald-100 border-3 border-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-sm animate-bounce">
+          <div className="w-20 h-20 bg-emerald-100 border-2 border-emerald-600 rounded-full flex items-center justify-center mb-4 shadow-xs animate-bounce">
             <span className="material-symbols-outlined text-5xl text-emerald-700">check_circle</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-emerald-950 mb-2">
@@ -131,18 +131,18 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Kolom Kiri: Informasi & Petunjuk RBAC */}
-          <div className="md:col-span-7 flex flex-col justify-between space-y-4">
+          <div className="lg:col-span-8 flex flex-col justify-between space-y-5">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 border-2 border-gray-900 rounded-full text-xs font-black text-amber-950 mb-3 shadow-xs">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 border border-amber-400 rounded-full text-xs font-black text-amber-950 mb-3 shadow-xs">
                 <span className="material-symbols-outlined text-sm">satellite_alt</span>
                 SINKRONISASI GPS PC (3 JAM)
               </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-snug mb-2">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight leading-snug mb-2">
                 {title}
               </h2>
-              <p className="text-xs sm:text-sm text-gray-600 font-medium leading-relaxed">
+              <p className="text-xs sm:text-sm text-gray-600 font-medium leading-relaxed max-w-3xl">
                 Perangkat PC/Laptop tidak memiliki sensor GPS fisik. Scan QR Code di samping menggunakan HP untuk membagikan lokasi GPS sekolah yang sah.
               </p>
             </div>
@@ -176,7 +176,7 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
             </div>
 
             {/* Aturan Keamanan / RBAC Note */}
-            <div className="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-950 font-medium flex items-start gap-2">
+            <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-950 font-medium flex items-start gap-2">
               <span className="material-symbols-outlined text-base text-emerald-700 flex-shrink-0 mt-0.5">
                 verified_user
               </span>
@@ -199,26 +199,26 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
           </div>
 
           {/* Kolom Kanan: QR Code & Status */}
-          <div className="md:col-span-5 flex flex-col items-center justify-center bg-gray-50 p-5 rounded-2xl border-2 border-gray-300">
+          <div className="lg:col-span-4 flex flex-col items-center justify-center bg-gray-50 p-6 rounded-2xl border-2 border-gray-300 shadow-xs">
             {syncUrl ? (
-              <div className="p-3 bg-white border-3 border-gray-900 rounded-2xl shadow-neo mb-3 flex items-center justify-center">
+              <div className="p-3.5 bg-white border-2 border-gray-900 rounded-2xl shadow-xs mb-3 flex items-center justify-center">
                 <QRCodeSVG 
                   value={syncUrl} 
-                  size={200}
+                  size={210}
                   bgColor={"#ffffff"}
                   fgColor={"#111827"}
                   level={"M"}
                 />
               </div>
             ) : (
-              <div className="w-[200px] h-[200px] bg-gray-200 border-2 border-gray-400 rounded-2xl animate-pulse flex items-center justify-center mb-3">
+              <div className="w-[210px] h-[210px] bg-gray-200 border-2 border-gray-400 rounded-2xl animate-pulse flex items-center justify-center mb-3">
                 <span className="text-xs font-bold text-gray-500">Membuat QR...</span>
               </div>
             )}
 
             <div className="flex items-center gap-2 mb-2">
               {status === "listening" ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border-2 border-emerald-500 shadow-xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-500 shadow-xs">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
                   Menunggu Scan HP...
                 </span>
@@ -236,7 +236,7 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
             {status === "error" && (
               <button 
                 onClick={handleRefresh}
-                className="mt-2 px-4 py-2 bg-red-600 text-white font-bold rounded-xl text-xs hover:bg-red-700 shadow-sm cursor-pointer"
+                className="mt-2 px-4 py-2 bg-red-600 text-white font-bold rounded-xl text-xs hover:bg-red-700 shadow-xs cursor-pointer"
               >
                 Generate Ulang QR
               </button>
