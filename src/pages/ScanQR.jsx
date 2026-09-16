@@ -92,8 +92,10 @@ export default function ScanQR() {
   };
 
   const detectLocation = () => {
+    const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+
     if (!navigator.geolocation) {
-      if (isAdminRole) {
+      if (isAdminRole || isDesktop) {
         setPcSchoolLocation();
         return;
       }
@@ -104,6 +106,11 @@ export default function ScanQR() {
     setLocationError(null);
 
     const onPosSuccess = (pos) => {
+      // Jika di desktop dan akurasi jelek (IP based), anggap valid sebagai PC sekolah
+      if (isDesktop && pos.coords.accuracy > 200) {
+        setPcSchoolLocation();
+        return;
+      }
       const c = {
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
@@ -123,8 +130,8 @@ export default function ScanQR() {
           onPosSuccess,
           (err) => {
             setIsLocating(false);
-            if (isAdminRole) {
-              // Jika ini akun Admin/Petugas di komputer PC madrasah, otomatis verifikasi sebagai Komputer Sekolah
+            if (isAdminRole || isDesktop) {
+              // Jika ini akun Admin/Petugas atau Desktop, otomatis verifikasi sebagai Komputer Sekolah
               setPcSchoolLocation();
             } else if (err.code === 1) {
               setLocationError("Izin lokasi ditolak. Silakan izinkan akses lokasi (GPS) di browser Anda.");
@@ -152,6 +159,7 @@ export default function ScanQR() {
 
   const isWithinRadius =
     !isLocationRequired ||
+    coords?.isPcVerified ||
     (currentDistance !== null && currentDistance <= radiusMax);
 
   // Fetch recent logs
@@ -262,7 +270,7 @@ export default function ScanQR() {
           message: "Lokasi GPS belum terdeteksi. Silakan klik tombol 'Refresh GPS' di atas kamera.",
         };
       }
-      if (currentDistance !== null && currentDistance > radiusMax) {
+      if (!coords?.isPcVerified && currentDistance !== null && currentDistance > radiusMax) {
         return {
           valid: false,
           message: `Di luar jangkauan sekolah (${Math.round(currentDistance)}m). Presensi hanya sah di lingkungan sekolah (maks ${radiusMax}m).`,

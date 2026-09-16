@@ -65,34 +65,66 @@ export default function ScanGuru() {
   const isLocationRequired = settings.enable_location_check !== false;
 
   // Function to detect GPS location
+  const setPcSchoolLocation = () => {
+    setCoords({
+      latitude: settings.latitude || -3.37651,
+      longitude: settings.longitude || 114.64682,
+      accuracy: 0,
+      isPcVerified: true,
+    });
+    setIsLocating(false);
+  };
+
   const detectLocation = () => {
+    const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+
     if (!navigator.geolocation) {
+      if (isDesktop) {
+        setPcSchoolLocation();
+        return;
+      }
       setLocationError("Browser Anda tidak mendukung deteksi lokasi GPS.");
       return;
     }
     setIsLocating(true);
     setLocationError(null);
 
+    const onPosSuccess = (pos) => {
+      // Bypass untuk PC/Laptop jika akurasinya jelek (berbasis IP)
+      if (isDesktop && pos.coords.accuracy > 200) {
+        setPcSchoolLocation();
+        return;
+      }
+      setCoords({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+      });
+      setIsLocating(false);
+    };
+
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoords({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-        });
-        setIsLocating(false);
+      onPosSuccess,
+      () => {
+        // Fallback untuk standard accuracy gagal (atau timeout)
+        navigator.geolocation.getCurrentPosition(
+          onPosSuccess,
+          (err) => {
+            setIsLocating(false);
+            if (isDesktop) {
+              setPcSchoolLocation();
+            } else if (err.code === 1) {
+              setLocationError("Izin lokasi ditolak. Buka pengaturan browser HP Anda dan izinkan akses lokasi (GPS).");
+            } else if (err.code === 2) {
+              setLocationError("Lokasi tidak dapat ditentukan. Pastikan GPS HP Anda aktif.");
+            } else {
+              setLocationError("Waktu deteksi GPS habis. Silakan coba kembali.");
+            }
+          },
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        );
       },
-      (err) => {
-        setIsLocating(false);
-        if (err.code === 1) {
-          setLocationError("Izin lokasi ditolak. Buka pengaturan browser HP Anda dan izinkan akses lokasi (GPS) untuk situs ini.");
-        } else if (err.code === 2) {
-          setLocationError("Lokasi tidak dapat ditentukan. Pastikan GPS HP Anda aktif.");
-        } else {
-          setLocationError("Waktu deteksi GPS habis. Silakan coba kembali.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }
+      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
     );
   };
 
@@ -111,6 +143,7 @@ export default function ScanGuru() {
 
   const isWithinRadius =
     !isLocationRequired ||
+    coords?.isPcVerified ||
     (currentDistance !== null && currentDistance <= (settings.radius_meters || 100));
 
   // Scan Mutation
@@ -157,7 +190,7 @@ export default function ScanGuru() {
       detectLocation();
       return;
     }
-    if (isLocationRequired && !isWithinRadius) {
+    if (isLocationRequired && !isWithinRadius && !coords?.isPcVerified) {
       alert(
         `Anda berada di luar jangkauan sekolah (${Math.round(currentDistance)} meter). Presensi hanya dapat dilakukan di dalam lingkungan sekolah (maksimal ${settings.radius_meters}m).`
       );
