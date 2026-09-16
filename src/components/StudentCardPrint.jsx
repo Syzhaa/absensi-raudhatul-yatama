@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
 
@@ -222,13 +223,23 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
   };
 
-  return (
+  const modalContent = (
     <div
       ref={containerRef}
-      className="fixed inset-0 bg-slate-900/85 backdrop-blur-sm flex flex-col z-[100] overflow-hidden animate-fade-in"
+      className="fixed inset-0 top-0 left-0 right-0 bottom-0 m-0 p-0 bg-slate-900/90 backdrop-blur-sm flex flex-col z-[9999] overflow-hidden"
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        margin: 0,
+        padding: 0,
+        zIndex: 9999,
+      }}
     >
       {/* Top Action Header */}
-      <div className="bg-white border-b-2 border-gray-900 shadow-md p-2.5 sm:p-3.5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2.5 z-10 shrink-0">
+      <div className="bg-white border-b-2 border-gray-900 shadow-sm p-2.5 sm:p-3.5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2.5 z-10 shrink-0 m-0">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-sm sm:text-base font-black text-gray-900 leading-tight">
@@ -899,4 +910,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(modalContent, document.body);
 }
