@@ -8,34 +8,34 @@ const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
   const isSuperAdmin = currentUserRole === "super_admin" || currentUserLembaga === "yayasan";
 
   // Role hierarchy for Attendance System:
-  // Super admin -> Admin MA, Admin MTs, Admin Akademik, Guru
-  // Admin MA -> Admin MA, Admin Akademik, Guru (locked to MA)
-  // Admin MTs -> Admin MTs, Admin Akademik, Guru (locked to MTs)
-  // Admin Akademik -> Guru
+  // Super admin -> Admin MA, Admin MTs, Petugas Absen, Guru
+  // Admin MA -> Admin MA, Petugas Absen, Guru (locked to MA)
+  // Admin MTs -> Admin MTs, Petugas Absen, Guru (locked to MTs)
+  // Petugas Absen -> Guru
   const availableRoles = useMemo(() => {
     if (isSuperAdmin) {
       return [
         { value: "admin_ma", label: "Admin MA", defaultLembaga: "ma" },
         { value: "admin_mts", label: "Admin MTs", defaultLembaga: "mts" },
-        { value: "admin_akademik", label: "Admin Akademik", defaultLembaga: "ma" },
+        { value: "petugas_absen", label: "Petugas Absen", defaultLembaga: "ma" },
         { value: "guru", label: "Guru" },
       ];
     }
     if (currentUserRole === "admin_ma" || currentUserLembaga === "ma") {
       return [
         { value: "admin_ma", label: "Admin MA" },
-        { value: "admin_akademik", label: "Admin Akademik" },
+        { value: "petugas_absen", label: "Petugas Absen" },
         { value: "guru", label: "Guru" },
       ];
     }
     if (currentUserRole === "admin_mts" || currentUserLembaga === "mts") {
       return [
         { value: "admin_mts", label: "Admin MTs" },
-        { value: "admin_akademik", label: "Admin Akademik" },
+        { value: "petugas_absen", label: "Petugas Absen" },
         { value: "guru", label: "Guru" },
       ];
     }
-    if (currentUserRole === "admin_akademik") {
+    if (currentUserRole === "petugas_absen" || currentUserRole === "admin_akademik") {
       return [
         { value: "guru", label: "Guru" },
       ];

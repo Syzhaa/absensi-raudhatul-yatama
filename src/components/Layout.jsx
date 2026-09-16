@@ -8,7 +8,7 @@ import { settingsService } from '../services';
 import { useEffectiveLembaga } from '../hooks/useEffectiveLembaga';
 import { useKelasFormat } from '../hooks/useKelasFormat';
 import { sortKelasList } from '../utils/kelasHelper';
-import { menuForRole } from '../auth/accessPolicy';
+import { menuForRole, canAccessPath } from '../auth/accessPolicy';
 import { useAttendanceSettings } from '../hooks/useAttendanceSettings';
 import ConfirmModal from './ConfirmModal';
 
@@ -96,6 +96,7 @@ export default function Layout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const userRole = useAppStore((state) => state.userRole);
+  const userPermissions = useAppStore((state) => state.userPermissions);
   const superAdminLembaga = useAppStore((state) => state.superAdminLembaga);
   const selectedKelas = useAppStore((state) => state.selectedKelas);
   const setUserRole = useAppStore((state) => state.setUserRole);
@@ -120,7 +121,7 @@ export default function Layout({ children }) {
   });
   const logoUrl = logoData?.data?.url || '/logo.png';
 
-  const allMenuItems = menuForRole(userRole);
+  const allMenuItems = menuForRole(userRole, userPermissions);
   const menuItems = allMenuItems
     .filter((item) => !["/settings", "/profile"].includes(item.path))
     .filter((item) => enableTeacherAttendance || item.path !== "/teachers");
@@ -241,7 +242,7 @@ export default function Layout({ children }) {
               <Link to="/profile" className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 border-gray-900 flex items-center justify-center bg-blue-100 text-blue-900 hover:bg-blue-200 transition-colors shadow-sm" title="Profil">
                 <span className="material-symbols-outlined text-base sm:text-lg">person</span>
               </Link>
-              {userRole !== 'guru' && (
+              {canAccessPath(userRole, '/settings', userPermissions) && (
                 <Link to="/settings" className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 border-gray-900 flex items-center justify-center bg-gray-100 text-gray-900 hover:bg-gray-200 transition-colors shadow-sm" title="Pengaturan">
                   <span className="material-symbols-outlined text-base sm:text-lg">settings</span>
                 </Link>

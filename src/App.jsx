@@ -8,7 +8,7 @@ import Settings from "./pages/Settings";
 import { useBackgroundSync } from "./hooks/useBackgroundSync";
 import api from "./services/api";
 import { useAppStore } from "./store/useAppStore";
-import { canAccessPath } from "./auth/accessPolicy";
+import { canAccessPath, getFirstAllowedPath } from "./auth/accessPolicy";
 import WhatsappApi from "./pages/WhatsappApi";
 import { CardSkeleton, PageHeaderSkeleton } from "./components/Skeleton";
 
@@ -32,8 +32,10 @@ function App() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const userRole = useAppStore((state) => state.userRole);
+  const userPermissions = useAppStore((state) => state.userPermissions);
   const setUserRole = useAppStore((state) => state.setUserRole);
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
+  const setUserPermissions = useAppStore((state) => state.setUserPermissions);
 
   useBackgroundSync();
 
@@ -72,6 +74,9 @@ function App() {
           const { data } = await api.get("/auth/me");
           setUserRole(data.data.role);
           setUserLembaga(data.data.lembaga);
+          if (data.data.permissions) {
+            setUserPermissions(data.data.permissions);
+          }
         } catch {
           localStorage.removeItem("auth_token");
           setIsAuthenticated(false);
@@ -165,36 +170,54 @@ function App() {
         }
       >
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/scan" element={<ScanQR />} />
+          <Route
+            path="/"
+            element={
+              canAccessPath(userRole, "/", userPermissions)
+                ? <Dashboard />
+                : <Navigate to={getFirstAllowedPath(userRole, userPermissions)} replace />
+            }
+          />
+          <Route
+            path="/scan"
+            element={
+              canAccessPath(userRole, "/scan", userPermissions)
+                ? <ScanQR />
+                : <Navigate to="/" replace />
+            }
+          />
           <Route
             path="/students"
-            element={canAccessPath(userRole, "/students") ? <Students /> : <Navigate to="/" replace />}
+            element={canAccessPath(userRole, "/students", userPermissions) ? <Students /> : <Navigate to="/" replace />}
           />
           <Route
             path="/teachers"
-            element={canAccessPath(userRole, "/teachers") ? <Teachers /> : <Navigate to="/" replace />}
+            element={canAccessPath(userRole, "/teachers", userPermissions) ? <Teachers /> : <Navigate to="/" replace />}
           />
           <Route
             path="/attendance"
-            element={userRole === "guru" ? <GuruAttendance /> : <Attendance />}
+            element={
+              canAccessPath(userRole, "/attendance", userPermissions)
+                ? (userRole === "guru" ? <GuruAttendance /> : <Attendance />)
+                : <Navigate to="/" replace />
+            }
           />
           <Route
             path="/holidays"
-            element={canAccessPath(userRole, "/holidays") ? <Holidays /> : <Navigate to="/" replace />}
+            element={canAccessPath(userRole, "/holidays", userPermissions) ? <Holidays /> : <Navigate to="/" replace />}
           />
           <Route
             path="/users"
-            element={canAccessPath(userRole, "/users") ? <Users /> : <Navigate to="/" replace />}
+            element={canAccessPath(userRole, "/users", userPermissions) ? <Users /> : <Navigate to="/" replace />}
           />
           <Route
             path="/profile"
-            element={canAccessPath(userRole, "/profile") ? <Profile /> : <Navigate to="/" replace />}
+            element={<Profile />}
           />
           <Route
             path="/settings"
             element={
-              canAccessPath(userRole, "/settings")
+              canAccessPath(userRole, "/settings", userPermissions)
                 ? <Settings onLogout={() => setIsAuthenticated(false)} />
                 : <Navigate to="/" replace />
             }
@@ -202,7 +225,7 @@ function App() {
           <Route
             path="/whatsapp-api"
             element={
-              canAccessPath(userRole, "/whatsapp-api")
+              canAccessPath(userRole, "/whatsapp-api", userPermissions)
                 ? <WhatsappApi />
                 : <Navigate to="/" replace />
             }
@@ -210,18 +233,18 @@ function App() {
           <Route
             path="/whatsapp-templates"
             element={
-              canAccessPath(userRole, "/whatsapp-templates")
+              canAccessPath(userRole, "/whatsapp-templates", userPermissions)
                 ? <WhatsappTemplates />
                 : <Navigate to="/" replace />
             }
           />
           <Route
             path="/report"
-            element={canAccessPath(userRole, "/report") ? <Report /> : <Navigate to="/" replace />}
+            element={canAccessPath(userRole, "/report", userPermissions) ? <Report /> : <Navigate to="/" replace />}
           />
           <Route
             path="/guide"
-            element={<Guide />}
+            element={canAccessPath(userRole, "/guide", userPermissions) ? <Guide /> : <Navigate to="/" replace />}
           />
           <Route
             path="/scan-guru"
@@ -229,7 +252,7 @@ function App() {
           />
           <Route
             path="*"
-            element={<Navigate to="/" replace />}
+            element={<Navigate to={canAccessPath(userRole, "/", userPermissions) ? "/" : getFirstAllowedPath(userRole, userPermissions)} replace />}
           />
         </Routes>
       </Suspense>

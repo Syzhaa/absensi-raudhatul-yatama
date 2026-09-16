@@ -5,6 +5,7 @@ import api from "../services/api";
 import { authService } from "../services";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { PageHeaderSkeleton, FormCardSkeleton } from "../components/Skeleton";
+import { AVAILABLE_PAGES, DEFAULT_PERMISSIONS } from "../auth/accessPolicy";
 
 // TimeInput Helper
 function TimeInput({ label, value, onChange, description, required = true }) {
@@ -151,6 +152,7 @@ export default function Settings() {
   const [showClearAllModal, setShowClearAllModal] = useState(false);
   const [isClearingAll, setIsClearingAll] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [selectedRoleTab, setSelectedRoleTab] = useState("petugas_absen");
 
   const { data: settingsData, isPending } = useQuery({
     queryKey: ["attendance-settings", effectiveLembaga],
@@ -182,6 +184,10 @@ export default function Settings() {
         radius_meters: s.radius_meters || 100,
         timezone: s.timezone || "Asia/Makassar",
         kelas_format: kf,
+        role_permissions: s.role_permissions || {
+          petugas_absen: { ...DEFAULT_PERMISSIONS.petugas_absen },
+          guru: { ...DEFAULT_PERMISSIONS.guru },
+        },
       });
     }
   }, [settingsData]);
@@ -346,6 +352,18 @@ export default function Settings() {
           >
             <span className="material-symbols-outlined text-sm">security</span>
             <span>Sistem</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabChange("roles")}
+            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
+              activeTab === "roles"
+                ? "bg-primary-green text-gray-900 border border-gray-900 shadow-sm"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            <span className="material-symbols-outlined text-sm">shield_person</span>
+            <span>Hak Akses</span>
           </button>
         </div>
       </div>
@@ -888,6 +906,219 @@ export default function Settings() {
               >
                 <span className="material-symbols-outlined text-base">logout</span>
                 <span>Logout Akun</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: Hak Akses & Peran (Role Permissions) */}
+      {activeTab === "roles" && formData && (
+        <div className="space-y-4">
+          {/* Header Info Card */}
+          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-5 shadow-neo">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-cyan-100 border-2 border-gray-900 rounded-xl flex items-center justify-center text-cyan-800 flex-shrink-0">
+                  <span className="material-symbols-outlined text-2xl font-bold">admin_panel_settings</span>
+                </div>
+                <div>
+                  <h3 className="font-black text-sm md:text-base text-gray-900">
+                    Manajemen Hak Akses Halaman Per-Role ({effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA"})
+                  </h3>
+                  <p className="text-xs text-gray-600 font-medium mt-0.5 leading-relaxed">
+                    Atur menu dan halaman yang diizinkan untuk dibuka oleh <strong>Petugas Absen</strong> dan <strong>Dewan Guru</strong> cukup dengan sakelar (switch) ON / OFF.
+                  </p>
+                </div>
+              </div>
+
+              {/* Role Picker */}
+              <div className="flex items-center bg-gray-100 p-1 border-2 border-gray-900 rounded-xl gap-1 self-start sm:self-auto flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRoleTab("petugas_absen")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+                    selectedRoleTab === "petugas_absen"
+                      ? "bg-cyan-500 text-white border border-gray-900 shadow-sm"
+                      : "text-gray-700 hover:text-gray-900"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sm">badge</span>
+                  <span>Petugas Absen</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRoleTab("guru")}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+                    selectedRoleTab === "guru"
+                      ? "bg-purple-600 text-white border border-gray-900 shadow-sm"
+                      : "text-gray-700 hover:text-gray-900"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sm">school</span>
+                  <span>Guru</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Quick Actions Bar */}
+            <div className="mt-4 pt-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-gray-500">
+                  Konfigurasi Aktif:
+                </span>
+                <span className={`text-[11px] font-black uppercase px-2 py-0.5 rounded-md border ${
+                  selectedRoleTab === "petugas_absen"
+                    ? "bg-cyan-100 border-cyan-400 text-cyan-900"
+                    : "bg-purple-100 border-purple-400 text-purple-900"
+                }`}>
+                  {selectedRoleTab === "petugas_absen" ? "Role: Petugas Absen" : "Role: Dewan Guru"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updatedPerms = { ...formData.role_permissions };
+                    const rolePerms = { ...(updatedPerms[selectedRoleTab] || {}) };
+                    AVAILABLE_PAGES.forEach((p) => {
+                      rolePerms[p.path] = true;
+                    });
+                    updatedPerms[selectedRoleTab] = rolePerms;
+                    setFormData({ ...formData, role_permissions: updatedPerms });
+                  }}
+                  className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 border border-gray-900 rounded-lg text-[11px] font-bold text-gray-800 transition-colors"
+                >
+                  Izinkan Semua (ON)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updatedPerms = { ...formData.role_permissions };
+                    const rolePerms = { ...(updatedPerms[selectedRoleTab] || {}) };
+                    AVAILABLE_PAGES.forEach((p) => {
+                      rolePerms[p.path] = false;
+                    });
+                    updatedPerms[selectedRoleTab] = rolePerms;
+                    setFormData({ ...formData, role_permissions: updatedPerms });
+                  }}
+                  className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 border border-gray-900 rounded-lg text-[11px] font-bold text-gray-800 transition-colors"
+                >
+                  Matikan Semua (OFF)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updatedPerms = { ...formData.role_permissions };
+                    updatedPerms[selectedRoleTab] = { ...DEFAULT_PERMISSIONS[selectedRoleTab] };
+                    setFormData({ ...formData, role_permissions: updatedPerms });
+                  }}
+                  className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 border border-amber-500 rounded-lg text-[11px] font-bold text-amber-900 transition-colors"
+                >
+                  Reset Standar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Switch List per Page */}
+          <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-5 shadow-neo space-y-3">
+            <h4 className="font-black text-xs md:text-sm text-gray-900 uppercase tracking-wider mb-2">
+              Daftar Halaman & Hak Akses ({selectedRoleTab === "petugas_absen" ? "Petugas Absen" : "Guru"})
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {AVAILABLE_PAGES.map((page) => {
+                const isAllowed = formData.role_permissions?.[selectedRoleTab]?.[page.path] !== undefined
+                  ? Boolean(formData.role_permissions[selectedRoleTab][page.path])
+                  : Boolean(DEFAULT_PERMISSIONS[selectedRoleTab]?.[page.path]);
+
+                const toggleAccess = () => {
+                  const updatedPerms = { ...formData.role_permissions };
+                  if (!updatedPerms[selectedRoleTab]) {
+                    updatedPerms[selectedRoleTab] = { ...DEFAULT_PERMISSIONS[selectedRoleTab] };
+                  }
+                  updatedPerms[selectedRoleTab] = {
+                    ...updatedPerms[selectedRoleTab],
+                    [page.path]: !isAllowed,
+                  };
+                  setFormData({ ...formData, role_permissions: updatedPerms });
+                };
+
+                return (
+                  <div
+                    key={page.path}
+                    className={`flex items-center justify-between p-3.5 border-2 rounded-xl transition-all ${
+                      isAllowed
+                        ? "bg-emerald-50/40 border-emerald-500/80 shadow-sm"
+                        : "bg-gray-50/70 border-gray-300 opacity-80"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5 pr-2 min-w-0">
+                      <div className={`w-9 h-9 rounded-xl border-2 border-gray-900 flex items-center justify-center flex-shrink-0 ${
+                        isAllowed ? "bg-primary-green text-gray-900" : "bg-gray-200 text-gray-500"
+                      }`}>
+                        <span className="material-symbols-outlined text-xl">{page.icon}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-black text-xs sm:text-sm text-gray-900 truncate">
+                            {page.title}
+                          </span>
+                          <span className="text-[10px] font-mono font-bold bg-white border border-gray-400 px-1.5 py-0.2 rounded text-gray-600">
+                            {page.path}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 font-medium leading-tight mt-0.5 line-clamp-2">
+                          {page.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className={`hidden sm:inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                        isAllowed
+                          ? "bg-emerald-100 border-emerald-500 text-emerald-800"
+                          : "bg-gray-200 border-gray-400 text-gray-600"
+                      }`}>
+                        {isAllowed ? "ON" : "OFF"}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={toggleAccess}
+                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-gray-900 transition-colors duration-200 ease-in-out focus:outline-none ${
+                          isAllowed ? "bg-primary-green" : "bg-gray-300"
+                        }`}
+                        title={isAllowed ? "Klik untuk mematikan akses" : "Klik untuk memberikan akses"}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white border-2 border-gray-900 shadow-sm transition duration-200 ease-in-out mt-0.5 ${
+                            isAllowed ? "translate-x-5" : "translate-x-0.5"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Save Button for Role Permissions */}
+            <div className="pt-3 border-t border-gray-200 flex justify-end">
+              <button
+                type="button"
+                onClick={() => updateMutation.mutate(formData)}
+                disabled={updateMutation.isPending}
+                className="w-full sm:w-auto px-7 py-2.5 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black text-xs md:text-sm rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {updateMutation.isPending ? (
+                  <span className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  <span className="material-symbols-outlined text-base">save</span>
+                )}
+                <span>Simpan Perubahan Hak Akses</span>
               </button>
             </div>
           </div>

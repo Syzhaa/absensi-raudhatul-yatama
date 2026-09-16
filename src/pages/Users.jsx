@@ -101,7 +101,7 @@ export default function Users() {
     const targetLembaga = (targetUser.lembaga || "").toLowerCase();
     if (myLembaga && myLembaga !== "yayasan" && targetLembaga !== myLembaga)
       return false;
-    if (userRole === "admin_akademik" && targetUser.role !== "guru") return false;
+    if ((userRole === "admin_akademik" || userRole === "petugas_absen") && targetUser.role !== "guru") return false;
     return true;
   };
 
@@ -189,8 +189,10 @@ export default function Users() {
         return { label: "Admin MA", color: "bg-emerald-100 text-emerald-900 border-emerald-300" };
       case "admin_mts":
         return { label: "Admin MTs", color: "bg-blue-100 text-blue-900 border-blue-300" };
+      case "petugas_absen":
+        return { label: "Petugas Absen", color: "bg-cyan-100 text-cyan-900 border-cyan-300" };
       case "admin_akademik":
-        return { label: "Admin Absensi", color: "bg-cyan-100 text-cyan-900 border-cyan-300" };
+        return { label: "Petugas Absen", color: "bg-cyan-100 text-cyan-900 border-cyan-300" };
       case "guru":
         return { label: "Guru", color: "bg-purple-100 text-purple-900 border-purple-300" };
       default:
@@ -270,7 +272,7 @@ export default function Users() {
           {(userRole === "super_admin" || userLembaga === "mts") && (
             <option value="admin_mts">Admin MTs</option>
           )}
-          <option value="admin_akademik">Admin Absensi</option>
+          <option value="petugas_absen">Petugas Absen</option>
           <option value="guru">Guru</option>
         </select>
       </div>

@@ -38,6 +38,7 @@ export default function Login({ onLogin }) {
 
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
   const setUserRole = useAppStore((state) => state.setUserRole);
+  const setUserPermissions = useAppStore((state) => state.setUserPermissions);
 
   useEffect(() => {
     let isMounted = true;
@@ -101,7 +102,7 @@ export default function Login({ onLogin }) {
         return;
       }
 
-      const allowedRoles = ["super_admin", "admin_ma", "admin_mts", "admin_akademik", "guru"];
+      const allowedRoles = ["super_admin", "admin_yayasan", "admin_ma", "admin_mts", "admin_akademik", "petugas_absen", "guru"];
       if (role && !allowedRoles.includes(role)) {
         setError("Akun ini tidak memiliki hak akses ke Sistem Presensi & Absensi.");
         setTurnstileToken("");
@@ -114,6 +115,8 @@ export default function Login({ onLogin }) {
         localStorage.setItem("auth_token", token);
         if (lembaga) setUserLembaga(lembaga);
         if (role) setUserRole(role);
+        const permissions = response.data?.user?.permissions || response.data?.data?.user?.permissions;
+        if (permissions && setUserPermissions) setUserPermissions(permissions);
       } else {
         throw new Error("Token tidak ditemukan dalam respons login.");
       }

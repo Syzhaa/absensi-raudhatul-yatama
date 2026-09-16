@@ -6,10 +6,12 @@ export const useAppStore = create(
     (set) => ({
       userLembaga: null,
       userRole: null,
+      userPermissions: null,
       selectedKelas: null,
       superAdminLembaga: "MA", // Super Admin lembaga override (MA or MTs)
       setUserLembaga: (lembaga) => set({ userLembaga: lembaga }),
       setUserRole: (role) => set({ userRole: role }),
+      setUserPermissions: (permissions) => set({ userPermissions: permissions }),
       setSelectedKelas: (kelas) => set({ selectedKelas: kelas }),
       setSuperAdminLembaga: (lembaga) => set({ superAdminLembaga: lembaga }),
     }),
