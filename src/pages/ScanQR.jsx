@@ -28,6 +28,23 @@ function getDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+const LOCATION_SESSION_KEY = "yatama_location_sync_session";
+
+function getCachedLocationSession() {
+  try {
+    const raw = localStorage.getItem(LOCATION_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.expiresAt && Date.now() < parsed.expiresAt) {
+      return parsed;
+    }
+    localStorage.removeItem(LOCATION_SESSION_KEY);
+  } catch {
+    localStorage.removeItem(LOCATION_SESSION_KEY);
+  }
+  return null;
+}
+
 export default function ScanQR() {
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState(null);
@@ -50,12 +67,13 @@ export default function ScanQR() {
   const { settings, enableLocationCheck, isLoading: isSettingsLoading } = useAttendanceSettings();
 
   // GPS Location states & detection
-  const [coords, setCoords] = useState(null);
+  const cachedLoc = getCachedLocationSession();
+  const [coords, setCoords] = useState(cachedLoc || null);
   const [locationError, setLocationError] = useState(null);
   const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-  const [isDesktopBlocked, setIsDesktopBlocked] = useState(isDesktop);
+  const [isDesktopBlocked, setIsDesktopBlocked] = useState(isDesktop && !cachedLoc?.isPcVerified);
   const [isLocating, setIsLocating] = useState(false);
-  const coordsRef = useRef(null);
+  const coordsRef = useRef(cachedLoc || null);
 
   const userRole = useAppStore((state) => state.userRole);
   const isAdminRole = [
@@ -330,9 +348,18 @@ export default function ScanQR() {
 
   
   const handleLocationSynced = (syncedCoords) => {
-    setCoords(syncedCoords);
+    const expiresAt = Date.now() + 3 * 3600 * 1000; // 3 Hours TTL
+    const fullSession = {
+      ...syncedCoords,
+      isPcVerified: true,
+      expiresAt,
+    };
+    try {
+      localStorage.setItem(LOCATION_SESSION_KEY, JSON.stringify(fullSession));
+    } catch {}
+    setCoords(fullSession);
     if (typeof coordsRef !== 'undefined' && coordsRef) {
-       coordsRef.current = syncedCoords;
+      coordsRef.current = fullSession;
     }
     setIsDesktopBlocked(false);
     setLocationError(null);
@@ -434,7 +461,7 @@ export default function ScanQR() {
                         <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded border ${
                           isWithinRadius ? "bg-emerald-100 border-emerald-400 text-emerald-900" : "bg-red-100 border-red-400 text-red-900"
                         }`}>
-                          {coords.isPcVerified ? "PC Terverifikasi" : `${currentDistance !== null ? `${Math.round(currentDistance)}m` : ""} / Maks ${radiusMax}m`}
+                          {coords.isPcVerified ? `PC Terverifikasi (s.d. ${format(new Date(coords.expiresAt || Date.now() + 3 * 3600 * 1000), "HH:mm")})` : `${currentDistance !== null ? `${Math.round(currentDistance)}m` : ""} / Maks ${radiusMax}m`}
                         </span>
                       )}
                     </div>

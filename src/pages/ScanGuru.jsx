@@ -1,3 +1,4 @@
+import api from "../services/api";
 import DesktopLocationSync from "../components/DesktopLocationSync";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -22,6 +23,23 @@ function getDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+const LOCATION_SESSION_KEY = "yatama_location_sync_session";
+
+function getCachedLocationSession() {
+  try {
+    const raw = localStorage.getItem(LOCATION_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.expiresAt && Date.now() < parsed.expiresAt) {
+      return parsed;
+    }
+    localStorage.removeItem(LOCATION_SESSION_KEY);
+  } catch {
+    localStorage.removeItem(LOCATION_SESSION_KEY);
+  }
+  return null;
+}
+
 export default function ScanGuru() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialLembaga = (searchParams.get("lembaga") || "ma").toLowerCase();
@@ -32,10 +50,11 @@ export default function ScanGuru() {
   const [nipInput, setNipInput] = useState("");
 
   // Location state
-  const [coords, setCoords] = useState(null);
+  const cachedLoc = getCachedLocationSession();
+  const [coords, setCoords] = useState(cachedLoc || null);
   const [locationError, setLocationError] = useState(null);
   const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-  const [isDesktopBlocked, setIsDesktopBlocked] = useState(isDesktop);
+  const [isDesktopBlocked, setIsDesktopBlocked] = useState(isDesktop && !cachedLoc?.isPcVerified);
   const [isLocating, setIsLocating] = useState(false);
 
   // Scanner state
@@ -225,6 +244,35 @@ export default function ScanGuru() {
           const syncMatch = decodedText.match(/(?:sync\/|sync:)([0-9a-fA-F-]+)/i);
           if (syncMatch) {
             const sessionId = syncMatch[1];
+            let pcUid = null;
+            let pcRole = null;
+            let pcName = null;
+            try {
+              const urlObj = new URL(decodedText.startsWith("http") ? decodedText : `https://dummy.com/${decodedText}`);
+              pcUid = urlObj.searchParams.get("uid");
+              pcRole = urlObj.searchParams.get("role");
+              pcName = urlObj.searchParams.get("name");
+            } catch (e) {}
+
+            let hpUser = null;
+            try {
+              const meRes = await api.get("/auth/me");
+              hpUser = meRes.data?.data;
+            } catch (e) {}
+
+            const adminRoles = ["super_admin", "admin_yayasan", "admin_ma", "admin_mts", "admin_akademik", "petugas_absen"];
+            const isHpAdmin = adminRoles.includes(hpUser?.role);
+
+            if (hpUser && !isHpAdmin && hpUser.role === "guru") {
+              if (pcUid && String(hpUser.id) !== String(pcUid)) {
+                setResult({
+                  success: false,
+                  message: `Akses Ditolak: Anda login sebagai ${hpUser.nama || hpUser.name || "Guru"}. PC milik ${pcName || "Akun Lain"}. Guru hanya dapat menyinkronkan akunnya sendiri.`,
+                });
+                return;
+              }
+            }
+
             setResult({
               success: true,
               message: "📡 Terdeteksi QR Sync PC. Mengirim koordinat GPS HP...",
@@ -237,17 +285,21 @@ export default function ScanGuru() {
                   latitude: lat,
                   longitude: lon,
                   accuracy: acc || 5,
+                  synced_by_id: hpUser?.id,
+                  synced_by_name: hpUser?.nama || hpUser?.name,
+                  synced_by_role: hpUser?.role,
+                  pc_user_id: pcUid,
                 });
                 if (res.data?.success) {
                   setResult({
                     success: true,
-                    message: "✅ Lokasi HP berhasil disinkronkan ke PC! Layar PC sekarang aktif.",
+                    message: "✅ Sukses! Lokasi tersinkronisasi ke PC dan aktif selama 3 Jam.",
                   });
                   setTimeout(() => setResult(null), 4000);
                 } else {
                   setResult({
                     success: false,
-                    message: "Gagal sinkron: " + (res.data?.message || "QR Kadaluarsa"),
+                    message: res.data?.message || "Gagal sinkron lokasi.",
                   });
                 }
               } catch (e) {
@@ -307,7 +359,16 @@ export default function ScanGuru() {
 
   
   const handleLocationSynced = (syncedCoords) => {
-    setCoords(syncedCoords);
+    const expiresAt = Date.now() + 3 * 3600 * 1000; // 3 Hours TTL
+    const fullSession = {
+      ...syncedCoords,
+      isPcVerified: true,
+      expiresAt,
+    };
+    try {
+      localStorage.setItem(LOCATION_SESSION_KEY, JSON.stringify(fullSession));
+    } catch {}
+    setCoords(fullSession);
     setIsDesktopBlocked(false);
     setLocationError(null);
   };
