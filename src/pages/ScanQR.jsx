@@ -282,6 +282,7 @@ export default function ScanQR() {
     setResult,
     setCameraError,
     onBeforeScan,
+    coordsRef,
   });
 
   useEffect(() => {
