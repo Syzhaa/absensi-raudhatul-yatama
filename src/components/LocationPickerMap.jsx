@@ -170,8 +170,24 @@ export default function LocationPickerMap({
     }
   }, [latNum, lonNum, radiusNum]);
 
-  // Handler: Ambil GPS Saat Ini
-  const handleGetCurrentGPS = () => {
+  // Handler: Pasang Titik Resmi Yatama
+  const handleSetOfficialYatama = () => {
+    const offLat = -3.37550000;
+    const offLon = 114.64690000;
+    onChangeCoordinates(offLat, offLon);
+    if (mapInstanceRef.current && markerRef.current && circleRef.current) {
+      markerRef.current.setLatLng([offLat, offLon]);
+      circleRef.current.setLatLng([offLat, offLon]);
+      mapInstanceRef.current.setView([offLat, offLon], 18, { animate: true });
+    }
+    setGpsStatus({
+      success: true,
+      message: "Titik koordinat resmi Raudhatul Yatama (Km. 10 Sungai Lakum) berhasil dipasang!",
+    });
+  };
+
+  // Handler: Ambil GPS Saat Ini (dengan fallback & deteksi blokir izin)
+  const handleGetCurrentGPS = async () => {
     if (!navigator.geolocation) {
       setGpsStatus({
         success: false,
@@ -180,50 +196,99 @@ export default function LocationPickerMap({
       return;
     }
 
+    // 1. Cek Permission API terlebih dahulu
+    if (navigator.permissions && navigator.permissions.query) {
+      try {
+        const perm = await navigator.permissions.query({ name: "geolocation" });
+        if (perm.state === "denied") {
+          setIsGettingGPS(false);
+          setGpsStatus({
+            success: false,
+            blocked: true,
+            message: "Izin lokasi GPS saat ini DIBLOKIR oleh browser Anda.",
+          });
+          return;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     setIsGettingGPS(true);
     setGpsStatus({
       success: null,
-      message: "Sedang menghubungkan sensor GPS perangkat...",
+      message: "Sedang menghubungkan sensor GPS perangkat... (Beri izin jika muncul pop-up)",
     });
 
+    // Safety timeout jika browser tidak merespon dalam 12 detik
+    const safetyTimer = setTimeout(() => {
+      setIsGettingGPS((current) => {
+        if (current) {
+          setGpsStatus({
+            success: false,
+            message: "Waktu deteksi lokasi habis. Jika Anda menggunakan PC/Laptop tanpa GPS fisik, Anda dapat menggeser pin di peta atau klik tombol 'Pasang Koordinat Resmi Yatama'.",
+          });
+          return false;
+        }
+        return false;
+      });
+    }, 12000);
+
+    const onPosSuccess = (pos) => {
+      clearTimeout(safetyTimer);
+      const myLat = parseFloat(pos.coords.latitude.toFixed(8));
+      const myLon = parseFloat(pos.coords.longitude.toFixed(8));
+      const accuracy = Math.round(pos.coords.accuracy);
+
+      setIsGettingGPS(false);
+      setGpsStatus({
+        success: true,
+        message: `Koordinat GPS berhasil diperoleh! Akurasi: ±${accuracy}m`,
+      });
+
+      setUserLocation({ lat: myLat, lon: myLon, accuracy });
+      onChangeCoordinates(myLat, myLon);
+
+      if (mapInstanceRef.current && markerRef.current && circleRef.current) {
+        markerRef.current.setLatLng([myLat, myLon]);
+        circleRef.current.setLatLng([myLat, myLon]);
+        mapInstanceRef.current.setView([myLat, myLon], 18, { animate: true });
+      }
+    };
+
+    const onPosError = (err) => {
+      // Jika high accuracy gagal/timeout di PC, coba standard accuracy sekali lagi
+      navigator.geolocation.getCurrentPosition(
+        onPosSuccess,
+        (secondErr) => {
+          clearTimeout(safetyTimer);
+          setIsGettingGPS(false);
+          if (secondErr.code === 1 || err.code === 1) {
+            setGpsStatus({
+              success: false,
+              blocked: true,
+              message: "Izin lokasi GPS ditolak oleh browser Anda.",
+            });
+          } else if (secondErr.code === 2) {
+            setGpsStatus({
+              success: false,
+              message: "Sinyal GPS tidak ditemukan. Pastikan layanan lokasi di perangkat Anda aktif.",
+            });
+          } else {
+            setGpsStatus({
+              success: false,
+              message: "Tidak dapat mendeteksi koordinat GPS perangkat. Silakan geser pin di peta secara manual.",
+            });
+          }
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+      );
+    };
+
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const myLat = parseFloat(pos.coords.latitude.toFixed(8));
-        const myLon = parseFloat(pos.coords.longitude.toFixed(8));
-        const accuracy = Math.round(pos.coords.accuracy);
-
-        setIsGettingGPS(false);
-        setGpsStatus({
-          success: true,
-          message: `Koordinat GPS berhasil diperoleh! Akurasi: ±${accuracy}m`,
-        });
-
-        // Simpan titik lokasi pengguna
-        setUserLocation({ lat: myLat, lon: myLon, accuracy });
-
-        // Update ke parent form
-        onChangeCoordinates(myLat, myLon);
-
-        // Update marker dan map
-        if (mapInstanceRef.current && markerRef.current && circleRef.current) {
-          markerRef.current.setLatLng([myLat, myLon]);
-          circleRef.current.setLatLng([myLat, myLon]);
-          mapInstanceRef.current.setView([myLat, myLon], 18, { animate: true });
-        }
-      },
-      (err) => {
-        setIsGettingGPS(false);
-        let msg = "Gagal mengambil GPS.";
-        if (err.code === 1) {
-          msg = "Izin lokasi GPS ditolak oleh browser. Silakan izinkan akses lokasi pada bilah URL browser Anda.";
-        } else if (err.code === 2) {
-          msg = "Sinyal GPS tidak ditemukan. Pastikan layanan lokasi pada perangkat Anda aktif.";
-        } else if (err.code === 3) {
-          msg = "Waktu deteksi GPS habis. Silakan coba kembali di tempat terbuka.";
-        }
-        setGpsStatus({ success: false, message: msg });
-      },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      onPosSuccess,
+      onPosError,
+      { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
     );
   };
 
@@ -350,6 +415,16 @@ export default function LocationPickerMap({
         <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
           <button
             type="button"
+            onClick={handleSetOfficialYatama}
+            className="px-3 py-2 bg-amber-100 hover:bg-amber-200 border-2 border-gray-900 rounded-xl text-xs font-black text-gray-900 shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+            title="Langsung pasang titik koordinat resmi Raudhatul Yatama di Jl. A. Yani Km. 10"
+          >
+            <span className="material-symbols-outlined text-base text-amber-800">school</span>
+            <span>Titik Resmi Yatama (Km. 10)</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handleGetCurrentGPS}
             disabled={isGettingGPS}
             className="flex-1 sm:flex-initial px-3 py-2 bg-primary-green hover:bg-emerald-400 border-2 border-gray-900 rounded-xl text-xs font-black text-gray-900 shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
@@ -360,7 +435,7 @@ export default function LocationPickerMap({
             ) : (
               <span className="material-symbols-outlined text-base">my_location</span>
             )}
-            <span>Ambil GPS Saya Sekarang</span>
+            <span>{isGettingGPS ? "Menghubungkan..." : "Ambil GPS Saya Sekarang"}</span>
           </button>
 
           <button
@@ -376,8 +451,49 @@ export default function LocationPickerMap({
         </div>
       </div>
 
+      {/* Card Panduan Khusus Jika Izin Lokasi GPS Diblokir Browser */}
+      {gpsStatus?.blocked && (
+        <div className="p-3.5 bg-red-50 border-2 border-red-500 rounded-2xl text-xs text-red-950 space-y-2.5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-black text-red-900">
+              <span className="material-symbols-outlined text-xl">block</span>
+              <span className="text-sm">Izin Lokasi GPS Diblokir di Browser Anda</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setGpsStatus(null)}
+              className="text-gray-500 hover:text-gray-900 font-bold"
+            >
+              ✕
+            </button>
+          </div>
+          <p className="text-gray-700 leading-relaxed">
+            Kotak persetujuan lokasi tidak muncul karena browser Anda menyetel izin situs ini ke <strong>&quot;Diblokir&quot;</strong> sebelumnya.
+          </p>
+          <div className="bg-white p-3 rounded-xl border border-red-200 text-[11px] space-y-1.5 text-gray-800">
+            <p className="font-black text-gray-900">Cara Mengaktifkan Izin Lokasi:</p>
+            <p>1. Lihat bilah alamat atas browser Anda (tepat di sebelah kiri alamat <code>absen.raudhatulyatama.sch.id</code>).</p>
+            <p>2. Klik ikon <strong>Gembok (🔒)</strong> atau ikon <strong>Setelan Situs (tune / slider)</strong>.</p>
+            <p>3. Pada bagian <strong>Lokasi (Location)</strong>, ubah dari &quot;Diblokir&quot; menjadi <strong>&quot;Izinkan&quot; (Allow)</strong>.</p>
+            <p>4. Muat ulang / Refresh halaman ini (F5 / tarik ke bawah di HP).</p>
+          </div>
+          <div className="flex items-center justify-between pt-1">
+            <span className="text-[11px] text-gray-600 font-semibold">
+              💡 Alternatif: Anda dapat langsung klik tombol <strong>&quot;Titik Resmi Yatama (Km. 10)&quot;</strong> atau klik langsung di peta tanpa perlu GPS.
+            </span>
+            <button
+              type="button"
+              onClick={handleSetOfficialYatama}
+              className="px-2.5 py-1 bg-emerald-600 text-white font-black text-[11px] rounded-lg hover:bg-emerald-700 cursor-pointer flex-shrink-0 ml-2"
+            >
+              Pasang Titik Resmi Saja
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* GPS / Action Status Notification */}
-      {gpsStatus && (
+      {gpsStatus && !gpsStatus.blocked && (
         <div
           className={`p-2.5 rounded-xl border-2 text-xs flex items-center justify-between ${
             gpsStatus.success === true
