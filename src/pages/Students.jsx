@@ -5,6 +5,7 @@ import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { useAppStore } from "../store/useAppStore";
 import StudentForm from "../components/StudentForm";
 import StudentCard from "../components/StudentCard";
+import StudentCardPrint from "../components/StudentCardPrint";
 import PromoteClassModal from "../components/PromoteClassModal";
 import ExcelImportModal from "../components/ExcelImportModal";
 import Modal from "../components/Modal";
@@ -418,6 +419,14 @@ export default function Students() {
           {selectedStudents.length > 0 && (
             <>
               <button
+                onClick={handleBatchPrintQR}
+                className="py-2 px-3 bg-white text-gray-900 font-bold border-2 border-gray-900 rounded-xl hover:bg-gray-100 flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
+                title="Cetak Kartu Massal"
+              >
+                <span className="material-symbols-outlined text-base">print</span>
+                <span>Cetak Kartu ({selectedStudents.length})</span>
+              </button>
+              <button
                 onClick={handlePromoteClass}
                 className="py-2 px-3 bg-amber-100 text-amber-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo hover:bg-amber-200 flex items-center gap-1.5 text-xs"
               >
@@ -608,6 +617,13 @@ export default function Students() {
                           <td className="py-2.5 px-4 text-center">
                             <div className="flex items-center justify-center gap-1">
                               <button
+                                onClick={() => openCardModal([student])}
+                                className="p-1 hover:bg-blue-50 text-blue-700 rounded border border-gray-300 transition-colors"
+                                title="Cetak Kartu"
+                              >
+                                <span className="material-symbols-outlined text-sm">badge</span>
+                              </button>
+                              <button
                                 onClick={() => handleEdit(student)}
                                 className="p-1 hover:bg-amber-50 text-amber-700 rounded border border-gray-300 transition-colors"
                                 title="Edit"
@@ -751,6 +767,15 @@ export default function Students() {
           onSuccess={() => {
             queryClient.invalidateQueries(["students"]);
           }}
+        />
+      )}
+
+      {/* QR/Card Modal */}
+      {showCardModal && selectedCardStudents?.length > 0 && (
+        <StudentCardPrint
+          students={selectedCardStudents}
+          onClose={closeCardModal}
+          type="student"
         />
       )}
 

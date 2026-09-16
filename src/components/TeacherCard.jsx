@@ -10,6 +10,7 @@ export default function TeacherCard({
   isSelected,
   onSelect,
   onOpenCredentials,
+  onShowCard,
   onEdit,
   onDelete,
   isActivatePending,
@@ -113,6 +114,15 @@ export default function TeacherCard({
               </button>
             )}
             <button
+              onClick={() => onShowCard(teacher)}
+              className="p-1.5 md:p-2 bg-blue-100 text-blue-700 border-2 border-gray-900 rounded-lg hover:bg-blue-200 transition-colors shadow-sm"
+              title="Cetak Kartu Guru"
+            >
+              <span className="material-symbols-outlined text-lg">
+                badge
+              </span>
+            </button>
+            <button
               onClick={() => onEdit(teacher)}
               className="p-1.5 md:p-2 bg-amber-100 text-amber-900 border-2 border-gray-900 rounded-lg hover:bg-amber-200 transition-colors shadow-sm"
               title="Edit guru"
@@ -172,6 +182,20 @@ export default function TeacherCard({
                     Kelola Kredensial
                   </button>
                 )}
+                <button
+                  onClick={() => {
+                    if (onShowCard) {
+                      onShowCard(teacher);
+                    }
+                    closeDropdown();
+                  }}
+                  className={`${menuItemClass} text-blue-700 hover:bg-blue-50 border-b border-gray-100`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    badge
+                  </span>
+                  Cetak Kartu
+                </button>
                 <button
                   onClick={() => {
                     onEdit(teacher);

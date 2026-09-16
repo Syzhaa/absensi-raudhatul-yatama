@@ -106,6 +106,15 @@ export default function StudentCard({
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-1.5">
             <button
+              onClick={() => onShowCard(student)}
+              className="p-1.5 md:p-2 bg-blue-100 text-blue-700 border-2 border-gray-900 rounded-lg hover:bg-blue-200 transition-colors shadow-sm"
+              title="Lihat Kartu"
+            >
+              <span className="material-symbols-outlined text-lg">
+                badge
+              </span>
+            </button>
+            <button
               onClick={() => onEdit(student)}
               className="p-1.5 md:p-2 bg-amber-100 text-amber-900 border-2 border-gray-900 rounded-lg hover:bg-amber-200 transition-colors shadow-sm"
               title="Edit siswa"
@@ -137,6 +146,20 @@ export default function StudentCard({
 
             {dropdownOpen && (
               <div className="absolute right-0 top-full mt-1 w-40 bg-white border-2 border-gray-900 rounded-xl shadow-neo z-10 overflow-hidden">
+                <button
+                  onClick={() => {
+                    if (onShowCard) {
+                      onShowCard(student);
+                    }
+                    closeDropdown();
+                  }}
+                  className={`${menuItemClass} hover:bg-gray-100 text-blue-700 border-b border-gray-100`}
+                >
+                  <span className="material-symbols-outlined text-lg">
+                    badge
+                  </span>
+                  Lihat Kartu
+                </button>
                 <button
                   onClick={() => {
                     onEdit(student);

@@ -7,6 +7,7 @@ import TeacherCard from "../components/TeacherCard";
 import CredentialsModal from "../components/CredentialsModal";
 import ConfirmModal from "../components/ConfirmModal";
 import ExcelImportModal from "../components/ExcelImportModal";
+import StudentCardPrint from "../components/StudentCardPrint";
 import QRCode from "qrcode";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -280,6 +281,31 @@ export default function Teachers() {
 
   const allTeachers = data?.data || [];
 
+  const openCardModal = (teachersList) => {
+    if (!teachersList || teachersList.length === 0) return;
+    setSelectedCardTeachers(teachersList);
+    setShowCardModal(true);
+  };
+
+  const closeCardModal = () => {
+    setShowCardModal(false);
+    setSelectedCardTeachers([]);
+    if (selectedCardTeachers.length > 1) {
+      setSelectedTeachers([]);
+    }
+  };
+
+  const handleBatchPrintCard = () => {
+    if (selectedTeachers.length === 0) {
+      showAlert("Peringatan", "Pilih guru terlebih dahulu");
+      return;
+    }
+    const selectedData = teachers.filter((t) =>
+      selectedTeachers.includes(t.id),
+    );
+    openCardModal(selectedData);
+  };
+
   const handleBatchDelete = () => {
     if (selectedTeachers.length === 0) return;
     const count = selectedTeachers.length;
@@ -346,14 +372,24 @@ export default function Teachers() {
           </div>
 
           {selectedTeachers.length > 0 && (
-            <button
-              onClick={handleBatchDelete}
-              className="py-2 px-3 bg-red-100 hover:bg-red-200 text-red-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo flex items-center gap-1.5 text-xs transition-all cursor-pointer"
-              title="Hapus Banyak Guru"
-            >
-              <span className="material-symbols-outlined text-base text-red-600">delete</span>
-              <span>Hapus ({selectedTeachers.length})</span>
-            </button>
+            <>
+              <button
+                onClick={handleBatchPrintCard}
+                className="py-2 px-3 bg-white text-gray-900 font-bold border-2 border-gray-900 rounded-xl hover:bg-gray-100 flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
+                title="Cetak Kartu Guru Massal"
+              >
+                <span className="material-symbols-outlined text-base">print</span>
+                <span>Cetak Kartu ({selectedTeachers.length})</span>
+              </button>
+              <button
+                onClick={handleBatchDelete}
+                className="py-2 px-3 bg-red-100 hover:bg-red-200 text-red-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo flex items-center gap-1.5 text-xs transition-all cursor-pointer"
+                title="Hapus Banyak Guru"
+              >
+                <span className="material-symbols-outlined text-base text-red-600">delete</span>
+                <span>Hapus ({selectedTeachers.length})</span>
+              </button>
+            </>
           )}
 
           {/* Import Excel Button */}
@@ -454,6 +490,7 @@ export default function Teachers() {
                   isSelected={selectedTeachers.includes(teacher.id)}
                   onSelect={handleSelectTeacher}
                   onOpenCredentials={handleOpenCredentials}
+                  onShowCard={(t) => openCardModal([t])}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   isActivatePending={activateAccessMutation.isPending}
@@ -530,6 +567,13 @@ export default function Teachers() {
                                   <span>Kredensial</span>
                                 </button>
                               )}
+                              <button
+                                onClick={() => openCardModal([teacher])}
+                                className="p-1 hover:bg-blue-50 text-blue-700 rounded border border-gray-300 transition-colors"
+                                title="Cetak Kartu Guru"
+                              >
+                                <span className="material-symbols-outlined text-sm">badge</span>
+                              </button>
                               <button
                                 onClick={() => handleEdit(teacher)}
                                 className="p-1 hover:bg-amber-50 text-amber-700 rounded border border-gray-300 transition-colors"
@@ -621,6 +665,15 @@ export default function Teachers() {
           add
         </span>
       </button>
+
+      {/* Kartu Guru Modal */}
+      {showCardModal && selectedCardTeachers?.length > 0 && (
+        <StudentCardPrint
+          students={selectedCardTeachers}
+          type="teacher"
+          onClose={closeCardModal}
+        />
+      )}
 
       {/* Credentials Modal - Buat & Kelola Kredensial Login Guru */}
       {showCredentialsModal && (
