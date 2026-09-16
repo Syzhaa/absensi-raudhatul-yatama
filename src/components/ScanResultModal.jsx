@@ -43,9 +43,9 @@ export default function ScanResultModal({ result, scanType, handleCloseModal }) 
     <>
       {result?.success && (result.data || result.manual) && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="relative bg-white border-3 border-gray-900 rounded-3xl shadow-neo-xl p-6 pt-9 max-w-xs sm:max-w-sm w-full animate-fade-in">
+          <div className="relative bg-white border-2 border-gray-900 rounded-3xl shadow-lg p-6 pt-9 max-w-xs sm:max-w-sm w-full animate-fade-in">
             {/* Header Icon Checkmark (Centang besar hijau menonjol ke luar) */}
-            <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 bg-[#4ade80] border-3 border-gray-900 rounded-full flex items-center justify-center shadow-neo">
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 bg-[#4ade80] border-2 border-gray-900 rounded-full flex items-center justify-center shadow-sm">
               <span className="material-symbols-outlined text-3xl text-white font-black">
                 check
               </span>
@@ -101,7 +101,7 @@ export default function ScanResultModal({ result, scanType, handleCloseModal }) 
             {/* Tombol Aksi Kapsul */}
             <button
               onClick={handleCloseModal}
-              className="w-full bg-white hover:bg-gray-100 text-gray-900 font-black py-2.5 border-3 border-gray-900 rounded-full shadow-neo transition-all active:translate-y-0.5"
+              className="w-full bg-white hover:bg-gray-100 text-gray-900 font-black py-2.5 border-2 border-gray-900 rounded-full shadow-sm transition-all active:translate-y-0.5 cursor-pointer"
             >
               TUTUP
             </button>
@@ -111,9 +111,9 @@ export default function ScanResultModal({ result, scanType, handleCloseModal }) 
 
       {result && !result.success && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="relative bg-white border-3 border-gray-900 rounded-3xl shadow-neo-xl p-6 pt-9 max-w-xs sm:max-w-sm w-full animate-fade-in text-center">
+          <div className="relative bg-white border-2 border-gray-900 rounded-3xl shadow-lg p-6 pt-9 max-w-xs sm:max-w-sm w-full animate-fade-in text-center">
             {/* Header Icon Cross */}
-            <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 bg-red-500 border-3 border-gray-900 rounded-full flex items-center justify-center shadow-neo">
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 bg-red-500 border-2 border-gray-900 rounded-full flex items-center justify-center shadow-sm">
               <span className="material-symbols-outlined text-3xl text-white font-black">
                 close
               </span>
@@ -129,7 +129,7 @@ export default function ScanResultModal({ result, scanType, handleCloseModal }) 
 
             <button
               onClick={handleCloseModal}
-              className="w-full bg-white hover:bg-gray-100 text-gray-900 font-black py-2.5 border-3 border-gray-900 rounded-full shadow-neo transition-all active:translate-y-0.5"
+              className="w-full bg-white hover:bg-gray-100 text-gray-900 font-black py-2.5 border-2 border-gray-900 rounded-full shadow-sm transition-all active:translate-y-0.5 cursor-pointer"
             >
               TUTUP
             </button>

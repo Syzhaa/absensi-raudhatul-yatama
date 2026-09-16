@@ -44,11 +44,11 @@ export default function RecentScanLogs({ recentLogs }) {
   };
 
   return (
-    <div className="w-full bg-white border-2 md:border-3 border-gray-900 rounded-2xl md:rounded-3xl p-4 sm:p-5 md:p-6 shadow-neo flex flex-col h-full">
+    <div className="w-full bg-white border-2 border-gray-900 rounded-2xl md:rounded-3xl p-4 sm:p-5 md:p-6 shadow-sm flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between border-b-2 border-gray-100 pb-3.5 mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-[#9bd47a] border-2 border-gray-900 flex items-center justify-center shadow-neo-sm">
+          <div className="w-9 h-9 rounded-xl bg-[#9bd47a] border-2 border-gray-900 flex items-center justify-center shadow-sm">
             <span className="material-symbols-outlined text-lg text-gray-900 font-bold">
               history
             </span>
@@ -63,7 +63,7 @@ export default function RecentScanLogs({ recentLogs }) {
           </div>
         </div>
 
-        <span className="px-3 py-1 bg-gray-100 border-2 border-gray-900 rounded-full font-black text-xs text-gray-900 shadow-neo-sm">
+        <span className="px-3 py-1 bg-gray-100 border-2 border-gray-900 rounded-full font-black text-xs text-gray-900 shadow-sm">
           {totalItems} Scan
         </span>
       </div>
@@ -109,7 +109,7 @@ export default function RecentScanLogs({ recentLogs }) {
               return (
                 <div
                   key={log.id || index}
-                  className="bg-white hover:bg-gray-50/90 border-2 border-gray-900 rounded-2xl px-3.5 py-2.5 flex items-center gap-3 shadow-neo-sm transition-all hover:translate-x-0.5"
+                  className="bg-white hover:bg-gray-50/90 border-2 border-gray-900 rounded-2xl px-3.5 py-2.5 flex items-center gap-3 shadow-sm transition-all hover:translate-x-0.5"
                 >
                   <div
                     className={`flex items-center justify-center w-10 h-10 rounded-xl font-black text-xs border-2 border-gray-900 flex-shrink-0 shadow-sm ${
@@ -163,7 +163,7 @@ export default function RecentScanLogs({ recentLogs }) {
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="w-8 h-8 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed flex items-center justify-center font-black text-sm shadow-neo-sm active:translate-y-0.5 transition-all"
+                  className="w-8 h-8 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed flex items-center justify-center font-black text-sm shadow-sm active:translate-y-0.5 transition-all cursor-pointer"
                   title="Halaman Sebelumnya"
                 >
                   <span className="material-symbols-outlined text-base">chevron_left</span>
@@ -179,9 +179,9 @@ export default function RecentScanLogs({ recentLogs }) {
                     <button
                       key={`page-${pageNum}`}
                       onClick={() => setCurrentPage(pageNum)}
-                      className={`w-8 h-8 rounded-lg border-2 border-gray-900 font-black text-xs transition-all ${
+                      className={`w-8 h-8 rounded-lg border-2 border-gray-900 font-black text-xs transition-all cursor-pointer ${
                         currentPage === pageNum
-                          ? "bg-[#9bd47a] text-gray-900 shadow-neo-sm scale-105"
+                          ? "bg-[#9bd47a] text-gray-900 shadow-sm scale-105"
                           : "bg-white text-gray-700 hover:bg-gray-100"
                       }`}
                     >
@@ -194,7 +194,7 @@ export default function RecentScanLogs({ recentLogs }) {
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="w-8 h-8 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed flex items-center justify-center font-black text-sm shadow-neo-sm active:translate-y-0.5 transition-all"
+                  className="w-8 h-8 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed flex items-center justify-center font-black text-sm shadow-sm active:translate-y-0.5 transition-all cursor-pointer"
                   title="Halaman Berikutnya"
                 >
                   <span className="material-symbols-outlined text-base">chevron_right</span>

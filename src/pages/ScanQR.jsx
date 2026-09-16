@@ -367,7 +367,7 @@ export default function ScanQR() {
 
   if (isDesktopBlocked && isLocationRequired && !coords?.isPcVerified) {
     return (
-      <div className="w-full pb-28 md:pb-8 flex flex-col items-center justify-center min-h-[60vh] p-4">
+      <div className="w-full pb-20 md:pb-6 flex flex-col items-stretch justify-start w-full">
         <DesktopLocationSync 
           onLocationReceived={handleLocationSynced} 
           title="Akses Presensi via PC"
@@ -377,12 +377,12 @@ export default function ScanQR() {
   }
 
   return (
-    <div className="w-full pb-28 md:pb-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 lg:gap-6 items-start w-full">
+    <div className="w-full pb-20 md:pb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start w-full">
         {/* Kolom Kiri: Kamera Scanner & Controls */}
-        <div className="md:col-span-6 lg:col-span-7 flex flex-col w-full md:sticky md:top-4">
+        <div className="lg:col-span-7 flex flex-col w-full lg:sticky lg:top-4">
           {/* 1. Navigasi Mode (Toggle Tabs) di Atas Kamera */}
-          <div className="w-full bg-white border-2 md:border-3 border-gray-900 p-1.5 rounded-2xl md:rounded-3xl shadow-neo flex items-center mb-3.5">
+          <div className="w-full bg-white border-2 border-gray-900 p-1.5 rounded-2xl md:rounded-3xl shadow-sm flex items-center mb-3.5">
             <button
               onClick={() => handleSwitchTab("check_in")}
               className={`flex-1 py-2.5 px-3 rounded-xl md:rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all select-none cursor-pointer ${
@@ -410,7 +410,7 @@ export default function ScanQR() {
           {/* GPS Location Status Banner */}
           <div className="mb-3.5">
             {isSettingsLoading ? (
-              <div className="p-3 bg-amber-50 border-2 md:border-3 border-gray-900 rounded-2xl flex items-center justify-between shadow-neo animate-pulse text-xs text-amber-900">
+              <div className="p-3 bg-amber-50 border-2 border-gray-900 rounded-2xl flex items-center justify-between shadow-sm animate-pulse text-xs text-amber-900">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-base animate-spin">refresh</span>
                   <span className="font-bold">Memuat konfigurasi GPS madrasah...</span>
@@ -418,7 +418,7 @@ export default function ScanQR() {
               </div>
             ) : isLocationRequired ? (
               <div
-                className={`p-3 rounded-2xl border-2 md:border-3 border-gray-900 flex items-center justify-between shadow-neo transition-all ${
+                className={`p-3 rounded-2xl border-2 border-gray-900 flex items-center justify-between shadow-sm transition-all ${
                   isLocating
                     ? "bg-amber-50"
                     : locationError
@@ -517,7 +517,7 @@ export default function ScanQR() {
 
           {/* 2. Area Kamera (Viewfinder) - Hidden when manual form active */}
           {!showManualForm && (
-            <div className="relative w-full aspect-square sm:aspect-[4/3] md:aspect-[4/3] lg:aspect-[16/10] bg-gray-950 rounded-2xl md:rounded-3xl border-2 md:border-3 border-gray-900 overflow-hidden shadow-neo flex items-center justify-center">
+            <div className="relative w-full aspect-square sm:aspect-[4/3] md:aspect-[4/3] lg:aspect-[16/10] bg-gray-950 rounded-2xl md:rounded-3xl border-2 border-gray-900 overflow-hidden shadow-sm md:shadow-md flex items-center justify-center">
               {/* QR Reader Viewport */}
               <div id="qr-reader" className="w-full h-full flex items-center justify-center overflow-hidden" />
 
@@ -565,7 +565,7 @@ export default function ScanQR() {
 
           {/* Camera Error Message (Minimalist 1-Line) */}
           {cameraError && (
-            <div className="w-full mt-3 px-3.5 py-2.5 bg-red-100/90 border-2 border-gray-900 rounded-xl md:rounded-2xl shadow-neo-sm flex items-center justify-between text-red-600 text-xs font-bold gap-2">
+            <div className="w-full mt-3 px-3.5 py-2.5 bg-red-100/90 border-2 border-gray-900 rounded-xl md:rounded-2xl shadow-sm flex items-center justify-between text-red-600 text-xs font-bold gap-2">
               <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
                 <span className="material-symbols-outlined text-base flex-shrink-0 text-red-600">
                   error
@@ -587,7 +587,7 @@ export default function ScanQR() {
               {scanning ? (
                 <button
                   onClick={stopScanning}
-                  className="w-full bg-[#e5e7eb] hover:bg-gray-300 text-gray-900 font-black py-3 px-6 border-2 md:border-3 border-gray-900 rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:translate-y-0.5 cursor-pointer"
+                  className="w-full bg-[#e5e7eb] hover:bg-gray-300 text-gray-900 font-black py-3 px-6 border-2 border-gray-900 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:translate-y-0.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-xl">
                     visibility_off
@@ -597,7 +597,7 @@ export default function ScanQR() {
               ) : (
                 <button
                   onClick={startScanning}
-                  className="w-full bg-primary-green hover:bg-lime-400 text-gray-900 font-black py-3 px-6 border-2 md:border-3 border-gray-900 rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:translate-y-0.5 cursor-pointer"
+                  className="w-full bg-primary-green hover:bg-lime-400 text-gray-900 font-black py-3 px-6 border-2 border-gray-900 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:translate-y-0.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-xl">
                     videocam
@@ -610,7 +610,7 @@ export default function ScanQR() {
         </div>
 
         {/* Kolom Kanan: Riwayat Scan Hari Ini */}
-        <div className="md:col-span-6 lg:col-span-5 flex flex-col w-full">
+        <div className="lg:col-span-5 flex flex-col w-full">
           <RecentScanLogs recentLogs={recentLogs} />
         </div>
       </div>
