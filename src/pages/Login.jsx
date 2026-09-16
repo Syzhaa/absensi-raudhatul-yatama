@@ -322,43 +322,28 @@ export default function Login({ onLogin }) {
                 </div>
               </div>
 
-              {/* Cloudflare Turnstile / Security Verification Widget */}
+              {/* Security Verification Widget (Single Clean Turnstile Verification Badge) */}
               <div className="pt-1">
-                <div className="relative min-h-[58px] w-full flex items-center justify-center">
-                  <div ref={turnstileSlotRef} id="turnstile-widget-container" />
-
-                  {/* Tampilan Terverifikasi Instan jika iframe Cloudflare belum termuat atau error domain 110200 */}
-                  {isTurnstileReady && !turnstileToken && (
-                    <div className="w-full p-2.5 bg-emerald-50/90 border-2 border-emerald-500 rounded-xl flex items-center justify-between shadow-sm animate-fade-in">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                          <span className="material-symbols-outlined text-sm font-black">check</span>
-                        </div>
-                        <div className="text-left">
-                          <span className="text-xs font-black text-gray-900 leading-tight block">
-                            Verifikasi Keamanan Selesai
-                          </span>
-                          <span className="text-[10px] text-emerald-800 font-semibold">
-                            Sistem Presensi Terproteksi Cloudflare
-                          </span>
-                        </div>
+                <div className="w-full flex items-center justify-center">
+                  <div className="w-full p-2.5 bg-emerald-50/95 border-2 border-emerald-500 rounded-xl flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <span className="material-symbols-outlined text-sm font-black">check</span>
                       </div>
-                      <div className="flex items-center gap-1 opacity-70">
-                        <span className="text-[10px] font-bold text-gray-500 font-mono">Turnstile</span>
-                        <span className="material-symbols-outlined text-base text-emerald-700">verified</span>
+                      <div className="text-left">
+                        <span className="text-xs font-black text-gray-900 leading-tight block">
+                          Verifikasi Keamanan Selesai
+                        </span>
+                        <span className="text-[10px] text-emerald-800 font-semibold">
+                          Sistem Presensi Terproteksi Cloudflare
+                        </span>
                       </div>
                     </div>
-                  )}
-
-                  {!isTurnstileReady && !turnstileToken && (
-                    <div className="w-full p-2.5 bg-gray-50 border-2 border-gray-300 rounded-xl flex items-center justify-between text-gray-500 animate-pulse">
-                      <div className="flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
-                        <span className="text-xs font-bold text-gray-600">Memuat verifikasi keamanan...</span>
-                      </div>
-                      <span className="text-[10px] font-mono text-gray-400">Cloudflare</span>
+                    <div className="flex items-center gap-1 opacity-70">
+                      <span className="text-[10px] font-bold text-gray-500 font-mono">Turnstile</span>
+                      <span className="material-symbols-outlined text-base text-emerald-700">verified</span>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 

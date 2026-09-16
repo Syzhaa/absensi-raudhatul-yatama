@@ -54,6 +54,16 @@ export default function ScanQR() {
   const [isLocating, setIsLocating] = useState(false);
   const coordsRef = useRef(null);
 
+  const userRole = useAppStore((state) => state.userRole);
+  const isAdminRole = [
+    "super_admin",
+    "admin_yayasan",
+    "admin_ma",
+    "admin_mts",
+    "admin_akademik",
+    "petugas_absen",
+  ].includes(userRole);
+
   // Wajib validasi jika enableLocationCheck aktif (default true jika undefined)
   const isLocationRequired = enableLocationCheck !== false;
   const schoolLat =
@@ -68,35 +78,64 @@ export default function ScanQR() {
     ? parseInt(settings.radius_meters, 10)
     : 100;
 
+  const setPcSchoolLocation = () => {
+    const c = {
+      latitude: schoolLat,
+      longitude: schoolLon,
+      accuracy: 5,
+      isPcVerified: true,
+    };
+    setCoords(c);
+    coordsRef.current = c;
+    setLocationError(null);
+    setIsLocating(false);
+  };
+
   const detectLocation = () => {
     if (!navigator.geolocation) {
+      if (isAdminRole) {
+        setPcSchoolLocation();
+        return;
+      }
       setLocationError("Browser tidak mendukung sensor GPS.");
       return;
     }
     setIsLocating(true);
     setLocationError(null);
+
+    const onPosSuccess = (pos) => {
+      const c = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+      };
+      setCoords(c);
+      coordsRef.current = c;
+      setIsLocating(false);
+    };
+
+    // Coba standard accuracy terlebih dahulu agar cepat di laptop/PC Wi-Fi
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const c = {
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-        };
-        setCoords(c);
-        coordsRef.current = c;
-        setIsLocating(false);
+      onPosSuccess,
+      () => {
+        // Jika gagal, coba high accuracy singkat (khusus ponsel/HP)
+        navigator.geolocation.getCurrentPosition(
+          onPosSuccess,
+          (err) => {
+            setIsLocating(false);
+            if (isAdminRole) {
+              // Jika ini akun Admin/Petugas di komputer PC madrasah, otomatis verifikasi sebagai Komputer Sekolah
+              setPcSchoolLocation();
+            } else if (err.code === 1) {
+              setLocationError("Izin lokasi ditolak. Silakan izinkan akses lokasi (GPS) di browser Anda.");
+            } else {
+              setLocationError("Perangkat tidak memiliki sensor GPS satelit.");
+            }
+          },
+          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
       },
-      (err) => {
-        setIsLocating(false);
-        if (err.code === 1) {
-          setLocationError("Izin lokasi ditolak. Silakan izinkan akses lokasi (GPS) di browser Anda.");
-        } else if (err.code === 2) {
-          setLocationError("Sinyal GPS tidak ditemukan. Pastikan GPS perangkat aktif.");
-        } else {
-          setLocationError("Waktu deteksi lokasi GPS habis. Silakan coba kembali.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
     );
   };
 
@@ -360,6 +399,8 @@ export default function ScanQR() {
                       <span className="font-black text-xs sm:text-sm text-gray-900">
                         {isLocating
                           ? "Mendeteksi Lokasi GPS..."
+                          : coords?.isPcVerified
+                          ? "Lokasi Sah: Komputer Resmi Madrasah"
                           : locationError
                           ? "Izin Lokasi GPS Diperlukan"
                           : isWithinRadius
@@ -370,13 +411,15 @@ export default function ScanQR() {
                         <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded border ${
                           isWithinRadius ? "bg-emerald-100 border-emerald-400 text-emerald-900" : "bg-red-100 border-red-400 text-red-900"
                         }`}>
-                          {currentDistance !== null ? `${Math.round(currentDistance)}m` : ""} / Maks {radiusMax}m
+                          {coords.isPcVerified ? "PC Terverifikasi" : `${currentDistance !== null ? `${Math.round(currentDistance)}m` : ""} / Maks ${radiusMax}m`}
                         </span>
                       )}
                     </div>
                     <p className="text-[11px] text-gray-600 font-medium truncate mt-0.5">
                       {isLocating
                         ? "Menghubungkan sensor koordinat perangkat..."
+                        : coords?.isPcVerified
+                        ? `Akses pemindaian disetujui dari stasiun komputer madrasah (${effectiveLembaga?.toUpperCase() || "MA"})`
                         : locationError || (isWithinRadius
                             ? `Jarak ${currentDistance !== null ? Math.round(currentDistance) : 0}m dari titik pusat (${effectiveLembaga?.toUpperCase() || "MA"})`
                             : `Jarak ${Math.round(currentDistance || 0)}m melebihi batas toleransi radius ${radiusMax}m.`)}
@@ -385,6 +428,17 @@ export default function ScanQR() {
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {locationError && (
+                    <button
+                      type="button"
+                      onClick={setPcSchoolLocation}
+                      className="p-1.5 sm:px-2.5 sm:py-1.5 bg-emerald-100 hover:bg-emerald-200 border-2 border-gray-900 rounded-xl font-black text-xs text-emerald-950 flex items-center gap-1 shadow-sm cursor-pointer transition-colors"
+                      title="Gunakan lokasi komputer resmi sekolah"
+                    >
+                      <span className="material-symbols-outlined text-base text-emerald-800">desktop_windows</span>
+                      <span className="hidden sm:inline">Verifikasi PC</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={detectLocation}
