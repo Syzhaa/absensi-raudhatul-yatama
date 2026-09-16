@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import useAppStore from "../store/useAppStore";
 
 export default function LocationSyncMobile() {
   const { sessionId } = useParams();
-  const [status, setStatus] = useState("idle"); // idle, locating, sending, success, error
+  const { user, isAuthenticated } = useAppStore();
+  const [status, setStatus] = useState("idle");
   const [message, setMessage] = useState("Ketuk tombol di bawah untuk mengirim koordinat satelit (GPS) Anda ke sistem.");
-  
+
+  // Pembatasan Akses: Hanya Admin/Petugas/Guru yang terautentikasi yang boleh mengirim lokasi
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setStatus("error");
+      setMessage("Akses Ditolak: Anda harus login ke akun Admin/Guru di HP ini terlebih dahulu sebelum dapat menyinkronkan lokasi.");
+    }
+  }, [isAuthenticated]);
+
   const handleSync = () => {
+    if (!isAuthenticated) return;
+
     if (!navigator.geolocation) {
       setStatus("error");
       setMessage("Browser di HP Anda tidak mendukung fitur GPS.");
@@ -83,6 +95,12 @@ export default function LocationSyncMobile() {
           </button>
         ) : null}
 
+        {status === "error" && !isAuthenticated && (
+          <div className="mt-4 px-4 py-3 bg-gray-100 rounded-xl border-2 border-gray-900 text-gray-800 font-bold text-sm">
+            Silakan buka tab baru, login ke absen.raudhatulyatama.sch.id, lalu kembali ke halaman ini.
+          </div>
+        )}
+        
         {status === "success" && (
           <div className="mt-4 px-4 py-3 bg-gray-100 rounded-xl border-2 border-gray-900 text-gray-800 font-bold text-sm">
             ✅ Proses Selesai. Lanjutkan di layar PC.

@@ -331,6 +331,27 @@ export default function ScanQR() {
     await startScanning();
   };
 
+  
+  const handleLocationSynced = (syncedCoords) => {
+    setCoords(syncedCoords);
+    if (typeof coordsRef !== 'undefined' && coordsRef) {
+       coordsRef.current = syncedCoords;
+    }
+    setIsDesktopBlocked(false);
+    setLocationError(null);
+  };
+
+  if (isDesktopBlocked) {
+    return (
+      <div className="w-full pb-28 md:pb-8 flex flex-col items-center justify-center min-h-[60vh] p-4">
+        <DesktopLocationSync 
+          onLocationReceived={handleLocationSynced} 
+          title="Akses Presensi via PC"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full pb-28 md:pb-8">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5 lg:gap-6 items-start w-full">

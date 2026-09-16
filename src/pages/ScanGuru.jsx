@@ -254,8 +254,26 @@ export default function ScanGuru() {
     };
   }, []);
 
-  return (
-    <div className="min-h-screen bg-slate-100 text-gray-900 font-sans p-3 sm:p-6 flex flex-col justify-between">
+  
+  const handleLocationSynced = (syncedCoords) => {
+    setCoords(syncedCoords);
+    setIsDesktopBlocked(false);
+    setLocationError(null);
+  };
+
+  if (isDesktopBlocked) {
+    return (
+    <div className="min-h-screen bg-slate-100
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 w-full">
+        <DesktopLocationSync 
+          onLocationReceived={handleLocationSynced} 
+          title="Akses Presensi via PC"
+        />
+      </div>
+    );
+  }
+
+  return ( text-gray-900 font-sans p-3 sm:p-6 flex flex-col justify-between">
       <div className="max-w-md w-full mx-auto space-y-4">
         {/* Top Branding Card */}
         <div className="bg-white border-2 sm:border-3 border-gray-900 rounded-2xl p-4 shadow-neo flex items-center justify-between gap-3">
