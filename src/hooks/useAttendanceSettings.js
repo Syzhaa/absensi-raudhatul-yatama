@@ -11,7 +11,7 @@ export function useAttendanceSettings() {
       const res = await api.get("/attendance/settings", {
         params: effectiveLembaga ? { lembaga: effectiveLembaga } : {},
       });
-      return res.data?.data;
+      return res.data?.data || res.data;
     },
     staleTime: 0, // Selalu fresh saat berpindah halaman tanpa perlu hard refresh
     refetchOnMount: "always",
@@ -22,9 +22,15 @@ export function useAttendanceSettings() {
       ? Boolean(Number(query.data.enable_teacher_attendance))
       : true;
 
+  const enableLocationCheck =
+    query.data?.enable_location_check !== undefined && query.data?.enable_location_check !== null
+      ? Boolean(Number(query.data.enable_location_check))
+      : true;
+
   return {
     ...query,
     settings: query.data,
     enableTeacherAttendance,
+    enableLocationCheck,
   };
 }

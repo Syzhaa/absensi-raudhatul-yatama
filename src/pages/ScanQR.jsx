@@ -5,6 +5,7 @@ import api from "../services/api";
 import { attendanceService } from "../services";
 import { useAppStore } from "../store/useAppStore";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
+import { useAttendanceSettings } from "../hooks/useAttendanceSettings";
 import { useScanner } from "../hooks/useScanner";
 import ScanResultModal from "../components/ScanResultModal";
 import ManualAttendanceForm from "../components/ManualAttendanceForm";
@@ -44,18 +45,8 @@ export default function ScanQR() {
   const queryClient = useQueryClient();
   const { effectiveLembaga } = useEffectiveLembaga();
 
-  // Fetch school settings (GPS coordinates & radius)
-  const { data: settingsData } = useQuery({
-    queryKey: ["attendance-settings", effectiveLembaga],
-    queryFn: () =>
-      api
-        .get("/attendance/settings", {
-          params: effectiveLembaga ? { lembaga: effectiveLembaga } : {},
-        })
-        .then((r) => r.data),
-    staleTime: 5 * 60 * 1000,
-  });
-  const settings = settingsData?.data || {};
+  // Fetch school settings (GPS coordinates & radius) using centralized hook
+  const { settings, enableLocationCheck, isLoading: isSettingsLoading } = useAttendanceSettings();
 
   // GPS Location states & detection
   const [coords, setCoords] = useState(null);
@@ -63,10 +54,19 @@ export default function ScanQR() {
   const [isLocating, setIsLocating] = useState(false);
   const coordsRef = useRef(null);
 
-  const isLocationRequired = Boolean(settings.enable_location_check);
-  const schoolLat = settings.latitude ? parseFloat(settings.latitude) : -3.37651;
-  const schoolLon = settings.longitude ? parseFloat(settings.longitude) : 114.64682;
-  const radiusMax = settings.radius_meters ? parseInt(settings.radius_meters, 10) : 100;
+  // Wajib validasi jika enableLocationCheck aktif (default true jika undefined)
+  const isLocationRequired = enableLocationCheck !== false;
+  const schoolLat =
+    settings?.latitude !== undefined && settings?.latitude !== null
+      ? parseFloat(settings.latitude)
+      : -3.37651;
+  const schoolLon =
+    settings?.longitude !== undefined && settings?.longitude !== null
+      ? parseFloat(settings.longitude)
+      : 114.64682;
+  const radiusMax = settings?.radius_meters
+    ? parseInt(settings.radius_meters, 10)
+    : 100;
 
   const detectLocation = () => {
     if (!navigator.geolocation) {
@@ -320,7 +320,14 @@ export default function ScanQR() {
 
           {/* GPS Location Status Banner */}
           <div className="mb-3.5">
-            {isLocationRequired ? (
+            {isSettingsLoading ? (
+              <div className="p-3 bg-amber-50 border-2 md:border-3 border-gray-900 rounded-2xl flex items-center justify-between shadow-neo animate-pulse text-xs text-amber-900">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base animate-spin">refresh</span>
+                  <span className="font-bold">Memuat konfigurasi GPS madrasah...</span>
+                </div>
+              </div>
+            ) : isLocationRequired ? (
               <div
                 className={`p-3 rounded-2xl border-2 md:border-3 border-gray-900 flex items-center justify-between shadow-neo transition-all ${
                   isLocating
