@@ -78,13 +78,16 @@ export default function ScanGuru() {
   const detectLocation = () => {
     const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 
-    // Langsung bypass jika menggunakan Desktop/PC untuk mencegah loading terus menerus (bug browser)
-    if (isDesktop ) {
-      setPcSchoolLocation();
+    // BLOKIR AKSES DARI PC/LAPTOP SESUAI INSTRUKSI BARU
+    if (isDesktop) {
+      setLocationError("⚠️ PERINGATAN: Gunakan HP (Smartphone) untuk absen atau memperbarui lokasi maps sekolah.");
+      setIsLocating(false);
       return;
     }
 
-    if (!navigator.geolocation) {
+    
+
+     if (!navigator.geolocation) {
       setLocationError("Browser tidak mendukung sensor GPS.");
       return;
     }

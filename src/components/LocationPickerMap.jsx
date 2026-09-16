@@ -180,6 +180,14 @@ export default function LocationPickerMap({
 
   // Handler: Ambil GPS Saat Ini (Cepat & Kompatibel untuk Mobile & PC)
   const handleGetCurrentGPS = async () => {
+    const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    if (isDesktop) {
+      setGpsStatus({
+        success: false,
+        message: "⚠️ PERINGATAN: Gunakan HP (Smartphone) Anda untuk memperbarui lokasi maps sekolah.",
+      });
+      return;
+    }
     if (!navigator.geolocation) {
       setGpsStatus({
         success: false,
@@ -266,6 +274,11 @@ export default function LocationPickerMap({
 
   // Handler: Uji Jarak Lokasi Saya ke Titik Sekolah
   const handleTestDistance = () => {
+    const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    if (isDesktop) {
+      alert("⚠️ PERINGATAN: Gunakan HP (Smartphone) Anda untuk menguji jarak lokasi.");
+      return;
+    }
     if (!navigator.geolocation) {
       alert("Browser tidak mendukung GPS.");
       return;

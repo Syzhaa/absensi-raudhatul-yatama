@@ -94,13 +94,16 @@ export default function ScanQR() {
   const detectLocation = () => {
     const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 
-    // Langsung bypass jika menggunakan Desktop/PC untuk mencegah loading terus menerus (bug browser)
-    if (isDesktop || isAdminRole) {
-      setPcSchoolLocation();
+    // BLOKIR AKSES DARI PC/LAPTOP SESUAI INSTRUKSI BARU
+    if (isDesktop) {
+      setLocationError("⚠️ PERINGATAN: Gunakan HP (Smartphone) untuk absen atau memperbarui lokasi maps sekolah.");
+      setIsLocating(false);
       return;
     }
 
-    if (!navigator.geolocation) {
+    
+
+     if (!navigator.geolocation) {
       setLocationError("Browser tidak mendukung sensor GPS.");
       return;
     }
@@ -428,17 +431,7 @@ export default function ScanQR() {
                 </div>
 
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {locationError && (
-                    <button
-                      type="button"
-                      onClick={setPcSchoolLocation}
-                      className="p-1.5 sm:px-2.5 sm:py-1.5 bg-emerald-100 hover:bg-emerald-200 border-2 border-gray-900 rounded-xl font-black text-xs text-emerald-950 flex items-center gap-1 shadow-sm cursor-pointer transition-colors"
-                      title="Gunakan lokasi komputer resmi sekolah"
-                    >
-                      <span className="material-symbols-outlined text-base text-emerald-800">desktop_windows</span>
-                      <span className="hidden sm:inline">Verifikasi PC</span>
-                    </button>
-                  )}
+                  
                   <button
                     type="button"
                     onClick={detectLocation}
