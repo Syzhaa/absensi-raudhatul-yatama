@@ -34,7 +34,8 @@ export default function ScanGuru() {
   // Location state
   const [coords, setCoords] = useState(null);
   const [locationError, setLocationError] = useState(null);
-  const [isDesktopBlocked, setIsDesktopBlocked] = useState(false);
+  const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+  const [isDesktopBlocked, setIsDesktopBlocked] = useState(isDesktop);
   const [isLocating, setIsLocating] = useState(false);
 
   // Scanner state
@@ -78,18 +79,13 @@ export default function ScanGuru() {
   };
 
   const detectLocation = () => {
-    const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-
-    // BLOKIR AKSES DARI PC/LAPTOP SESUAI INSTRUKSI BARU
-    if (isDesktop) {
-      setLocationError("⚠️ PERINGATAN: Gunakan HP (Smartphone) untuk absen atau memperbarui lokasi maps sekolah.");
+    if (isDesktop && !coords?.isPcVerified) {
+      setIsDesktopBlocked(true);
       setIsLocating(false);
       return;
     }
 
-    
-
-     if (!navigator.geolocation) {
+    if (!navigator.geolocation) {
       setLocationError("Browser tidak mendukung sensor GPS.");
       return;
     }
@@ -261,10 +257,9 @@ export default function ScanGuru() {
     setLocationError(null);
   };
 
-  if (isDesktopBlocked) {
+  if (isDesktopBlocked && isLocationRequired && !coords?.isPcVerified) {
     return (
-    <div className="min-h-screen bg-slate-100
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 w-full">
+      <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4">
         <DesktopLocationSync 
           onLocationReceived={handleLocationSynced} 
           title="Akses Presensi via PC"
@@ -273,7 +268,8 @@ export default function ScanGuru() {
     );
   }
 
-  return ( text-gray-900 font-sans p-3 sm:p-6 flex flex-col justify-between">
+  return (
+    <div className="min-h-screen bg-slate-100 text-gray-900 font-sans p-3 sm:p-6 flex flex-col justify-between">
       <div className="max-w-md w-full mx-auto space-y-4">
         {/* Top Branding Card */}
         <div className="bg-white border-2 sm:border-3 border-gray-900 rounded-2xl p-4 shadow-neo flex items-center justify-between gap-3">

@@ -52,7 +52,8 @@ export default function ScanQR() {
   // GPS Location states & detection
   const [coords, setCoords] = useState(null);
   const [locationError, setLocationError] = useState(null);
-  const [isDesktopBlocked, setIsDesktopBlocked] = useState(false);
+  const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+  const [isDesktopBlocked, setIsDesktopBlocked] = useState(isDesktop);
   const [isLocating, setIsLocating] = useState(false);
   const coordsRef = useRef(null);
 
@@ -94,18 +95,13 @@ export default function ScanQR() {
   };
 
   const detectLocation = () => {
-    const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-
-    // BLOKIR AKSES DARI PC/LAPTOP SESUAI INSTRUKSI BARU
-    if (isDesktop) {
-      setLocationError("⚠️ PERINGATAN: Gunakan HP (Smartphone) untuk absen atau memperbarui lokasi maps sekolah.");
+    if (isDesktop && !coords?.isPcVerified) {
+      setIsDesktopBlocked(true);
       setIsLocating(false);
       return;
     }
 
-    
-
-     if (!navigator.geolocation) {
+    if (!navigator.geolocation) {
       setLocationError("Browser tidak mendukung sensor GPS.");
       return;
     }
@@ -341,7 +337,7 @@ export default function ScanQR() {
     setLocationError(null);
   };
 
-  if (isDesktopBlocked) {
+  if (isDesktopBlocked && isLocationRequired && !coords?.isPcVerified) {
     return (
       <div className="w-full pb-28 md:pb-8 flex flex-col items-center justify-center min-h-[60vh] p-4">
         <DesktopLocationSync 
