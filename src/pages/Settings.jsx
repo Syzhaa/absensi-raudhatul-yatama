@@ -6,6 +6,7 @@ import { authService } from "../services";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { PageHeaderSkeleton, FormCardSkeleton } from "../components/Skeleton";
 import { AVAILABLE_PAGES, DEFAULT_PERMISSIONS } from "../auth/accessPolicy";
+import LocationPickerMap from "../components/LocationPickerMap";
 
 // TimeInput Helper
 function TimeInput({ label, value, onChange, description, required = true }) {
@@ -204,8 +205,10 @@ export default function Settings() {
       queryClient.invalidateQueries({ queryKey: ["students_master"] });
       queryClient.invalidateQueries({ queryKey: ["teachers_master"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard_stats"] });
+      queryClient.invalidateQueries();
       setShowSuccessToast(true);
       setTimeout(() => setShowSuccessToast(false), 3000);
+      alert("Pengaturan berhasil disimpan!");
     },
     onError: (error) => {
       const resData = error.response?.data;
@@ -217,43 +220,6 @@ export default function Settings() {
       alert("Gagal menyimpan: " + errorMsg);
     },
   });
-
-  const [copiedLink, setCopiedLink] = useState(false);
-  const [isGettingGPS, setIsGettingGPS] = useState(false);
-
-  const teacherPortalUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/scan-guru?lembaga=${effectiveLembaga || "ma"}`
-    : `https://absen.raudhatulyatama.sch.id/scan-guru?lembaga=${effectiveLembaga || "ma"}`;
-
-  const handleCopyPortalLink = () => {
-    navigator.clipboard.writeText(teacherPortalUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
-  };
-
-  const handleGetCurrentGPS = () => {
-    if (!navigator.geolocation) {
-      alert("Browser Anda tidak mendukung deteksi lokasi.");
-      return;
-    }
-    setIsGettingGPS(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setFormData((prev) => ({
-          ...prev,
-          latitude: parseFloat(pos.coords.latitude.toFixed(8)),
-          longitude: parseFloat(pos.coords.longitude.toFixed(8)),
-        }));
-        setIsGettingGPS(false);
-        alert(`Koordinat GPS berhasil diperoleh:\nLatitude: ${pos.coords.latitude}\nLongitude: ${pos.coords.longitude}\nAkurasi: ±${Math.round(pos.coords.accuracy)} meter.`);
-      },
-      (err) => {
-        setIsGettingGPS(false);
-        alert("Gagal mendeteksi lokasi GPS: " + err.message + "\nPastikan GPS perangkat aktif dan berikan izin lokasi.");
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  };
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault();
@@ -608,113 +574,31 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Card 3: Titik Koordinat Sekolah & Radius */}
+          {/* Card 2: Titik Koordinat Lokasi Sekolah & Peta Interaktif */}
           <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-5 shadow-neo space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-xl text-emerald-600">location_on</span>
+            <div className="flex items-center gap-2.5 border-b border-gray-200 pb-3">
+              <span className="material-symbols-outlined text-xl text-emerald-600">location_on</span>
+              <div>
                 <h3 className="font-black text-sm md:text-base text-gray-900">
-                  Titik Koordinat Lokasi Sekolah ({effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA"})
+                  Titik Pusat & Radius Madrasah ({effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA"})
                 </h3>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleGetCurrentGPS}
-                disabled={isGettingGPS}
-                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border-2 border-gray-900 rounded-xl font-black text-xs text-gray-800 flex items-center gap-1.5 shadow-sm transition-all self-start sm:self-auto disabled:opacity-50 cursor-pointer"
-              >
-                {isGettingGPS ? (
-                  <span className="w-3.5 h-3.5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></span>
-                ) : (
-                  <span className="material-symbols-outlined text-base text-emerald-600">my_location</span>
-                )}
-                <span>Ambil GPS Saya Sekarang</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <label className="text-xs font-black uppercase text-gray-700">
-                  Latitude (Lintang) *
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.latitude ?? ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      latitude: parseFloat(e.target.value) || 0,
-                    }))
-                  }
-                  placeholder="-3.37651000"
-                  className="w-full px-3.5 py-2.5 bg-white border-2 border-gray-900 rounded-xl font-mono text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-green"
-                  required
-                />
-                <span className="text-[10px] text-gray-500">Garis lintang lokasi sekolah</span>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-black uppercase text-gray-700">
-                  Longitude (Bujur) *
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={formData.longitude ?? ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      longitude: parseFloat(e.target.value) || 0,
-                    }))
-                  }
-                  placeholder="114.64682000"
-                  className="w-full px-3.5 py-2.5 bg-white border-2 border-gray-900 rounded-xl font-mono text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-green"
-                  required
-                />
-                <span className="text-[10px] text-gray-500">Garis bujur lokasi sekolah</span>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-black uppercase text-gray-700">
-                  Radius Maksimal (Meter) *
-                </label>
-                <input
-                  type="number"
-                  min="10"
-                  max="5000"
-                  value={formData.radius_meters ?? 100}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      radius_meters: parseInt(e.target.value, 10) || 100,
-                    }))
-                  }
-                  placeholder="100"
-                  className="w-full px-3.5 py-2.5 bg-white border-2 border-gray-900 rounded-xl font-mono text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-green"
-                  required
-                />
-                <span className="text-[10px] text-gray-500">Jarak toleransi (disarankan 100m)</span>
+                <p className="text-xs text-gray-500 font-medium mt-0.5">
+                  Tentukan titik lokasi fisik sekolah. Klik pada peta, geser pin 🏫, cari alamat, atau gunakan tombol &quot;Ambil GPS Saya Sekarang&quot;.
+                </p>
               </div>
             </div>
 
-            {formData.latitude && formData.longitude && (
-              <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs">
-                <span className="text-gray-600 font-medium">
-                  Koordinat Terpasang: <strong>{formData.latitude}, {formData.longitude}</strong>
-                </span>
-                <a
-                  href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-emerald-700 hover:text-emerald-900 font-bold underline flex items-center gap-1"
-                >
-                  <span className="material-symbols-outlined text-sm">map</span>
-                  <span>Cek di Google Maps</span>
-                </a>
-              </div>
-            )}
+            <LocationPickerMap
+              latitude={formData.latitude}
+              longitude={formData.longitude}
+              radius={formData.radius_meters}
+              onChangeCoordinates={(lat, lng) =>
+                setFormData((prev) => ({ ...prev, latitude: lat, longitude: lng }))
+              }
+              onChangeRadius={(rad) =>
+                setFormData((prev) => ({ ...prev, radius_meters: rad }))
+              }
+            />
           </div>
 
           {/* Action Save Button */}
@@ -729,7 +613,7 @@ export default function Settings() {
               ) : (
                 <span className="material-symbols-outlined text-base">save</span>
               )}
-              <span>Simpan Pengaturan Lokasi & Guru</span>
+              <span>Simpan Pengaturan Lokasi & GPS</span>
             </button>
           </div>
         </form>
