@@ -28,19 +28,28 @@ function getDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-const LOCATION_SESSION_KEY = "yatama_location_sync_session";
+function getLocationSessionKey(lembaga) {
+  const norm = (lembaga || "ma").toLowerCase();
+  return `yatama_location_sync_session_${norm}`;
+}
 
-function getCachedLocationSession() {
+function getCachedLocationSession(lembaga) {
   try {
-    const raw = localStorage.getItem(LOCATION_SESSION_KEY);
+    const key = getLocationSessionKey(lembaga);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (parsed && parsed.expiresAt && Date.now() < parsed.expiresAt) {
-      return parsed;
+      const norm = (lembaga || "ma").toLowerCase();
+      if (!parsed.lembaga || parsed.lembaga.toLowerCase() === norm) {
+        return parsed;
+      }
     }
-    localStorage.removeItem(LOCATION_SESSION_KEY);
+    localStorage.removeItem(key);
   } catch {
-    localStorage.removeItem(LOCATION_SESSION_KEY);
+    try {
+      localStorage.removeItem(getLocationSessionKey(lembaga));
+    } catch {}
   }
   return null;
 }
@@ -66,14 +75,16 @@ export default function ScanQR() {
   // Fetch school settings (GPS coordinates & radius) using centralized hook
   const { settings, enableLocationCheck, isLoading: isSettingsLoading } = useAttendanceSettings();
 
-  // GPS Location states & detection
-  const cachedLoc = getCachedLocationSession();
-  const [coords, setCoords] = useState(cachedLoc || null);
+  // GPS Location states & detection (Isolated Per Lembaga)
+  const [coords, setCoords] = useState(() => getCachedLocationSession(effectiveLembaga));
   const [locationError, setLocationError] = useState(null);
   const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-  const [isDesktopBlocked, setIsDesktopBlocked] = useState(isDesktop && !cachedLoc?.isPcVerified);
+  const [isDesktopBlocked, setIsDesktopBlocked] = useState(() => {
+    const cached = getCachedLocationSession(effectiveLembaga);
+    return isDesktop && !cached?.isPcVerified;
+  });
   const [isLocating, setIsLocating] = useState(false);
-  const coordsRef = useRef(cachedLoc || null);
+  const coordsRef = useRef(getCachedLocationSession(effectiveLembaga));
 
   const userRole = useAppStore((state) => state.userRole);
   const isAdminRole = [
@@ -100,21 +111,29 @@ export default function ScanQR() {
     : 100;
 
   const setPcSchoolLocation = () => {
+    const activeLembagaNorm = (effectiveLembaga || "ma").toLowerCase();
     const c = {
       latitude: schoolLat,
       longitude: schoolLon,
       accuracy: 5,
       isPcVerified: true,
+      lembaga: activeLembagaNorm,
+      expiresAt: Date.now() + 3 * 3600 * 1000,
     };
+    try {
+      localStorage.setItem(getLocationSessionKey(effectiveLembaga), JSON.stringify(c));
+    } catch {}
     setCoords(c);
     coordsRef.current = c;
     setLocationError(null);
     setIsLocating(false);
+    setIsDesktopBlocked(false);
   };
 
   const detectLocation = () => {
-    // Jika PC sudah terverifikasi (via QR sync HP atau stasiun resmi), jangan memindai GPS lagi, langsung aktif!
-    if (coords?.isPcVerified || cachedLoc?.isPcVerified) {
+    const cachedForLembaga = getCachedLocationSession(effectiveLembaga);
+    // Jika PC sudah terverifikasi untuk lembaga aktif ini, jangan memindai GPS lagi, langsung aktif!
+    if (coords?.isPcVerified || cachedForLembaga?.isPcVerified) {
       setIsLocating(false);
       setLocationError(null);
       setIsDesktopBlocked(false);
@@ -165,17 +184,23 @@ export default function ScanQR() {
     );
   };
 
+  // Re-evaluate verification status per lembaga
   useEffect(() => {
+    const cachedForLembaga = getCachedLocationSession(effectiveLembaga);
+    setCoords(cachedForLembaga || null);
+    coordsRef.current = cachedForLembaga || null;
+    const blocked = isDesktop && !cachedForLembaga?.isPcVerified;
+    setIsDesktopBlocked(blocked);
+    setLocationError(null);
+
     if (isLocationRequired) {
-      if (coords?.isPcVerified || cachedLoc?.isPcVerified) {
+      if (cachedForLembaga?.isPcVerified) {
         setIsLocating(false);
-        setLocationError(null);
-        setIsDesktopBlocked(false);
       } else {
         detectLocation();
       }
     }
-  }, [isLocationRequired, effectiveLembaga]);
+  }, [effectiveLembaga, isLocationRequired, isDesktop]);
 
   const currentDistance =
     coords && schoolLat && schoolLon
@@ -363,13 +388,15 @@ export default function ScanQR() {
   
   const handleLocationSynced = (syncedCoords) => {
     const expiresAt = Date.now() + 3 * 3600 * 1000; // 3 Hours TTL
+    const activeLembagaNorm = (effectiveLembaga || "ma").toLowerCase();
     const fullSession = {
       ...syncedCoords,
       isPcVerified: true,
+      lembaga: activeLembagaNorm,
       expiresAt,
     };
     try {
-      localStorage.setItem(LOCATION_SESSION_KEY, JSON.stringify(fullSession));
+      localStorage.setItem(getLocationSessionKey(effectiveLembaga), JSON.stringify(fullSession));
     } catch {}
     setCoords(fullSession);
     if (typeof coordsRef !== 'undefined' && coordsRef) {
@@ -377,6 +404,7 @@ export default function ScanQR() {
     }
     setIsDesktopBlocked(false);
     setLocationError(null);
+    setIsLocating(false);
   };
 
   if (isDesktopBlocked && isLocationRequired && !coords?.isPcVerified) {
@@ -384,7 +412,8 @@ export default function ScanQR() {
       <div className="w-full pb-20 md:pb-6 flex flex-col items-stretch justify-start w-full">
         <DesktopLocationSync 
           onLocationReceived={handleLocationSynced} 
-          title="Akses Presensi via PC"
+          title={`Akses Presensi via PC (${(effectiveLembaga || "MA").toUpperCase()})`}
+          lembaga={effectiveLembaga}
         />
       </div>
     );

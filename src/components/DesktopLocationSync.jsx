@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import api from "../services/api";
 import { useAppStore } from "../store/useAppStore";
 
-export default function DesktopLocationSync({ onLocationReceived, title = "Verifikasi Lokasi via HP" }) {
+export default function DesktopLocationSync({ onLocationReceived, title = "Verifikasi Lokasi via HP", lembaga = "MA" }) {
   const [sessionId] = useState(() => uuidv4());
   const [status, setStatus] = useState("connecting"); // connecting, listening, success, error
   const [syncUrl, setSyncUrl] = useState("");
@@ -45,14 +45,16 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
     const activeUid = currentUser.id || userIdStore;
     const activeRole = currentUser.role || userRoleStore;
     const activeName = currentUser.name || currentUser.nama || userNameStore;
+    const activeLembaga = lembaga || "MA";
 
     if (activeUid) params.set("uid", activeUid);
     if (activeRole) params.set("role", activeRole);
     if (activeName) params.set("name", activeName);
+    if (activeLembaga) params.set("lembaga", activeLembaga);
 
     const url = `${baseUrl}/sync/${sessionId}?${params.toString()}`;
     setSyncUrl(url);
-  }, [sessionId, currentUser, userIdStore, userRoleStore, userNameStore]);
+  }, [sessionId, currentUser, userIdStore, userRoleStore, userNameStore, lembaga]);
 
   // Listen to SSE Stream
   useEffect(() => {
@@ -75,6 +77,7 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
             longitude: Number(data.longitude),
             accuracy: Number(data.accuracy || 5),
             isPcVerified: true,
+            lembaga: data.lembaga || lembaga || "MA",
             syncedByName: data.synced_by_name || "Petugas",
             syncedByRole: data.synced_by_role || "Admin",
           });
@@ -137,13 +140,13 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 border border-amber-400 rounded-full text-xs font-black text-amber-950 mb-3 shadow-xs">
                 <span className="material-symbols-outlined text-sm">satellite_alt</span>
-                SINKRONISASI GPS PC (3 JAM)
+                SINKRONISASI GPS PC - {(lembaga || "MA").toUpperCase()} (3 JAM)
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight leading-snug mb-2">
                 {title}
               </h2>
               <p className="text-xs sm:text-sm text-gray-600 font-medium leading-relaxed max-w-3xl">
-                Perangkat PC/Laptop tidak memiliki sensor GPS fisik. Scan QR Code di samping menggunakan HP untuk membagikan lokasi GPS sekolah yang sah.
+                Perangkat PC/Laptop tidak memiliki sensor GPS fisik. Scan QR Code di samping menggunakan HP untuk membagikan lokasi GPS lingkungan madrasah <strong>{(lembaga || "MA").toUpperCase()}</strong> yang sah.
               </p>
             </div>
 

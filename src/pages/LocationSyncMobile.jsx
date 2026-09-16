@@ -21,6 +21,7 @@ export default function LocationSyncMobile() {
   const pcUid = searchParams.get("uid");
   const pcRole = searchParams.get("role");
   const pcName = searchParams.get("name");
+  const pcLembaga = searchParams.get("lembaga") || "";
 
   const [currentUser, setCurrentUser] = useState(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
@@ -135,6 +136,7 @@ export default function LocationSyncMobile() {
             synced_by_name: activeUser.nama || activeUser.name,
             synced_by_role: activeUser.role,
             pc_user_id: pcUid,
+            lembaga: pcLembaga || activeUser.lembaga || "MA",
           });
 
           if (res.data?.success) {
