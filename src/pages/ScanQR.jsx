@@ -1,3 +1,4 @@
+import DesktopLocationSync from "../components/DesktopLocationSync";
 import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -51,6 +52,7 @@ export default function ScanQR() {
   // GPS Location states & detection
   const [coords, setCoords] = useState(null);
   const [locationError, setLocationError] = useState(null);
+  const [isDesktopBlocked, setIsDesktopBlocked] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const coordsRef = useRef(null);
 

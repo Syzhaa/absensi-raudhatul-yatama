@@ -1,3 +1,4 @@
+import DesktopLocationSync from "../components/DesktopLocationSync";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useSearchParams, Link } from "react-router-dom";
@@ -33,6 +34,7 @@ export default function ScanGuru() {
   // Location state
   const [coords, setCoords] = useState(null);
   const [locationError, setLocationError] = useState(null);
+  const [isDesktopBlocked, setIsDesktopBlocked] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
 
   // Scanner state

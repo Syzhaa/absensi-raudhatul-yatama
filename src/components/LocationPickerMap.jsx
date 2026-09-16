@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import DesktopLocationSync from "./DesktopLocationSync";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -81,6 +82,7 @@ export default function LocationPickerMap({
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [isGettingGPS, setIsGettingGPS] = useState(false);
+  const [isDesktopBlocked, setIsDesktopBlocked] = useState(false);
   const [gpsStatus, setGpsStatus] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [testDistance, setTestDistance] = useState(null);
@@ -182,10 +184,7 @@ export default function LocationPickerMap({
   const handleGetCurrentGPS = async () => {
     const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
     if (isDesktop) {
-      setGpsStatus({
-        success: false,
-        message: "⚠️ PERINGATAN: Gunakan HP (Smartphone) Anda untuk memperbarui lokasi maps sekolah.",
-      });
+      setIsDesktopBlocked(true);
       return;
     }
     if (!navigator.geolocation) {
@@ -276,7 +275,7 @@ export default function LocationPickerMap({
   const handleTestDistance = () => {
     const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
     if (isDesktop) {
-      alert("⚠️ PERINGATAN: Gunakan HP (Smartphone) Anda untuk menguji jarak lokasi.");
+      setIsDesktopBlocked(true);
       return;
     }
     if (!navigator.geolocation) {
