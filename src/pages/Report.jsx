@@ -46,6 +46,18 @@ const formatTglLengkap = (val) => {
   }
 };
 
+// Helper Alamat Resmi Per Lembaga (Sesuai Maps & Kontak Yayasan)
+const getLembagaAddress = (lembagaCode) => {
+  const norm = (lembagaCode || "").toLowerCase();
+  if (norm === "mts") {
+    return "Jl. Handil Jambu, Kertak Hanyar, Kab. Banjar, Kalimantan Selatan";
+  }
+  if (norm === "ma") {
+    return "Jl. A. Yani KM 10,700 Gang H. Antung, Kertak Hanyar, Kab. Banjar, Kalsel";
+  }
+  return "Jl. A. Yani KM 10,700 Gang H. Antung & Jl. Handil Jambu, Kertak Hanyar, Kab. Banjar, Kalsel";
+};
+
 // Helper Email Resmi Per Lembaga
 const getLembagaEmail = (lembagaCode) => {
   const norm = (lembagaCode || "").toLowerCase();
@@ -145,6 +157,7 @@ export default function Report() {
   const currentInstitutionCode = (isSuperAdmin && lembagaFilter ? lembagaFilter : effectiveLembaga || "MA").toUpperCase();
   const currentInstitutionFull = currentInstitutionCode === "MTS" ? "MADRASAH TSANAWIYAH" : "MADRASAH ALIYAH";
   const currentLembagaEmail = getLembagaEmail(currentInstitutionCode);
+  const currentInstitutionAddress = getLembagaAddress(currentInstitutionCode);
 
   const baseParams = useMemo(() => ({
     date_from: dateFrom,
@@ -330,7 +343,7 @@ export default function Report() {
         const wsData = [
           ["YAYASAN RAUDHATUL YATAMA"],
           [`${institutionFull} RAUDHATUL YATAMA`],
-          ["Jl. Trans Kalimantan Km. 21, Desa Sungai Bakung, Kec. Sungai Tabuk, Kab. Banjar, Kalimantan Selatan"],
+          ["{currentInstitutionAddress}"],
           [`Website: raudhatulyatama.sch.id, ppdb.raudhatulyatama.sch.id | Email: ${email}`],
           [`LAPORAN PRESENSI HARIAN ${targetTitle}`],
           [`Hari & Tanggal: ${formatTglLengkap(dateFrom)} | Dicetak: ${format(new Date(), "dd/MM/yyyy HH:mm")}`],
@@ -370,7 +383,7 @@ export default function Report() {
         const sumHeader = [
           ["YAYASAN RAUDHATUL YATAMA"],
           [`${institutionFull} RAUDHATUL YATAMA`],
-          ["Jl. Trans Kalimantan Km. 21, Desa Sungai Bakung, Kec. Sungai Tabuk, Kab. Banjar, Kalimantan Selatan"],
+          ["{currentInstitutionAddress}"],
           [`Website: raudhatulyatama.sch.id, ppdb.raudhatulyatama.sch.id | Email: ${email}`],
           [`REKAPITULASI JUMLAH PRESENSI ${targetTitle}`],
           [`Periode: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)} | Dicetak: ${format(new Date(), "dd/MM/yyyy HH:mm")}`],
@@ -486,7 +499,7 @@ export default function Report() {
     d.setFont("helvetica", "normal");
     d.setFontSize(8.5);
     d.setTextColor(75, 85, 99);
-    d.text("Jl. Trans Kalimantan Km. 21, Desa Sungai Bakung, Kec. Sungai Tabuk, Kab. Banjar, Kalimantan Selatan", 152, 25, { align: "center" });
+    d.text("{currentInstitutionAddress}", 152, 25, { align: "center" });
     // 2 Website Resmi (Tanpa domain absen) & Email sesuai lembaga
     d.text(`Website: raudhatulyatama.sch.id • ppdb.raudhatulyatama.sch.id | Email: ${email}`, 152, 29, { align: "center" });
 
@@ -1079,7 +1092,7 @@ export default function Report() {
               {currentInstitutionFull} RAUDHATUL YATAMA
             </h3>
             <p className="text-xs text-gray-600 font-medium mt-0.5">
-              Jl. Trans Kalimantan Km. 21, Desa Sungai Bakung, Kec. Sungai Tabuk, Kab. Banjar, Kalimantan Selatan
+              {currentInstitutionAddress}
             </p>
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-1 mt-1.5 text-[11px] font-bold text-gray-700">
               <span>
