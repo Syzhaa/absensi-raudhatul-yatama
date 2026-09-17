@@ -154,8 +154,7 @@
 }
 
 /* Html5Qrcode Scanner Styling Override */
-#qr-reader,
-#teacher-qr-reader {
+#qr-reader {
   position: relative !important;
   display: block !important;
   border: none !important;
@@ -166,8 +165,7 @@
   overflow: hidden !important;
 }
 
-#qr-reader video,
-#teacher-qr-reader video {
+#qr-reader video {
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
@@ -179,14 +177,12 @@
 }
 
 /* Sembunyikan duplicate video jika sempat ada glitch multi-mount */
-#qr-reader video ~ video,
-#teacher-qr-reader video ~ video {
+#qr-reader video ~ video {
   display: none !important;
 }
 
 /* Sembunyikan canvas & shaded overlay bawaan library */
 #qr-reader canvas,
-#teacher-qr-reader canvas,
 #qr-canvas,
 #qr-canvas-visible {
   display: none !important;
