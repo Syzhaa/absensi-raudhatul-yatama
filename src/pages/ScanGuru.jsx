@@ -235,9 +235,10 @@ export default function ScanGuru() {
       const qr = new Html5Qrcode("teacher-qr-reader");
       html5QrCodeRef.current = qr;
 
-      await qr.start(
-        { facingMode: "environment" },
-        { fps: 10, aspectRatio: 1.0 },
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const cameraConfig = isMobile ? { facingMode: { ideal: "environment" } } : { facingMode: "user" };
+
+      const guruScanCallback =
         async (decodedText) => {
           if (scanMutation.isPending) return;
 
@@ -336,8 +337,13 @@ export default function ScanGuru() {
 
           submitScan(decodedText);
           await stopCamera();
-        }
-      );
+        };
+
+      try {
+        await qr.start(cameraConfig, { fps: 10, aspectRatio: 1.0 }, guruScanCallback);
+      } catch (camErr) {
+        await qr.start({}, { fps: 10, aspectRatio: 1.0 }, guruScanCallback);
+      }
       setIsScanning(true);
     } catch (err) {
       setCameraError("Kamera tidak dapat diakses. Pastikan izin kamera telah diberikan atau gunakan opsi input manual di bawah.");

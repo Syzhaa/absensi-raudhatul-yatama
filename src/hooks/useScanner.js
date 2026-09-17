@@ -26,17 +26,18 @@ export function useScanner({
         const readerElement = document.getElementById("qr-reader");
         if (!readerElement) return;
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "environment" },
-          });
-          stream.getTracks().forEach((track) => track.stop());
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+              video: isMobile ? { facingMode: { ideal: "environment" } } : true,
+            });
+            stream.getTracks().forEach((track) => track.stop());
+          } catch (e) {
+            // Ignore pre-flight stream test error, let Html5Qrcode handle it
+          }
           html5QrCodeRef.current = new Html5Qrcode("qr-reader");
-          await html5QrCodeRef.current.start(
-            { facingMode: "environment" },
-            { 
-              fps: 10,
-              aspectRatio: 1.0,
-            },
+          const cameraConfig = isMobile ? { facingMode: { ideal: "environment" } } : { facingMode: "user" };
+          const scanCallback =
             async (decodedText) => {
               if (
                 scanMutation.isPending ||
@@ -241,9 +242,14 @@ export function useScanner({
                   lastScannedRef.current = null;
                 }
               }, 3000);
-            },
-            () => {},
-          );
+            };
+
+          try {
+            await html5QrCodeRef.current.start(cameraConfig, { fps: 10, aspectRatio: 1.0 }, scanCallback, () => {});
+          } catch (camErr) {
+            // Fallback to any default camera if ideal/facingMode constraint fails
+            await html5QrCodeRef.current.start({}, { fps: 10, aspectRatio: 1.0 }, scanCallback, () => {});
+          }
           setScanning(true);
         } catch (err) {
           let errorMsg = "Tidak dapat mengakses kamera";
