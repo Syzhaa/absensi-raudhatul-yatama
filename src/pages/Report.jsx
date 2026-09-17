@@ -47,18 +47,46 @@ const formatTglLengkap = (val) => {
   }
 };
 
-// Helper Alamat Resmi Per Lembaga
+let dynamicKontakList = [];
+
+const fetchDynamicKontak = async () => {
+  if (dynamicKontakList.length > 0) return dynamicKontakList;
+  try {
+    const res = await api.get("/kontak");
+    if (Array.isArray(res.data?.data)) {
+      dynamicKontakList = res.data.data;
+      return dynamicKontakList;
+    }
+  } catch {}
+  return [];
+};
+
+// Helper Alamat Resmi Per Lembaga (Dinamis dari Backend API dengan Fallback)
 const getLembagaAddress = (lembagaCode) => {
   const norm = (lembagaCode || "").toLowerCase();
-  if (norm === "mts") {
+  const targetLembaga = norm === "mts" ? "mts" : (norm === "ma" ? "ma" : "yayasan");
+  const found = dynamicKontakList.find(
+    (k) => k.lembaga === targetLembaga && k.key?.toLowerCase() === "alamat"
+  );
+  if (found?.value) return found.value;
+
+  if (targetLembaga === "mts") {
     return "Jl. Handil Jambu, Kertak Hanyar, Kab. Banjar, Kalimantan Selatan";
   }
   return "Jl. A. Yani KM 10,700 Gang H. Antung, Kertak Hanyar, Kab. Banjar, Kalsel";
 };
 
-// Helper Email Resmi Per Lembaga
+// Helper Email Resmi Per Lembaga (Dinamis dari Backend API dengan Fallback)
 const getLembagaEmail = (lembagaCode) => {
   const norm = (lembagaCode || "").toLowerCase();
+  const targetLembaga = norm === "mts" ? "mts" : (norm === "ma" ? "ma" : null);
+  if (targetLembaga) {
+    const found = dynamicKontakList.find(
+      (k) => k.lembaga === targetLembaga && k.key?.toLowerCase() === "email"
+    );
+    if (found?.value) return found.value;
+  }
+
   if (norm === "mts") {
     return "mts@raudhatulyatama.sch.id";
   }
@@ -319,6 +347,7 @@ export default function Report() {
     setIsExporting(true);
     setExportProgress("Menyiapkan dokumen Excel...");
     try {
+      await fetchDynamicKontak();
       const institutionName = currentInstitutionCode;
       const institutionFull = currentInstitutionFull;
       const email = currentLembagaEmail;
@@ -572,6 +601,7 @@ export default function Report() {
     setIsExporting(true);
     setExportProgress("Menyiapkan dokumen PDF...");
     try {
+      await fetchDynamicKontak();
       const institutionName = currentInstitutionCode;
       const institutionFull = currentInstitutionFull;
       const targetTitle = category === "siswa" ? "SANTRI / SISWA" : "DEWAN GURU";
