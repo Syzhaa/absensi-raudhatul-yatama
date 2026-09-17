@@ -56,46 +56,66 @@ export default function DesktopLocationSync({ onLocationReceived, title = "Verif
     setSyncUrl(url);
   }, [sessionId, currentUser, userIdStore, userRoleStore, userNameStore, lembaga]);
 
-  // Listen to SSE Stream
+  // Listen to SSE Stream + Polling Fallback
   useEffect(() => {
+    let isDone = false;
     const apiUrl = import.meta.env.VITE_API_URL || "https://api.raudhatulyatama.sch.id/api/v1";
     const sse = new EventSource(`${apiUrl}/location-sync/stream/${sessionId}`);
 
+    const handleSuccessData = (data) => {
+      if (isDone) return;
+      isDone = true;
+      setStatus("success");
+      try { sse.close(); } catch (e) {}
+
+      setTimeout(() => {
+        onLocationReceived({
+          latitude: Number(data.latitude),
+          longitude: Number(data.longitude),
+          accuracy: Number(data.accuracy || 5),
+          isPcVerified: true,
+          syncedByName: data.synced_by_name || "Petugas",
+          syncedByRole: data.synced_by_role || "Admin",
+        });
+      }, 1000);
+    };
+
     sse.addEventListener("connected", () => {
-      setStatus("listening");
+      if (!isDone) setStatus("listening");
     });
 
     sse.addEventListener("location_received", (e) => {
       try {
         const data = JSON.parse(e.data);
-        setStatus("success");
-        sse.close();
-
-        setTimeout(() => {
-          onLocationReceived({
-            latitude: Number(data.latitude),
-            longitude: Number(data.longitude),
-            accuracy: Number(data.accuracy || 5),
-            isPcVerified: true,
-            lembaga: data.lembaga || lembaga || "MA",
-            syncedByName: data.synced_by_name || "Petugas",
-            syncedByRole: data.synced_by_role || "Admin",
-          });
-        }, 1200);
+        handleSuccessData(data);
       } catch (err) {
         console.error("Failed to parse SSE location data", err);
       }
     });
 
     sse.addEventListener("timeout", () => {
-      setStatus("error");
-      sse.close();
+      if (!isDone) setStatus("error");
+      try { sse.close(); } catch (e) {}
     });
 
-    sse.onerror = () => {};
+    // Fallback polling every 2.5 seconds in case SSE stream is blocked by client/proxy
+    const pollInterval = setInterval(async () => {
+      if (isDone) return;
+      try {
+        const checkRes = await fetch(`${apiUrl}/location-sync/check/${sessionId}`);
+        const checkData = await checkRes.json();
+        if (checkData.synced && checkData.data) {
+          handleSuccessData(checkData.data);
+        }
+      } catch (err) {
+        // ignore poll errors
+      }
+    }, 2500);
 
     return () => {
-      sse.close();
+      isDone = true;
+      clearInterval(pollInterval);
+      try { sse.close(); } catch (e) {}
     };
   }, [sessionId, onLocationReceived]);
 

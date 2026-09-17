@@ -183,8 +183,35 @@ export default function LocationPickerMap({
   // Handler: Ambil GPS Saat Ini (Cepat & Kompatibel untuk Mobile & PC)
   const handleGetCurrentGPS = async () => {
     const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    
+    // Jika di Desktop, cek apakah ada sesi GPS sinkronisasi 3 jam yang masih aktif
     if (isDesktop) {
-      setIsDesktopBlocked(true);
+      try {
+        const raw = localStorage.getItem("yatama_location_sync_session");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.latitude && parsed?.longitude && parsed?.expiresAt && Date.now() < parsed.expiresAt) {
+            const myLat = parseFloat(Number(parsed.latitude).toFixed(8));
+            const myLon = parseFloat(Number(parsed.longitude).toFixed(8));
+            onChangeCoordinates(myLat, myLon);
+            if (mapInstanceRef.current && markerRef.current && circleRef.current) {
+              markerRef.current.setLatLng([myLat, myLon]);
+              circleRef.current.setLatLng([myLat, myLon]);
+              mapInstanceRef.current.setView([myLat, myLon], 17, { animate: true });
+            }
+            setGpsStatus({
+              success: true,
+              message: `Koordinat berhasil diambil dari sesi sinkronisasi HP (${myLat}, ${myLon}). Klik 'Simpan Pengaturan' untuk memperbarui.`,
+            });
+            return;
+          }
+        }
+      } catch (e) {}
+
+      setGpsStatus({
+        success: false,
+        message: "Perangkat PC tidak memiliki GPS fisik. Buka menu 'Scan Presensi' dan lakukan sinkronisasi via HP terlebih dahulu, atau geser pin 🏫 di peta secara manual.",
+      });
       return;
     }
     if (!navigator.geolocation) {

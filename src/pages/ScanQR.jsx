@@ -342,8 +342,18 @@ export default function ScanQR() {
     coordsRef,
   });
 
+  // Auto-start scanner on mount or when desktop block is resolved
   useEffect(() => {
-    startScanning();
+    if (!isDesktopBlocked && !showManualForm) {
+      // Small timeout to guarantee #qr-reader is mounted in DOM
+      const timer = setTimeout(() => {
+        startScanning();
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [isDesktopBlocked, showManualForm]);
+
+  useEffect(() => {
     return () => {
       stopScanning();
       if (restartTimerRef.current) clearTimeout(restartTimerRef.current);
