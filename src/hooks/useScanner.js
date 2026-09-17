@@ -27,16 +27,7 @@ export function useScanner({
         if (!readerElement) return;
         try {
           const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-          try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-              video: isMobile ? { facingMode: { ideal: "environment" } } : true,
-            });
-            stream.getTracks().forEach((track) => track.stop());
-          } catch (e) {
-            // Ignore pre-flight stream test error, let Html5Qrcode handle it
-          }
           html5QrCodeRef.current = new Html5Qrcode("qr-reader");
-          const cameraConfig = isMobile ? { facingMode: { ideal: "environment" } } : { facingMode: "user" };
           const scanCallback =
             async (decodedText) => {
               if (
@@ -244,11 +235,50 @@ export function useScanner({
               }, 3000);
             };
 
+          let started = false;
+
+          // 1. Coba mulai dengan facingMode valid ("environment" untuk kamera belakang HP, "user" untuk laptop)
           try {
-            await html5QrCodeRef.current.start(cameraConfig, { fps: 10, aspectRatio: 1.0 }, scanCallback, () => {});
-          } catch (camErr) {
-            // Fallback to any default camera if ideal/facingMode constraint fails
-            await html5QrCodeRef.current.start({}, { fps: 10, aspectRatio: 1.0 }, scanCallback, () => {});
+            await html5QrCodeRef.current.start(
+              { facingMode: isMobile ? "environment" : "user" },
+              { fps: 10, aspectRatio: 1.0 },
+              scanCallback,
+              () => {}
+            );
+            started = true;
+          } catch (firstErr) {
+            console.warn("Gagal start facingMode primer:", firstErr);
+          }
+
+          // 2. Jika gagal, coba deteksi list device camera yang tersedia
+          if (!started) {
+            try {
+              const devices = await Html5Qrcode.getCameras();
+              if (devices && devices.length > 0) {
+                // Pada smartphone kamera belakang biasanya di akhir list
+                const selectedCamera = isMobile ? devices[devices.length - 1] : devices[0];
+                await html5QrCodeRef.current.start(
+                  selectedCamera.id,
+                  { fps: 10, aspectRatio: 1.0 },
+                  scanCallback,
+                  () => {}
+                );
+                started = true;
+              }
+            } catch (deviceErr) {
+              console.warn("Gagal start via getCameras:", deviceErr);
+            }
+          }
+
+          // 3. Fallback terakhir: coba facingMode "user" (kamera depan / generic)
+          if (!started) {
+            await html5QrCodeRef.current.start(
+              { facingMode: "user" },
+              { fps: 10, aspectRatio: 1.0 },
+              scanCallback,
+              () => {}
+            );
+            started = true;
           }
           setScanning(true);
         } catch (err) {

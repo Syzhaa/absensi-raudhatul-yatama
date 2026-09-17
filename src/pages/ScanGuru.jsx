@@ -239,7 +239,6 @@ export default function ScanGuru() {
       html5QrCodeRef.current = qr;
 
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const cameraConfig = isMobile ? { facingMode: { ideal: "environment" } } : { facingMode: "user" };
 
       const guruScanCallback =
         async (decodedText) => {
@@ -342,10 +341,46 @@ export default function ScanGuru() {
           await stopCamera();
         };
 
+      let started = false;
+
+      // 1. Coba mulai dengan facingMode valid ("environment" untuk HP, "user" untuk PC)
       try {
-        await qr.start(cameraConfig, { fps: 10, aspectRatio: 1.0 }, guruScanCallback);
-      } catch (camErr) {
-        await qr.start({}, { fps: 10, aspectRatio: 1.0 }, guruScanCallback);
+        await qr.start(
+          { facingMode: isMobile ? "environment" : "user" },
+          { fps: 10, aspectRatio: 1.0 },
+          guruScanCallback
+        );
+        started = true;
+      } catch (firstErr) {
+        console.warn("Gagal start facingMode primer di Guru:", firstErr);
+      }
+
+      // 2. Jika gagal, coba deteksi list device camera yang tersedia
+      if (!started) {
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          if (devices && devices.length > 0) {
+            const selectedCamera = isMobile ? devices[devices.length - 1] : devices[0];
+            await qr.start(
+              selectedCamera.id,
+              { fps: 10, aspectRatio: 1.0 },
+              guruScanCallback
+            );
+            started = true;
+          }
+        } catch (deviceErr) {
+          console.warn("Gagal start via getCameras di Guru:", deviceErr);
+        }
+      }
+
+      // 3. Fallback terakhir: coba facingMode "user"
+      if (!started) {
+        await qr.start(
+          { facingMode: "user" },
+          { fps: 10, aspectRatio: 1.0 },
+          guruScanCallback
+        );
+        started = true;
       }
       setIsScanning(true);
     } catch (err) {
