@@ -47,9 +47,13 @@ const formatTglLengkap = (val) => {
   }
 };
 
-// Helper Alamat Resmi Per Lembaga (Sesuai Permintaan Resmi Yayasan)
-const getLembagaAddress = () => {
-  return "Simpang Empat, Kec. Kertak Hanyar, Kabupaten Banjar, Kalimantan Selatan 70654";
+// Helper Alamat Resmi Per Lembaga
+const getLembagaAddress = (lembagaCode) => {
+  const norm = (lembagaCode || "").toLowerCase();
+  if (norm === "mts") {
+    return "Jl. Handil Jambu, Kertak Hanyar, Kab. Banjar, Kalimantan Selatan";
+  }
+  return "Jl. A. Yani KM 10,700 Gang H. Antung, Kertak Hanyar, Kab. Banjar, Kalsel";
 };
 
 // Helper Email Resmi Per Lembaga
