@@ -76,7 +76,12 @@ export default function Report() {
   const today = format(new Date(), "yyyy-MM-dd");
   const firstDayThisMonth = format(startOfMonth(new Date()), "yyyy-MM-dd");
 
-  const [tab, setTab] = useState("siswa"); // siswa | guru | rekap_siswa | rekap_guru
+  // Category: "siswa" | "guru"
+  const [category, setCategory] = useState("siswa");
+  
+  // View mode for date range: "rekap" (angka ringkasan) | "detail" (log mentah)
+  const [rangeViewMode, setRangeViewMode] = useState("rekap");
+
   const [dateFrom, setDateFrom] = useState("2026-08-01");
   const [dateTo, setDateTo] = useState("2026-09-17");
   const [statusFilter, setStatusFilter] = useState("");
@@ -86,8 +91,15 @@ export default function Report() {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(25);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState("");
 
+  const isSingleDay = dateFrom === dateTo;
   const activeKelas = kelasFilterLocal || selectedKelas || "";
+
+  // Set default view mode based on isSingleDay
+  // 1 hari -> detail log harian (jam masuk, pulang, status, ket)
+  // rentang hari -> rekap jumlah angka
+  const isDetailView = isSingleDay || rangeViewMode === "detail";
 
   const baseParams = useMemo(() => ({
     date_from: dateFrom,
@@ -111,7 +123,6 @@ export default function Report() {
   };
 
   const handlePresetLastMonth = () => {
-    const lastMonth = subMonths(new Date(), 1);
     setDateFrom("2026-08-01");
     setDateTo("2026-08-31");
     setPage(1);
@@ -123,352 +134,235 @@ export default function Report() {
     setPage(1);
   };
 
-  // Queries
+  // Queries:
+  // 1. Detailed log query (students)
   const { data: siswaData, isLoading: isSiswaLoading } = useQuery({
-    queryKey: ["report-siswa", tab, dateFrom, dateTo, activeKelas, statusFilter, lembagaFilter, page, perPage],
+    queryKey: ["report-siswa-detail", dateFrom, dateTo, activeKelas, statusFilter, lembagaFilter, page, perPage],
     queryFn: async () => {
       const res = await api.get("/attendance/report/students", {
         params: { ...baseParams, page, per_page: perPage, ...(activeKelas && { kelas: activeKelas }) },
       });
       return res.data;
     },
-    enabled: tab === "siswa",
+    enabled: category === "siswa",
   });
 
+  // 2. Detailed log query (teachers)
   const { data: guruData, isLoading: isGuruLoading } = useQuery({
-    queryKey: ["report-guru", tab, dateFrom, dateTo, statusFilter, lembagaFilter, page, perPage],
+    queryKey: ["report-guru-detail", dateFrom, dateTo, statusFilter, lembagaFilter, page, perPage],
     queryFn: async () => {
       const res = await api.get("/attendance/report/teachers", {
         params: { ...baseParams, page, per_page: perPage },
       });
       return res.data;
     },
-    enabled: tab === "guru",
+    enabled: category === "guru",
   });
 
-  const { data: rekapData, isLoading: isRekapLoading } = useQuery({
-    queryKey: ["report-rekap-siswa", tab, dateFrom, dateTo, activeKelas, lembagaFilter],
+  // 3. Rekap jumlah query (students summary)
+  const { data: rekapSiswaData, isLoading: isRekapSiswaLoading } = useQuery({
+    queryKey: ["report-siswa-summary", dateFrom, dateTo, activeKelas, lembagaFilter],
     queryFn: async () => {
       const res = await api.get("/attendance/report/student-matrix", {
         params: { ...baseParams, ...(activeKelas && { kelas: activeKelas }) },
       });
       return res.data;
     },
-    enabled: tab === "rekap" || tab === "rekap_siswa",
+    enabled: category === "siswa" && !isSingleDay,
   });
 
+  // 4. Rekap jumlah query (teachers summary)
   const { data: rekapGuruData, isLoading: isRekapGuruLoading } = useQuery({
-    queryKey: ["report-rekap-guru", tab, dateFrom, dateTo, lembagaFilter],
+    queryKey: ["report-guru-summary", dateFrom, dateTo, lembagaFilter],
     queryFn: async () => {
       const res = await api.get("/attendance/report/teacher-summary", {
         params: baseParams,
       });
       return res.data;
     },
-    enabled: tab === "rekap_guru",
+    enabled: category === "guru" && !isSingleDay,
   });
 
-  const isSingleDay = dateFrom === dateTo;
-  const isLoading = isSiswaLoading || isGuruLoading || isRekapLoading || isRekapGuruLoading;
+  const isLoading = isSiswaLoading || isGuruLoading || isRekapSiswaLoading || isRekapGuruLoading;
 
-  // Extract pagination meta safely from LengthAwarePaginator
+  // Pagination meta for detailed log
   const paginationMeta = useMemo(() => {
-    if (tab === "siswa") {
+    if (category === "siswa") {
       return siswaData?.data?.data || null;
     }
-    if (tab === "guru") {
-      return guruData?.data?.data || null;
-    }
-    return null;
-  }, [tab, siswaData, guruData]);
+    return guruData?.data?.data || null;
+  }, [category, siswaData, guruData]);
 
-  // Filter rows for current page display
-  const siswaRows = useMemo(() => {
-    const rawData = paginationMeta?.data || siswaData?.data?.data || [];
+  // Rows for Detailed view (Page list)
+  const detailRows = useMemo(() => {
+    const rawData = paginationMeta?.data || [];
     const rows = Array.isArray(rawData) ? rawData : [];
     if (!search) return rows;
     const q = search.toLowerCase();
-    return rows.filter((r) =>
-      r.student?.nama?.toLowerCase().includes(q) ||
-      r.student?.nisn?.toLowerCase().includes(q) ||
-      r.student?.kelas?.toLowerCase().includes(q)
-    );
-  }, [paginationMeta, siswaData, search]);
+    return rows.filter((r) => {
+      const personName = (r.student?.nama || r.teacher?.nama || "").toLowerCase();
+      const personId = (r.student?.nisn || r.teacher?.nip || "").toLowerCase();
+      const personClass = (r.student?.kelas || "").toLowerCase();
+      return personName.includes(q) || personId.includes(q) || personClass.includes(q);
+    });
+  }, [paginationMeta, search]);
 
-  const guruRows = useMemo(() => {
-    const rawData = paginationMeta?.data || guruData?.data?.data || [];
-    const rows = Array.isArray(rawData) ? rawData : [];
-    if (!search) return rows;
-    const q = search.toLowerCase();
-    return rows.filter((r) =>
-      r.teacher?.nama?.toLowerCase().includes(q) ||
-      r.teacher?.nip?.toLowerCase().includes(q)
-    );
-  }, [paginationMeta, guruData, search]);
-
+  // Rows for Rekap Jumlah view
   const rekapRows = useMemo(() => {
-    const rawData = rekapData?.data?.data || [];
+    let rawData = [];
+    if (category === "siswa") {
+      rawData = rekapSiswaData?.data?.data || [];
+    } else {
+      rawData = rekapGuruData?.data?.data || [];
+    }
     const rows = Array.isArray(rawData) ? rawData : [];
     if (!search) return rows;
     const q = search.toLowerCase();
-    return rows.filter((r) =>
-      r.nama?.toLowerCase().includes(q) ||
-      r.nisn?.toLowerCase().includes(q) ||
-      r.kelas?.toLowerCase().includes(q)
-    );
-  }, [rekapData, search]);
+    return rows.filter((r) => {
+      const personName = (r.nama || "").toLowerCase();
+      const personId = (r.nisn || r.nip || r.nis || "").toLowerCase();
+      const personClass = (r.kelas || "").toLowerCase();
+      return personName.includes(q) || personId.includes(q) || personClass.includes(q);
+    });
+  }, [category, rekapSiswaData, rekapGuruData, search]);
 
-  const rekapGuruRows = useMemo(() => {
-    const rawData = rekapGuruData?.data?.data || [];
-    const rows = Array.isArray(rawData) ? rawData : [];
-    if (!search) return rows;
-    const q = search.toLowerCase();
-    return rows.filter((r) =>
-      r.nama?.toLowerCase().includes(q) ||
-      r.nip?.toLowerCase().includes(q)
-    );
-  }, [rekapGuruData, search]);
+  // Summary counts for stats cards
+  const summary = category === "siswa" ? siswaData?.data?.summary : guruData?.data?.summary;
 
-  const summary =
-    tab === "siswa"
-      ? siswaData?.data?.summary
-      : tab === "guru"
-      ? guruData?.data?.summary
-      : null;
-
-  // Helper to fetch ALL data for complete exports
-  const fetchAllExportData = async () => {
-    if (tab === "siswa") {
+  // ==========================================
+  // HELPER DATA FETCHING FOR EXPORTS
+  // ==========================================
+  const fetchAllDetailedLogs = async () => {
+    if (category === "siswa") {
       const res = await api.get("/attendance/report/students", {
         params: { ...baseParams, per_page: 5000, ...(activeKelas && { kelas: activeKelas }) },
       });
       return res.data?.data?.data?.data || [];
-    }
-    if (tab === "guru") {
+    } else {
       const res = await api.get("/attendance/report/teachers", {
         params: { ...baseParams, per_page: 5000 },
       });
       return res.data?.data?.data?.data || [];
     }
-    if (tab === "rekap_siswa" || tab === "rekap") {
+  };
+
+  const fetchAllSummaryCounts = async () => {
+    if (category === "siswa") {
       const res = await api.get("/attendance/report/student-matrix", {
         params: { ...baseParams, ...(activeKelas && { kelas: activeKelas }) },
       });
       return res.data?.data?.data || [];
-    }
-    if (tab === "rekap_guru") {
+    } else {
       const res = await api.get("/attendance/report/teacher-summary", {
         params: baseParams,
       });
       return res.data?.data?.data || [];
     }
-    return [];
   };
 
-  // EXPORT EXCEL RESMI & RAPI
+  // ==========================================
+  // EXPORT EXCEL RESMI (MULTI-SHEET PER TANGGAL)
+  // ==========================================
   const exportExcel = async () => {
     setIsExporting(true);
+    setExportProgress("Mengambil seluruh data...");
     try {
-      const allRows = await fetchAllExportData();
-      if (!allRows || allRows.length === 0) {
-        alert("Tidak ada data untuk diekspor pada rentang tanggal ini.");
-        return;
-      }
-
-      const institutionName = (isSuperAdmin && lembagaFilter ? lembagaFilter : effectiveLembaga || "MA").toUpperCase();
-      let wsData = [];
-      let filename = "";
-      let colWidths = [];
-
-      const kopHeader = [
-        ["YAYASAN RAUDHATUL YATAMA"],
-        [`MADRASAH ${institutionName === "MTS" ? "TSANAWIYAH" : "ALIYAH"} RAUDHATUL YATAMA`],
-        [tab === "siswa" ? "LAPORAN PRESENSI SANTRI / SISWA" : tab === "guru" ? "LAPORAN PRESENSI DEWAN GURU" : "REKAPITULASI KEHADIRAN"],
-        [`Periode: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)} | Dicetak: ${format(new Date(), "dd/MM/yyyy HH:mm")}`],
-        [],
-      ];
-
-      if (tab === "siswa") {
-        filename = `Laporan_Presensi_Siswa_${institutionName}_${dateFrom}_sd_${dateTo}.xlsx`;
-        wsData = [
-          ...kopHeader,
-          ["No", "Tanggal", "Nama Siswa", "NISN", "Kelas", "Lembaga", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"],
-          ...allRows.map((r, i) => [
-            i + 1,
-            formatTgl(r.attendance_date),
-            r.student?.nama || "-",
-            r.student?.nisn || "-",
-            formatKelas(r.student?.kelas) || "-",
-            (r.lembaga || institutionName).toUpperCase(),
-            STATUS_LABELS[r.status] || r.status,
-            r.check_in ? r.check_in.slice(0, 5) : "-",
-            r.check_out ? r.check_out.slice(0, 5) : "-",
-            r.notes || "-",
-          ]),
-        ];
-        colWidths = [{ wch: 6 }, { wch: 15 }, { wch: 28 }, { wch: 16 }, { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 25 }];
-      } else if (tab === "guru") {
-        filename = `Laporan_Presensi_Guru_${institutionName}_${dateFrom}_sd_${dateTo}.xlsx`;
-        wsData = [
-          ...kopHeader,
-          ["No", "Tanggal", "Nama Guru", "NIP / NUPTK / NPK", "Lembaga", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"],
-          ...allRows.map((r, i) => [
-            i + 1,
-            formatTgl(r.attendance_date),
-            r.teacher?.nama || "-",
-            r.teacher?.nip || "-",
-            (r.lembaga || institutionName).toUpperCase(),
-            STATUS_LABELS[r.status] || r.status,
-            r.check_in ? r.check_in.slice(0, 5) : "-",
-            r.check_out ? r.check_out.slice(0, 5) : "-",
-            r.notes || "-",
-          ]),
-        ];
-        colWidths = [{ wch: 6 }, { wch: 15 }, { wch: 28 }, { wch: 18 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 25 }];
-      } else if (tab === "rekap_guru") {
-        filename = `Rekapitulasi_Guru_${institutionName}_${dateFrom}_sd_${dateTo}.xlsx`;
-        wsData = [
-          ...kopHeader,
-          ["No", "Nama Guru", "NIP / NUPTK / NPK", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir", "Total Hari"],
-          ...allRows.map((r, i) => [
-            i + 1,
-            r.nama,
-            r.nip || "-",
-            (r.lembaga || institutionName).toUpperCase(),
-            Number(r.hadir) || 0,
-            Number(r.terlambat) || 0,
-            Number(r.izin) || 0,
-            Number(r.sakit) || 0,
-            Number(r.alpha) || 0,
-            Number(r.libur) || 0,
-            Number(r.total_hadir) || 0,
-            Number(r.total_days) || 0,
-          ]),
-        ];
-        colWidths = [{ wch: 6 }, { wch: 28 }, { wch: 18 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 12 }, { wch: 12 }];
-      } else {
-        filename = `Rekapitulasi_Matriks_Siswa_${institutionName}_${dateFrom}_sd_${dateTo}.xlsx`;
-        wsData = [
-          ...kopHeader,
-          ["No", "Nama Siswa", "NISN", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"],
-          ...allRows.map((r, i) => {
-            const s = r.summary || {};
-            return [
-              i + 1,
-              r.nama,
-              r.nisn || "-",
-              formatKelas(r.kelas) || "-",
-              (r.lembaga || institutionName).toUpperCase(),
-              s.hadir ?? 0,
-              s.terlambat ?? 0,
-              s.izin ?? 0,
-              s.sakit ?? 0,
-              s.alpha ?? 0,
-              s.libur ?? 0,
-              r.total_hadir ?? 0,
-            ];
-          }),
-        ];
-        colWidths = [{ wch: 6 }, { wch: 28 }, { wch: 16 }, { wch: 12 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 12 }];
-      }
-
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      ws["!cols"] = colWidths;
-
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Laporan Absensi");
-      XLSX.writeFile(wb, filename);
-    } catch (err) {
-      console.error("Export Excel error:", err);
-      alert("Gagal mengekspor data ke Excel: " + (err.message || "Unknown error"));
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  // EXPORT PDF FORMAL & RESMI (KOP SURAT + TTD PENGESAHAN)
-  const exportPdf = async (mode = "ringkasan") => {
-    setIsExporting(true);
-    try {
-      const allRows = await fetchAllExportData();
-      if (!allRows || allRows.length === 0) {
-        alert("Tidak ada data untuk dicetak.");
-        return;
-      }
-
-      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       const institutionName = (isSuperAdmin && lembagaFilter ? lembagaFilter : effectiveLembaga || "MA").toUpperCase();
       const institutionFull = institutionName === "MTS" ? "MADRASAH TSANAWIYAH" : "MADRASAH ALIYAH";
+      const targetTitle = category === "siswa" ? "SANTRI / SISWA" : "DEWAN GURU";
 
-      const drawKopSurat = (d, title, subtitle) => {
-        // Kop Surat Header
-        d.setFont("helvetica", "bold");
-        d.setFontSize(14);
-        d.setTextColor(17, 24, 39);
-        d.text("YAYASAN RAUDHATUL YATAMA", 148.5, 14, { align: "center" });
+      const wb = XLSX.utils.book_new();
 
-        d.setFontSize(12);
-        d.setTextColor(16, 185, 129); // Primary green
-        d.text(`${institutionFull} RAUDHATUL YATAMA`, 148.5, 20, { align: "center" });
-
-        d.setFont("helvetica", "normal");
-        d.setFontSize(8.5);
-        d.setTextColor(75, 85, 99);
-        d.text("Jl. Trans Kalimantan Km. 21, Desa Sungai Bakung, Kec. Sungai Tabuk, Kab. Banjar, Kalsel", 148.5, 25, { align: "center" });
-        d.text("Website: www.raudhatulyatama.sch.id | Email: madrasah@raudhatulyatama.sch.id", 148.5, 29, { align: "center" });
-
-        // Garis Ganda Pemisah Kop
-        d.setDrawColor(17, 24, 39);
-        d.setLineWidth(0.8);
-        d.line(14, 32, 283, 32);
-        d.setLineWidth(0.25);
-        d.line(14, 33.2, 283, 33.2);
-
-        // Judul Dokumen
-        d.setFont("helvetica", "bold");
-        d.setFontSize(11);
-        d.setTextColor(17, 24, 39);
-        d.text(title, 148.5, 39, { align: "center" });
-
-        d.setFont("helvetica", "normal");
-        d.setFontSize(9);
-        d.setTextColor(100, 116, 139);
-        d.text(subtitle, 148.5, 43.5, { align: "center" });
-      };
-
-      const drawSignatures = (d, finalY) => {
-        const pageHeight = d.internal.pageSize.height;
-        let startY = finalY + 12;
-
-        // Jika ruang tanda tangan mepet ke bawah, buat halaman baru
-        if (startY + 35 > pageHeight) {
-          d.addPage("a4", "landscape");
-          startY = 20;
+      if (isSingleDay) {
+        // --- Single Day: 1 Sheet Detail Harian ---
+        const logs = await fetchAllDetailedLogs();
+        if (logs.length === 0) {
+          alert("Tidak ada data presensi pada tanggal ini.");
+          return;
         }
 
-        const dateStr = format(new Date(), "dd MMMM yyyy");
+        const wsData = [
+          ["YAYASAN RAUDHATUL YATAMA"],
+          [`${institutionFull} RAUDHATUL YATAMA`],
+          [`LAPORAN PRESENSI HARIAN ${targetTitle}`],
+          [`Hari & Tanggal: ${formatTglLengkap(dateFrom)} | Dicetak: ${format(new Date(), "dd/MM/yyyy HH:mm")}`],
+          [],
+          category === "siswa"
+            ? ["No", "Nama Siswa", "NISN", "Kelas", "Lembaga", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"]
+            : ["No", "Nama Guru", "NIP / NUPTK / NPK", "Lembaga", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"],
+          ...logs.map((r, i) => [
+            i + 1,
+            category === "siswa" ? (r.student?.nama || "-") : (r.teacher?.nama || "-"),
+            category === "siswa" ? (r.student?.nisn || "-") : (r.teacher?.nip || "-"),
+            category === "siswa" ? (formatKelas(r.student?.kelas) || "-") : institutionName,
+            institutionName,
+            STATUS_LABELS[r.status] || r.status,
+            r.check_in ? r.check_in.slice(0, 5) : "-",
+            r.check_out ? r.check_out.slice(0, 5) : "-",
+            r.notes || "-",
+          ]),
+        ];
 
-        d.setFont("helvetica", "normal");
-        d.setFontSize(9);
-        d.setTextColor(30, 41, 59);
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        ws["!cols"] = [{ wch: 6 }, { wch: 28 }, { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 25 }];
+        XLSX.utils.book_append_sheet(wb, ws, "Presensi_Harian");
+      } else {
+        // --- Date Range: Sheet 1 = Ringkasan Jumlah, Sheet 2..N = Sheet per Tanggal ---
+        const [summaries, logs] = await Promise.all([
+          fetchAllSummaryCounts(),
+          fetchAllDetailedLogs(),
+        ]);
 
-        // Kiri: Petugas Presensi
-        d.text("Mengetahui,", 30, startY);
-        d.text("Petugas Presensi Madrasah,", 30, startY + 5);
-        d.text("( .................................................... )", 30, startY + 26);
-        d.text("NIP. -", 30, startY + 30);
+        if (summaries.length === 0 && logs.length === 0) {
+          alert("Tidak ada data presensi pada rentang tanggal ini.");
+          return;
+        }
 
-        // Kanan: Kepala Madrasah
-        d.text(`Banjar, ${dateStr}`, 210, startY);
-        d.text(`Kepala ${institutionFull},`, 210, startY + 5);
-        d.text("( .................................................... )", 210, startY + 26);
-        d.text("NIP. -", 210, startY + 30);
-      };
+        // 1. SHEET 1: RINGKASAN JUMLAH
+        const sumHeader = [
+          ["YAYASAN RAUDHATUL YATAMA"],
+          [`${institutionFull} RAUDHATUL YATAMA`],
+          [`REKAPITULASI JUMLAH PRESENSI ${targetTitle}`],
+          [`Periode: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)} | Dicetak: ${format(new Date(), "dd/MM/yyyy HH:mm")}`],
+          [],
+          category === "siswa"
+            ? ["No", "Nama Siswa", "NISN", "Kelas", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]
+            : ["No", "Nama Guru", "NIP / NUPTK / NPK", "Lembaga", "Hadir", "Terlambat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"],
+        ];
 
-      if (mode === "harian" && (tab === "siswa" || tab === "guru")) {
-        // Mode Per-Hari (1 Hari = 1 Halaman)
+        const sumRows = summaries.map((r, i) => {
+          const s = r.summary || {};
+          const hadir = s.hadir ?? r.hadir ?? 0;
+          const telat = s.terlambat ?? r.terlambat ?? 0;
+          const izin = s.izin ?? r.izin ?? 0;
+          const sakit = s.sakit ?? r.sakit ?? 0;
+          const alpha = s.alpha ?? r.alpha ?? 0;
+          const libur = s.libur ?? r.libur ?? 0;
+          const totalHadir = r.total_hadir ?? (hadir + telat);
+
+          return [
+            i + 1,
+            r.nama,
+            category === "siswa" ? (r.nisn || r.nis || "-") : (r.nip || "-"),
+            category === "siswa" ? (formatKelas(r.kelas) || "-") : institutionName,
+            institutionName,
+            hadir,
+            telat,
+            izin,
+            sakit,
+            alpha,
+            libur,
+            totalHadir,
+          ];
+        });
+
+        const wsSummary = XLSX.utils.aoa_to_sheet([...sumHeader, ...sumRows]);
+        wsSummary["!cols"] = [{ wch: 6 }, { wch: 28 }, { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 12 }];
+        XLSX.utils.book_append_sheet(wb, wsSummary, "Ringkasan_Jumlah");
+
+        // 2. SHEET 2..N: PER TANGGAL DI DALAM RENTANG
         const groupedByDate = {};
-        allRows.forEach((r) => {
+        logs.forEach((r) => {
           const rawDate = r.attendance_date ? String(r.attendance_date).split("T")[0].split(" ")[0] : "Lainnya";
           if (!groupedByDate[rawDate]) groupedByDate[rawDate] = [];
           groupedByDate[rawDate].push(r);
@@ -476,39 +370,321 @@ export default function Report() {
 
         const uniqueDates = Object.keys(groupedByDate).sort();
 
-        uniqueDates.forEach((tgl, pageIdx) => {
-          if (pageIdx > 0) doc.addPage("a4", "landscape");
+        uniqueDates.forEach((tgl) => {
+          const dayRows = groupedByDate[tgl] || [];
+          const sheetName = tgl.length >= 10 ? `${tgl.slice(8, 10)}-${tgl.slice(5, 7)}-${tgl.slice(0, 4)}` : tgl;
 
-          const title = tab === "siswa" ? "LAPORAN PRESENSI HARIAN SANTRI" : "LAPORAN PRESENSI HARIAN DEWAN GURU";
+          const dateWsData = [
+            [`PRESENSI TANGGAL: ${formatTglLengkap(tgl)}`],
+            [`Lembaga: ${institutionFull} Raudhatul Yatama`],
+            [],
+            category === "siswa"
+              ? ["No", "Nama Siswa", "NISN", "Kelas", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"]
+              : ["No", "Nama Guru", "NIP / NUPTK / NPK", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"],
+            ...dayRows.map((r, i) => [
+              i + 1,
+              category === "siswa" ? (r.student?.nama || "-") : (r.teacher?.nama || "-"),
+              category === "siswa" ? (r.student?.nisn || "-") : (r.teacher?.nip || "-"),
+              category === "siswa" ? (formatKelas(r.student?.kelas) || "-") : (STATUS_LABELS[r.status] || r.status),
+              STATUS_LABELS[r.status] || r.status,
+              r.check_in ? r.check_in.slice(0, 5) : "-",
+              r.check_out ? r.check_out.slice(0, 5) : "-",
+              r.notes || "-",
+            ]),
+          ];
+
+          const wsDate = XLSX.utils.aoa_to_sheet(dateWsData);
+          wsDate["!cols"] = [{ wch: 6 }, { wch: 28 }, { wch: 18 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 25 }];
+          // Excel sheet name max 31 chars
+          XLSX.utils.book_append_sheet(wb, wsDate, sheetName.slice(0, 31));
+        });
+      }
+
+      const filename = `Laporan_Absensi_${category.toUpperCase()}_${institutionName}_${dateFrom}_sd_${dateTo}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    } catch (err) {
+      console.error("Export Excel error:", err);
+      alert("Gagal mengekspor data ke Excel: " + (err.message || "Unknown error"));
+    } finally {
+      setIsExporting(false);
+      setExportProgress("");
+    }
+  };
+
+  // ==========================================
+  // EXPORT PDF FORMAL & RESMI (KOP SURAT + TTD)
+  // ==========================================
+  const drawKopSurat = (d, institutionFull, title, subtitle) => {
+    d.setFont("helvetica", "bold");
+    d.setFontSize(14);
+    d.setTextColor(17, 24, 39);
+    d.text("YAYASAN RAUDHATUL YATAMA", 148.5, 14, { align: "center" });
+
+    d.setFontSize(12);
+    d.setTextColor(16, 185, 129);
+    d.text(`${institutionFull} RAUDHATUL YATAMA`, 148.5, 20, { align: "center" });
+
+    d.setFont("helvetica", "normal");
+    d.setFontSize(8.5);
+    d.setTextColor(75, 85, 99);
+    d.text("Jl. Trans Kalimantan Km. 21, Desa Sungai Bakung, Kec. Sungai Tabuk, Kab. Banjar, Kalsel", 148.5, 25, { align: "center" });
+    d.text("Website: www.raudhatulyatama.sch.id | Email: madrasah@raudhatulyatama.sch.id", 148.5, 29, { align: "center" });
+
+    // Garis Ganda Pemisah Kop
+    d.setDrawColor(17, 24, 39);
+    d.setLineWidth(0.8);
+    d.line(14, 32, 283, 32);
+    d.setLineWidth(0.25);
+    d.line(14, 33.2, 283, 33.2);
+
+    // Judul Dokumen
+    d.setFont("helvetica", "bold");
+    d.setFontSize(11);
+    d.setTextColor(17, 24, 39);
+    d.text(title, 148.5, 39, { align: "center" });
+
+    d.setFont("helvetica", "normal");
+    d.setFontSize(9);
+    d.setTextColor(100, 116, 139);
+    d.text(subtitle, 148.5, 43.5, { align: "center" });
+  };
+
+  const drawSignatures = (d, institutionFull, finalY) => {
+    const pageHeight = d.internal.pageSize.height;
+    let startY = finalY + 12;
+
+    if (startY + 35 > pageHeight) {
+      d.addPage("a4", "landscape");
+      startY = 20;
+    }
+
+    const dateStr = format(new Date(), "dd MMMM yyyy");
+
+    d.setFont("helvetica", "normal");
+    d.setFontSize(9);
+    d.setTextColor(30, 41, 59);
+
+    d.text("Mengetahui,", 30, startY);
+    d.text("Petugas Presensi Madrasah,", 30, startY + 5);
+    d.text("( .................................................... )", 30, startY + 26);
+    d.text("NIP. -", 30, startY + 30);
+
+    d.text(`Banjar, ${dateStr}`, 210, startY);
+    d.text(`Kepala ${institutionFull},`, 210, startY + 5);
+    d.text("( .................................................... )", 210, startY + 26);
+    d.text("NIP. -", 210, startY + 30);
+  };
+
+  // PDF Export Router: "ringkasan" | "gabungan" | "zip"
+  const exportPdf = async (mode = "ringkasan") => {
+    setIsExporting(true);
+    setExportProgress("Menyiapkan dokumen PDF...");
+    try {
+      const institutionName = (isSuperAdmin && lembagaFilter ? lembagaFilter : effectiveLembaga || "MA").toUpperCase();
+      const institutionFull = institutionName === "MTS" ? "MADRASAH TSANAWIYAH" : "MADRASAH ALIYAH";
+      const targetTitle = category === "siswa" ? "SANTRI / SISWA" : "DEWAN GURU";
+
+      if (mode === "zip") {
+        // --- ZIP: 1 PDF PER TANGGAL TERPISAH ---
+        setExportProgress("Mengambil data per tanggal...");
+        const logs = await fetchAllDetailedLogs();
+        if (logs.length === 0) {
+          alert("Tidak ada data presensi pada rentang tanggal ini.");
+          return;
+        }
+
+        const groupedByDate = {};
+        logs.forEach((r) => {
+          const rawDate = r.attendance_date ? String(r.attendance_date).split("T")[0].split(" ")[0] : "Lainnya";
+          if (!groupedByDate[rawDate]) groupedByDate[rawDate] = [];
+          groupedByDate[rawDate].push(r);
+        });
+
+        const uniqueDates = Object.keys(groupedByDate).sort();
+
+        const JSZip = (await import("jszip")).default;
+        const { saveAs } = await import("file-saver");
+        const zip = new JSZip();
+
+        setExportProgress(`Mengemas ${uniqueDates.length} file PDF harian...`);
+
+        for (let i = 0; i < uniqueDates.length; i++) {
+          const tgl = uniqueDates[i];
+          const singleDoc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+          const dayRows = groupedByDate[tgl] || [];
+
+          const title = `LAPORAN PRESENSI HARIAN ${targetTitle}`;
           const subtitle = `Hari & Tanggal: ${formatTglLengkap(tgl)} | Lembaga: ${institutionFull}`;
-          drawKopSurat(doc, title, subtitle);
+          drawKopSurat(singleDoc, institutionFull, title, subtitle);
 
-          const currentRows = groupedByDate[tgl] || [];
-          const head = tab === "siswa"
+          const head = category === "siswa"
             ? [["No", "Nama Siswa", "NISN", "Kelas", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"]]
-            : [["No", "Nama Guru", "NIP / NUPTK / NPK", "Lembaga", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"]];
+            : [["No", "Nama Guru", "NIP / NUPTK / NPK", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"]];
 
-          const body = tab === "siswa"
-            ? currentRows.map((r, i) => [
-                i + 1,
-                r.student?.nama || "-",
-                r.student?.nisn || "-",
-                formatKelas(r.student?.kelas) || "-",
-                STATUS_LABELS[r.status] || r.status,
-                r.check_in ? r.check_in.slice(0, 5) : "-",
-                r.check_out ? r.check_out.slice(0, 5) : "-",
-                r.notes || "-",
-              ])
-            : currentRows.map((r, i) => [
-                i + 1,
-                r.teacher?.nama || "-",
-                r.teacher?.nip || "-",
-                r.lembaga || "-",
-                STATUS_LABELS[r.status] || r.status,
-                r.check_in ? r.check_in.slice(0, 5) : "-",
-                r.check_out ? r.check_out.slice(0, 5) : "-",
-                r.notes || "-",
-              ]);
+          const body = dayRows.map((r, idx) => [
+            idx + 1,
+            category === "siswa" ? (r.student?.nama || "-") : (r.teacher?.nama || "-"),
+            category === "siswa" ? (r.student?.nisn || "-") : (r.teacher?.nip || "-"),
+            category === "siswa" ? (formatKelas(r.student?.kelas) || "-") : (STATUS_LABELS[r.status] || r.status),
+            STATUS_LABELS[r.status] || r.status,
+            r.check_in ? r.check_in.slice(0, 5) : "-",
+            r.check_out ? r.check_out.slice(0, 5) : "-",
+            r.notes || "-",
+          ]);
+
+          autoTable(singleDoc, {
+            startY: 47,
+            head,
+            body,
+            theme: "grid",
+            styles: { fontSize: 8.5, cellPadding: 2, textColor: [30, 41, 59], lineColor: [203, 213, 225], lineWidth: 0.15 },
+            headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold", lineWidth: 0.3, lineColor: [15, 23, 42] },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            columnStyles: { 0: { halign: "center", cellWidth: 10 } },
+          });
+
+          drawSignatures(singleDoc, institutionFull, singleDoc.lastAutoTable.finalY);
+
+          singleDoc.setFontSize(8);
+          singleDoc.setTextColor(148, 163, 184);
+          singleDoc.text(`Dokumen Resmi Yayasan Raudhatul Yatama  •  Tanggal: ${formatTgl(tgl)}`, 14, 202);
+
+          const blob = singleDoc.output("blob");
+          zip.file(`Laporan_${category}_${tgl}.pdf`, blob);
+        }
+
+        setExportProgress("Menghasilkan arsip ZIP...");
+        const zipContent = await zip.generateAsync({ type: "blob" });
+        saveAs(zipContent, `Laporan_Absensi_${category.toUpperCase()}_ZIP_${dateFrom}_sd_${dateTo}.zip`);
+      } else if (mode === "gabungan" && !isSingleDay) {
+        // --- MULTI-PAGE PDF: Hal 1 = Ringkasan Jumlah, Hal 2..N = Detail per hari ---
+        const [summaries, logs] = await Promise.all([
+          fetchAllSummaryCounts(),
+          fetchAllDetailedLogs(),
+        ]);
+
+        const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+        // 1. Halaman 1: Ringkasan Jumlah
+        const titleSum = `REKAPITULASI JUMLAH PRESENSI ${targetTitle}`;
+        const subtitleSum = `Periode: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)} | Lembaga: ${institutionFull}`;
+        drawKopSurat(doc, institutionFull, titleSum, subtitleSum);
+
+        const headSum = category === "siswa"
+          ? [["No", "Nama Siswa", "NISN", "Kelas", "Hadir", "Telat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]]
+          : [["No", "Nama Guru", "NIP / NPK", "Hadir", "Telat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]];
+
+        const bodySum = summaries.map((r, i) => {
+          const s = r.summary || {};
+          return [
+            i + 1,
+            r.nama,
+            category === "siswa" ? (r.nisn || r.nis || "-") : (r.nip || "-"),
+            category === "siswa" ? (formatKelas(r.kelas) || "-") : (s.hadir ?? r.hadir ?? 0),
+            s.hadir ?? r.hadir ?? 0,
+            s.terlambat ?? r.terlambat ?? 0,
+            s.izin ?? r.izin ?? 0,
+            s.sakit ?? r.sakit ?? 0,
+            s.alpha ?? r.alpha ?? 0,
+            s.libur ?? r.libur ?? 0,
+            r.total_hadir ?? 0,
+          ];
+        });
+
+        autoTable(doc, {
+          startY: 47,
+          head: headSum,
+          body: bodySum,
+          theme: "grid",
+          styles: { fontSize: 8, cellPadding: 1.8, textColor: [30, 41, 59], lineColor: [203, 213, 225], lineWidth: 0.15 },
+          headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold", lineWidth: 0.3, lineColor: [15, 23, 42] },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          columnStyles: { 0: { halign: "center", cellWidth: 10 } },
+        });
+
+        drawSignatures(doc, institutionFull, doc.lastAutoTable.finalY);
+
+        // 2. Halaman 2..N: Log Per Hari
+        const groupedByDate = {};
+        logs.forEach((r) => {
+          const rawDate = r.attendance_date ? String(r.attendance_date).split("T")[0].split(" ")[0] : "Lainnya";
+          if (!groupedByDate[rawDate]) groupedByDate[rawDate] = [];
+          groupedByDate[rawDate].push(r);
+        });
+
+        const uniqueDates = Object.keys(groupedByDate).sort();
+
+        uniqueDates.forEach((tgl) => {
+          doc.addPage("a4", "landscape");
+          const titleDay = `LAPORAN PRESENSI HARIAN ${targetTitle}`;
+          const subtitleDay = `Hari & Tanggal: ${formatTglLengkap(tgl)} | Lembaga: ${institutionFull}`;
+          drawKopSurat(doc, institutionFull, titleDay, subtitleDay);
+
+          const dayRows = groupedByDate[tgl] || [];
+          const headDay = category === "siswa"
+            ? [["No", "Nama Siswa", "NISN", "Kelas", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"]]
+            : [["No", "Nama Guru", "NIP / NUPTK / NPK", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"]];
+
+          const bodyDay = dayRows.map((r, idx) => [
+            idx + 1,
+            category === "siswa" ? (r.student?.nama || "-") : (r.teacher?.nama || "-"),
+            category === "siswa" ? (r.student?.nisn || "-") : (r.teacher?.nip || "-"),
+            category === "siswa" ? (formatKelas(r.student?.kelas) || "-") : (STATUS_LABELS[r.status] || r.status),
+            STATUS_LABELS[r.status] || r.status,
+            r.check_in ? r.check_in.slice(0, 5) : "-",
+            r.check_out ? r.check_out.slice(0, 5) : "-",
+            r.notes || "-",
+          ]);
+
+          autoTable(doc, {
+            startY: 47,
+            head: headDay,
+            body: bodyDay,
+            theme: "grid",
+            styles: { fontSize: 8.5, cellPadding: 2, textColor: [30, 41, 59], lineColor: [203, 213, 225], lineWidth: 0.15 },
+            headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold", lineWidth: 0.3, lineColor: [15, 23, 42] },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            columnStyles: { 0: { halign: "center", cellWidth: 10 } },
+          });
+
+          drawSignatures(doc, institutionFull, doc.lastAutoTable.finalY);
+        });
+
+        // Page Numbering
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.setTextColor(148, 163, 184);
+          doc.text(`Halaman ${i} dari ${totalPages}  •  Dokumen Resmi Raudhatul Yatama`, 14, 202);
+        }
+
+        doc.save(`Laporan_Gabungan_${category.toUpperCase()}_${institutionName}_${dateFrom}_sd_${dateTo}.pdf`);
+      } else {
+        // --- RINGKASAN PDF (Standar) ---
+        const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+        if (isSingleDay) {
+          // 1 Hari: Print detail list hari tersebut
+          const logs = await fetchAllDetailedLogs();
+          const title = `LAPORAN PRESENSI HARIAN ${targetTitle}`;
+          const subtitle = `Hari & Tanggal: ${formatTglLengkap(dateFrom)} | Lembaga: ${institutionFull}`;
+          drawKopSurat(doc, institutionFull, title, subtitle);
+
+          const head = category === "siswa"
+            ? [["No", "Nama Siswa", "NISN", "Kelas", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"]]
+            : [["No", "Nama Guru", "NIP / NUPTK / NPK", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"]];
+
+          const body = logs.map((r, i) => [
+            i + 1,
+            category === "siswa" ? (r.student?.nama || "-") : (r.teacher?.nama || "-"),
+            category === "siswa" ? (r.student?.nisn || "-") : (r.teacher?.nip || "-"),
+            category === "siswa" ? (formatKelas(r.student?.kelas) || "-") : (STATUS_LABELS[r.status] || r.status),
+            STATUS_LABELS[r.status] || r.status,
+            r.check_in ? r.check_in.slice(0, 5) : "-",
+            r.check_out ? r.check_out.slice(0, 5) : "-",
+            r.notes || "-",
+          ]);
 
           autoTable(doc, {
             startY: 47,
@@ -518,211 +694,172 @@ export default function Report() {
             styles: { fontSize: 8.5, cellPadding: 2, textColor: [30, 41, 59], lineColor: [203, 213, 225], lineWidth: 0.15 },
             headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold", lineWidth: 0.3, lineColor: [15, 23, 42] },
             alternateRowStyles: { fillColor: [248, 250, 252] },
-            columnStyles: {
-              0: { halign: "center", cellWidth: 10 },
-              4: { halign: "center", fontStyle: "bold" },
-              5: { halign: "center" },
-              6: { halign: "center" },
-            },
+            columnStyles: { 0: { halign: "center", cellWidth: 10 } },
           });
 
-          drawSignatures(doc, doc.lastAutoTable.finalY);
-
-          // Footer
-          const pageNum = doc.internal.getNumberOfPages();
-          doc.setFontSize(8);
-          doc.setTextColor(148, 163, 184);
-          doc.text(`Dokumen Resmi Yayasan Raudhatul Yatama  •  Tanggal: ${formatTgl(tgl)}`, 14, 202);
-        });
-
-        doc.save(`Laporan_Harian_${tab}_${institutionName}_${dateFrom}_sd_${dateTo}.pdf`);
-      } else {
-        // Mode Ringkasan / Rekapitulasi Menyeluruh
-        const title = tab === "siswa"
-          ? "REKAPITULASI PRESENSI SISWA"
-          : tab === "guru"
-          ? "REKAPITULASI PRESENSI DEWAN GURU"
-          : tab === "rekap_guru"
-          ? "REKAPITULASI KEHADIRAN DEWAN GURU"
-          : "REKAPITULASI MATRIKS KEHADIRAN SISWA";
-
-        const subtitle = `Periode: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)} | Lembaga: ${institutionFull}`;
-        drawKopSurat(doc, title, subtitle);
-
-        let head = [];
-        let body = [];
-
-        if (tab === "siswa") {
-          head = [["No", "Tanggal", "Nama Siswa", "NISN", "Kelas", "Status", "Masuk", "Pulang", "Keterangan"]];
-          body = allRows.map((r, i) => [
-            i + 1,
-            formatTgl(r.attendance_date),
-            r.student?.nama || "-",
-            r.student?.nisn || "-",
-            formatKelas(r.student?.kelas) || "-",
-            STATUS_LABELS[r.status] || r.status,
-            r.check_in ? r.check_in.slice(0, 5) : "-",
-            r.check_out ? r.check_out.slice(0, 5) : "-",
-            r.notes || "-",
-          ]);
-        } else if (tab === "guru") {
-          head = [["No", "Tanggal", "Nama Guru", "NIP / NUPTK / NPK", "Lembaga", "Status", "Masuk", "Pulang", "Keterangan"]];
-          body = allRows.map((r, i) => [
-            i + 1,
-            formatTgl(r.attendance_date),
-            r.teacher?.nama || "-",
-            r.teacher?.nip || "-",
-            r.lembaga || "-",
-            STATUS_LABELS[r.status] || r.status,
-            r.check_in ? r.check_in.slice(0, 5) : "-",
-            r.check_out ? r.check_out.slice(0, 5) : "-",
-            r.notes || "-",
-          ]);
-        } else if (tab === "rekap_guru") {
-          head = [["No", "Nama Guru", "NIP / NUPTK / NPK", "Lembaga", "Hadir", "Telat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]];
-          body = allRows.map((r, i) => [
-            i + 1,
-            r.nama,
-            r.nip || "-",
-            r.lembaga || "-",
-            r.hadir,
-            r.terlambat,
-            r.izin,
-            r.sakit,
-            r.alpha,
-            r.libur,
-            r.total_hadir,
-          ]);
+          drawSignatures(doc, institutionFull, doc.lastAutoTable.finalY);
+          doc.save(`Laporan_Harian_${category.toUpperCase()}_${institutionName}_${dateFrom}.pdf`);
         } else {
-          head = [["No", "Nama Siswa", "NISN", "Kelas", "Lembaga", "Hadir", "Telat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]];
-          body = allRows.map((r, i) => {
+          // Rentang Hari: Print tabel rekapitulasi angka per orang
+          const summaries = await fetchAllSummaryCounts();
+          const title = `REKAPITULASI JUMLAH PRESENSI ${targetTitle}`;
+          const subtitle = `Periode: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)} | Lembaga: ${institutionFull}`;
+          drawKopSurat(doc, institutionFull, title, subtitle);
+
+          const head = category === "siswa"
+            ? [["No", "Nama Siswa", "NISN", "Kelas", "Hadir", "Telat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]]
+            : [["No", "Nama Guru", "NIP / NPK", "Hadir", "Telat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]];
+
+          const body = summaries.map((r, i) => {
             const s = r.summary || {};
             return [
               i + 1,
               r.nama,
-              r.nisn || "-",
-              formatKelas(r.kelas) || "-",
-              r.lembaga || "-",
-              s.hadir ?? 0,
-              s.terlambat ?? 0,
-              s.izin ?? 0,
-              s.sakit ?? 0,
-              s.alpha ?? 0,
-              s.libur ?? 0,
+              category === "siswa" ? (r.nisn || r.nis || "-") : (r.nip || "-"),
+              category === "siswa" ? (formatKelas(r.kelas) || "-") : (s.hadir ?? r.hadir ?? 0),
+              s.hadir ?? r.hadir ?? 0,
+              s.terlambat ?? r.terlambat ?? 0,
+              s.izin ?? r.izin ?? 0,
+              s.sakit ?? r.sakit ?? 0,
+              s.alpha ?? r.alpha ?? 0,
+              s.libur ?? r.libur ?? 0,
               r.total_hadir ?? 0,
             ];
           });
+
+          autoTable(doc, {
+            startY: 47,
+            head,
+            body,
+            theme: "grid",
+            styles: { fontSize: 8, cellPadding: 1.8, textColor: [30, 41, 59], lineColor: [203, 213, 225], lineWidth: 0.15 },
+            headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold", lineWidth: 0.3, lineColor: [15, 23, 42] },
+            alternateRowStyles: { fillColor: [248, 250, 252] },
+            columnStyles: { 0: { halign: "center", cellWidth: 10 } },
+          });
+
+          drawSignatures(doc, institutionFull, doc.lastAutoTable.finalY);
+
+          const totalPages = doc.internal.getNumberOfPages();
+          for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFontSize(8);
+            doc.setTextColor(148, 163, 184);
+            doc.text(`Halaman ${i} dari ${totalPages}  •  Dokumen Resmi Raudhatul Yatama`, 14, 202);
+          }
+
+          doc.save(`Laporan_Rekap_Angka_${category.toUpperCase()}_${institutionName}_${dateFrom}_sd_${dateTo}.pdf`);
         }
-
-        autoTable(doc, {
-          startY: 47,
-          head,
-          body,
-          theme: "grid",
-          styles: { fontSize: 8, cellPadding: 1.8, textColor: [30, 41, 59], lineColor: [203, 213, 225], lineWidth: 0.15 },
-          headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold", lineWidth: 0.3, lineColor: [15, 23, 42] },
-          alternateRowStyles: { fillColor: [248, 250, 252] },
-          columnStyles: { 0: { halign: "center", cellWidth: 10 } },
-        });
-
-        drawSignatures(doc, doc.lastAutoTable.finalY);
-
-        const totalPages = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-          doc.setPage(i);
-          doc.setFontSize(8);
-          doc.setTextColor(148, 163, 184);
-          doc.text(`Halaman ${i} dari ${totalPages}  •  Sistem Absensi Terpadu Yayasan Raudhatul Yatama`, 14, 202);
-        }
-
-        doc.save(`Laporan_Rekap_${tab}_${institutionName}_${dateFrom}_sd_${dateTo}.pdf`);
       }
     } catch (err) {
       console.error("Export PDF error:", err);
       alert("Gagal mencetak dokumen PDF: " + (err.message || "Unknown error"));
     } finally {
       setIsExporting(false);
+      setExportProgress("");
     }
   };
 
   return (
     <div className="w-full pb-28 md:pb-8 space-y-4 font-sans">
-      {/* 1. TOP HEADER & TAB BAR */}
+      {/* 1. TOP HEADER & EXPORT ACTION BAR */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-3xl p-3 sm:p-4 shadow-neo flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Navigation Tabs */}
-        <div className="flex bg-gray-100 p-1 rounded-2xl border-2 border-gray-900 gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden">
-          {(enableTeacherAttendance
-            ? [
-                { id: "siswa", label: "Log Siswa", icon: "school" },
-                { id: "guru", label: "Log Guru", icon: "badge" },
-                { id: "rekap_siswa", label: "Matriks Siswa", icon: "table_chart" },
-                { id: "rekap_guru", label: "Rekap Guru", icon: "analytics" },
-              ]
-            : [
-                { id: "siswa", label: "Log Siswa", icon: "school" },
-                { id: "rekap_siswa", label: "Matriks Siswa", icon: "table_chart" },
-              ]
-          ).map((t) => {
-            const isTabActive = tab === t.id || (t.id === "rekap_siswa" && tab === "rekap");
-            return (
-              <button
-                key={t.id}
-                onClick={() => { setTab(t.id); setPage(1); }}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-black text-xs md:text-sm transition-all whitespace-nowrap cursor-pointer select-none ${
-                  isTabActive
-                    ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-white"
-                }`}
-              >
-                <span className="material-symbols-outlined text-base leading-none">{t.icon}</span>
-                <span>{t.label}</span>
-              </button>
-            );
-          })}
+        {/* Category Switcher Pill (Siswa vs Guru) */}
+        <div className="flex bg-gray-100 p-1 rounded-2xl border-2 border-gray-900 gap-1 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => { setCategory("siswa"); setPage(1); }}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all cursor-pointer select-none ${
+              category === "siswa"
+                ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-sm"
+                : "text-gray-600 hover:text-gray-900 hover:bg-white"
+            }`}
+          >
+            <span className="material-symbols-outlined text-base leading-none">school</span>
+            <span>Presensi Siswa</span>
+          </button>
+
+          {enableTeacherAttendance && (
+            <button
+              type="button"
+              onClick={() => { setCategory("guru"); setPage(1); }}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all cursor-pointer select-none ${
+                category === "guru"
+                  ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-white"
+              }`}
+            >
+              <span className="material-symbols-outlined text-base leading-none">badge</span>
+              <span>Presensi Guru</span>
+            </button>
+          )}
         </div>
 
         {/* Action Buttons: Export Excel & PDF */}
         <div className="flex items-center gap-2 justify-end flex-wrap flex-shrink-0">
+          {/* Tombol Excel (Full Sheet Ringkasan + Sheet per Tanggal) */}
           <button
             onClick={exportExcel}
             disabled={isExporting}
             className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-2xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
-            title="Download Format Excel Lengkap"
+            title="Download Excel: Sheet Depan Ringkasan + Sheet Lain per Tanggal"
           >
             {isExporting ? (
               <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             ) : (
               <span className="material-symbols-outlined text-base">table_view</span>
             )}
-            <span>Excel</span>
+            <span>Excel {isSingleDay ? "" : "(Multi-Sheet)"}</span>
           </button>
 
+          {/* Tombol PDF Rekap */}
           <button
             onClick={() => exportPdf("ringkasan")}
             disabled={isExporting}
             className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-2xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
-            title="Download PDF Rekapitulasi Resmi"
+            title={isSingleDay ? "Download PDF Laporan Harian" : "Download PDF Ringkasan Angka Rekapitulasi"}
           >
             <span className="material-symbols-outlined text-base">picture_as_pdf</span>
-            <span>PDF Rekap</span>
+            <span>{isSingleDay ? "PDF Harian" : "PDF Rekap"}</span>
           </button>
 
-          {!isSingleDay && (tab === "siswa" || tab === "guru") && (
-            <button
-              onClick={() => exportPdf("harian")}
-              disabled={isExporting}
-              className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-2xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
-              title="Download PDF Lengkap Harian (1 Hari = 1 Halaman)"
-            >
-              <span className="material-symbols-outlined text-base">layers</span>
-              <span>PDF Harian</span>
-            </button>
+          {/* Tombol Tambahan Rentang Hari: PDF Gabungan & ZIP Per Tanggal */}
+          {!isSingleDay && (
+            <>
+              <button
+                onClick={() => exportPdf("gabungan")}
+                disabled={isExporting}
+                className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-2xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
+                title="Download 1 File PDF Gabungan (Ringkasan + Semua Halaman Tanggal)"
+              >
+                <span className="material-symbols-outlined text-base">layers</span>
+                <span>PDF Gabungan</span>
+              </button>
+
+              <button
+                onClick={() => exportPdf("zip")}
+                disabled={isExporting}
+                className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-gray-900 font-black text-xs md:text-sm border-2 border-gray-900 rounded-2xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
+                title="Download Arsip ZIP Berisi File PDF Terpisah per Tanggal"
+              >
+                <span className="material-symbols-outlined text-base">folder_zip</span>
+                <span>PDF ZIP</span>
+              </button>
+            </>
           )}
         </div>
       </div>
 
-      {/* 2. STATISTIC SUMMARY CARDS */}
-      {summary && (tab === "siswa" || tab === "guru") && (
+      {/* Progress Toast saat mengekspor */}
+      {isExporting && exportProgress && (
+        <div className="bg-amber-100 border-2 border-gray-900 rounded-2xl p-3 text-xs font-black text-amber-950 flex items-center gap-2 shadow-sm animate-pulse">
+          <span className="material-symbols-outlined text-base">sync</span>
+          <span>{exportProgress}</span>
+        </div>
+      )}
+
+      {/* 2. STATISTIC SUMMARY CARDS (Untuk 1 Hari) */}
+      {isSingleDay && summary && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
           <div className="bg-white border-2 border-gray-900 rounded-2xl p-2.5 shadow-sm text-center">
             <span className="text-xl sm:text-2xl font-black text-emerald-600 leading-none block mb-1">{summary.hadir || 0}</span>
@@ -751,9 +888,9 @@ export default function Report() {
         </div>
       )}
 
-      {/* 3. PERMANENT & ORGANIZED FILTER BAR */}
+      {/* 3. PERMANENT & CLEAN FILTER CONTROLS */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-3xl p-4 sm:p-5 shadow-neo space-y-3.5">
-        {/* Quick Date Presets */}
+        {/* Quick Presets Bar */}
         <div className="flex items-center justify-between flex-wrap gap-2 border-b border-gray-200 pb-3">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-xs font-black text-gray-700 uppercase tracking-wider mr-1">Pilih Cepat:</span>
@@ -764,7 +901,7 @@ export default function Report() {
                 dateFrom === today && dateTo === today ? "bg-primary-green border-gray-900 text-gray-900 font-black shadow-xs" : "bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700"
               }`}
             >
-              Hari Ini
+              Hari Ini (1 Hari)
             </button>
             <button
               type="button"
@@ -815,7 +952,7 @@ export default function Report() {
           )}
         </div>
 
-        {/* Filter Controls Grid */}
+        {/* Filter Inputs Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {/* Dari Tanggal */}
           <div className="flex flex-col gap-1">
@@ -839,8 +976,8 @@ export default function Report() {
             />
           </div>
 
-          {/* Filter Status (Log Siswa / Guru) */}
-          {(tab === "siswa" || tab === "guru") && (
+          {/* Filter Status (Hanya saat mode detail list) */}
+          {isDetailView && (
             <div className="flex flex-col gap-1">
               <label className="text-[11px] font-black text-gray-700 uppercase">Status Presensi</label>
               <select
@@ -857,7 +994,7 @@ export default function Report() {
           )}
 
           {/* Filter Kelas (Siswa Only) */}
-          {(tab === "siswa" || tab === "rekap_siswa") && (
+          {category === "siswa" && (
             <div className="flex flex-col gap-1">
               <label className="text-[11px] font-black text-gray-700 uppercase">Filter Kelas</label>
               <select
@@ -892,8 +1029,8 @@ export default function Report() {
             </div>
           )}
 
-          {/* Search Input Box */}
-          <div className={`flex flex-col gap-1 ${tab === "siswa" || tab === "rekap_siswa" ? "lg:col-span-2" : "lg:col-span-3"}`}>
+          {/* Search Box */}
+          <div className={`flex flex-col gap-1 ${category === "siswa" && isDetailView ? "lg:col-span-2" : "lg:col-span-3"}`}>
             <label className="text-[11px] font-black text-gray-700 uppercase">Cari Nama / NISN / NIP</label>
             <div className="relative">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-lg">search</span>
@@ -901,7 +1038,7 @@ export default function Report() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={tab === "guru" || tab === "rekap_guru" ? "Ketik nama guru atau NIP..." : "Ketik nama siswa atau NISN..."}
+                placeholder={category === "guru" ? "Ketik nama dewan guru atau NIP..." : "Ketik nama siswa atau NISN..."}
                 className="w-full pl-9 pr-8 py-2 bg-gray-50 border-2 border-gray-900 focus:bg-white rounded-xl font-bold text-xs text-gray-900 focus:outline-hidden"
               />
               {search && (
@@ -916,9 +1053,46 @@ export default function Report() {
             </div>
           </div>
         </div>
+
+        {/* View Mode Toggle (Khusus saat rentang hari) */}
+        {!isSingleDay && (
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100 flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-gray-600 uppercase">Mode Tampilan Layar:</span>
+              <div className="inline-flex bg-gray-100 p-0.5 rounded-xl border border-gray-400">
+                <button
+                  type="button"
+                  onClick={() => setRangeViewMode("rekap")}
+                  className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    rangeViewMode === "rekap"
+                      ? "bg-white text-gray-900 shadow-xs border border-gray-300"
+                      : "text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  Rekapitulasi Angka (Rekomendasi)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRangeViewMode("detail")}
+                  className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    rangeViewMode === "detail"
+                      ? "bg-white text-gray-900 shadow-xs border border-gray-300"
+                      : "text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  Log Harian Lengkap
+                </button>
+              </div>
+            </div>
+
+            <span className="text-xs font-bold text-gray-500">
+              Rentang: <strong>{formatTgl(dateFrom)}</strong> s/d <strong>{formatTgl(dateTo)}</strong>
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* 4. DATA TABLE VIEW */}
+      {/* 4. MAIN DATA TABLE */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-3xl shadow-neo overflow-hidden">
         {isLoading ? (
           <div className="overflow-x-auto p-4">
@@ -927,8 +1101,8 @@ export default function Report() {
                 <tr>
                   <th className="px-3 py-2.5 text-left font-black text-xs uppercase">No</th>
                   <th className="px-3 py-2.5 text-left font-black text-xs uppercase">Nama</th>
-                  <th className="px-3 py-2.5 text-left font-black text-xs uppercase">Status</th>
-                  <th className="px-3 py-2.5 text-center font-black text-xs uppercase">Waktu</th>
+                  <th className="px-3 py-2.5 text-left font-black text-xs uppercase">Status / Hadir</th>
+                  <th className="px-3 py-2.5 text-center font-black text-xs uppercase">Waktu / Total</th>
                 </tr>
               </thead>
               <tbody>
@@ -938,215 +1112,151 @@ export default function Report() {
               </tbody>
             </table>
           </div>
+        ) : isDetailView ? (
+          /* =========================================================================
+             A. TAMPILAN 1 HARI / MODE DETAIL LOG HARIAN:
+             List nama, jam masuk, jam keluar, status (hadir/terlambat/izin/sakit/alpha), keterangan
+             ========================================================================= */
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
+                <tr>
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide w-12">No</th>
+                  {!isSingleDay && <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>}
+                  <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">
+                    {category === "siswa" ? "Nama Siswa" : "Nama Dewan Guru"}
+                  </th>
+                  <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">
+                    {category === "siswa" ? "NISN" : "NIP / NPK"}
+                  </th>
+                  {category === "siswa" && <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Kelas</th>}
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide">Status</th>
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide">Jam Masuk</th>
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide">Jam Pulang</th>
+                  <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Keterangan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {detailRows.length === 0 ? (
+                  <tr>
+                    <td colSpan="9" className="text-center py-12 text-gray-400 font-bold">
+                      Tidak ada rekaman presensi pada periode ini.
+                    </td>
+                  </tr>
+                ) : (
+                  detailRows.map((r, i) => (
+                    <tr key={r.id || i} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-3.5 py-2.5 text-center font-bold text-xs text-gray-500">
+                        {paginationMeta ? (paginationMeta.current_page - 1) * perPage + i + 1 : i + 1}
+                      </td>
+                      {!isSingleDay && (
+                        <td className="px-3.5 py-2.5 font-bold text-xs text-gray-800 whitespace-nowrap">
+                          {formatTgl(r.attendance_date)}
+                        </td>
+                      )}
+                      <td className="px-3.5 py-2.5 font-black text-gray-900">
+                        {category === "siswa" ? (r.student?.nama || "-") : (r.teacher?.nama || "-")}
+                      </td>
+                      <td className="px-3.5 py-2.5 text-gray-600 font-mono text-xs">
+                        {category === "siswa" ? (r.student?.nisn || "-") : (r.teacher?.nip || "-")}
+                      </td>
+                      {category === "siswa" && (
+                        <td className="px-3.5 py-2.5 font-bold text-gray-700">{formatKelas(r.student?.kelas) || "-"}</td>
+                      )}
+                      <td className="px-3.5 py-2.5 text-center">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-lg border text-[11px] font-black ${STATUS_COLORS[r.status] || "bg-gray-100 text-gray-700 border-gray-300"}`}>
+                          {STATUS_LABELS[r.status] || r.status}
+                        </span>
+                      </td>
+                      <td className="px-3.5 py-2.5 font-mono text-xs text-gray-800 text-center font-bold">
+                        {r.check_in ? r.check_in.slice(0, 5) : "-"}
+                      </td>
+                      <td className="px-3.5 py-2.5 font-mono text-xs text-gray-800 text-center font-bold">
+                        {r.check_out ? r.check_out.slice(0, 5) : "-"}
+                      </td>
+                      <td className="px-3.5 py-2.5 text-xs text-gray-600 font-medium truncate max-w-[180px]">
+                        {r.notes || "-"}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <>
-            {/* A. LOG SISWA TABLE */}
-            {tab === "siswa" && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
-                    <tr>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide w-12">No</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Nama Siswa</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">NISN</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Kelas</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide">Status</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide">Masuk</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide">Pulang</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Keterangan</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {siswaRows.length === 0 ? (
-                      <tr>
-                        <td colSpan="9" className="text-center py-12 text-gray-400 font-bold">
-                          Tidak ada rekaman presensi siswa pada periode ini.
-                        </td>
-                      </tr>
-                    ) : (
-                      siswaRows.map((r, i) => (
-                        <tr key={r.id || i} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-3.5 py-2.5 text-center font-bold text-xs text-gray-500">
-                            {paginationMeta ? (paginationMeta.current_page - 1) * perPage + i + 1 : i + 1}
-                          </td>
-                          <td className="px-3.5 py-2.5 font-bold text-xs text-gray-800 whitespace-nowrap">
-                            {formatTgl(r.attendance_date)}
-                          </td>
-                          <td className="px-3.5 py-2.5 font-black text-gray-900">{r.student?.nama || "-"}</td>
-                          <td className="px-3.5 py-2.5 text-gray-600 font-mono text-xs">{r.student?.nisn || "-"}</td>
-                          <td className="px-3.5 py-2.5 font-bold text-gray-700">{formatKelas(r.student?.kelas) || "-"}</td>
-                          <td className="px-3.5 py-2.5 text-center">
-                            <span className={`inline-block px-2.5 py-0.5 rounded-lg border text-[11px] font-black ${STATUS_COLORS[r.status] || "bg-gray-100 text-gray-700 border-gray-300"}`}>
-                              {STATUS_LABELS[r.status] || r.status}
-                            </span>
-                          </td>
-                          <td className="px-3.5 py-2.5 font-mono text-xs text-gray-800 text-center font-bold">{r.check_in?.slice(0, 5) || "-"}</td>
-                          <td className="px-3.5 py-2.5 font-mono text-xs text-gray-800 text-center font-bold">{r.check_out?.slice(0, 5) || "-"}</td>
-                          <td className="px-3.5 py-2.5 text-xs text-gray-600 font-medium truncate max-w-[180px]">{r.notes || "-"}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          /* =========================================================================
+             B. TAMPILAN RENTANG HARI (MODE REKAPITULASI ANGKA):
+             Header: No, Nama, Hadir (angka), Terlambat (angka), Izin, Sakit, Alpha, Libur, Total
+             ========================================================================= */
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
+                <tr>
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide w-12">No</th>
+                  <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">
+                    {category === "siswa" ? "Nama Siswa" : "Nama Dewan Guru"}
+                  </th>
+                  <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">
+                    {category === "siswa" ? "NISN" : "NIP / NPK"}
+                  </th>
+                  {category === "siswa" && <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Kelas</th>}
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-emerald-700">Hadir</th>
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-amber-700">Telat</th>
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-blue-700">Izin</th>
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-purple-700">Sakit</th>
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-rose-700">Alpha</th>
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-slate-700">Libur</th>
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase bg-emerald-50 text-emerald-950">Total Hadir</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {rekapRows.length === 0 ? (
+                  <tr>
+                    <td colSpan="11" className="text-center py-12 text-gray-400 font-bold">
+                      Tidak ada data rekapitulasi pada rentang tanggal ini.
+                    </td>
+                  </tr>
+                ) : (
+                  rekapRows.map((r, i) => {
+                    const s = r.summary || {};
+                    const hadir = s.hadir ?? r.hadir ?? 0;
+                    const telat = s.terlambat ?? r.terlambat ?? 0;
+                    const izin = s.izin ?? r.izin ?? 0;
+                    const sakit = s.sakit ?? r.sakit ?? 0;
+                    const alpha = s.alpha ?? r.alpha ?? 0;
+                    const libur = s.libur ?? r.libur ?? 0;
+                    const totalHadir = r.total_hadir ?? (hadir + telat);
 
-            {/* B. LOG GURU TABLE */}
-            {tab === "guru" && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
-                    <tr>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide w-12">No</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Nama Dewan Guru</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">NIP / NPK</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide">Status</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide">Masuk</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide">Pulang</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Keterangan</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {guruRows.length === 0 ? (
-                      <tr>
-                        <td colSpan="8" className="text-center py-12 text-gray-400 font-bold">
-                          Tidak ada rekaman presensi guru pada periode ini.
+                    return (
+                      <tr key={r.id || i} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-3.5 py-2.5 text-center font-bold text-xs text-gray-500">{i + 1}</td>
+                        <td className="px-3.5 py-2.5 font-black text-gray-900">{r.nama}</td>
+                        <td className="px-3.5 py-2.5 text-gray-600 font-mono text-xs">
+                          {category === "siswa" ? (r.nisn || r.nis || "-") : (r.nip || "-")}
+                        </td>
+                        {category === "siswa" && (
+                          <td className="px-3.5 py-2.5 font-bold text-gray-700">{formatKelas(r.kelas) || "-"}</td>
+                        )}
+                        <td className="px-3.5 py-2.5 text-center font-black text-emerald-600">{hadir}</td>
+                        <td className="px-3.5 py-2.5 text-center font-black text-amber-600">{telat}</td>
+                        <td className="px-3.5 py-2.5 text-center font-black text-blue-600">{izin}</td>
+                        <td className="px-3.5 py-2.5 text-center font-black text-purple-600">{sakit}</td>
+                        <td className="px-3.5 py-2.5 text-center font-black text-rose-600">{alpha}</td>
+                        <td className="px-3.5 py-2.5 text-center font-bold text-slate-500">{libur}</td>
+                        <td className="px-3.5 py-2.5 text-center font-black text-emerald-800 bg-emerald-50/70">
+                          {totalHadir}
                         </td>
                       </tr>
-                    ) : (
-                      guruRows.map((r, i) => (
-                        <tr key={r.id || i} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-3.5 py-2.5 text-center font-bold text-xs text-gray-500">
-                            {paginationMeta ? (paginationMeta.current_page - 1) * perPage + i + 1 : i + 1}
-                          </td>
-                          <td className="px-3.5 py-2.5 font-bold text-xs text-gray-800 whitespace-nowrap">
-                            {formatTgl(r.attendance_date)}
-                          </td>
-                          <td className="px-3.5 py-2.5 font-black text-gray-900">{r.teacher?.nama || "-"}</td>
-                          <td className="px-3.5 py-2.5 text-gray-600 font-mono text-xs">{r.teacher?.nip || "-"}</td>
-                          <td className="px-3.5 py-2.5 text-center">
-                            <span className={`inline-block px-2.5 py-0.5 rounded-lg border text-[11px] font-black ${STATUS_COLORS[r.status] || "bg-gray-100 text-gray-700 border-gray-300"}`}>
-                              {STATUS_LABELS[r.status] || r.status}
-                            </span>
-                          </td>
-                          <td className="px-3.5 py-2.5 font-mono text-xs text-gray-800 text-center font-bold">{r.check_in?.slice(0, 5) || "-"}</td>
-                          <td className="px-3.5 py-2.5 font-mono text-xs text-gray-800 text-center font-bold">{r.check_out?.slice(0, 5) || "-"}</td>
-                          <td className="px-3.5 py-2.5 text-xs text-gray-600 font-medium truncate max-w-[180px]">{r.notes || "-"}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* C. MATRIKS SISWA TABLE */}
-            {(tab === "rekap" || tab === "rekap_siswa") && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
-                    <tr>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide w-12">No</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Nama Siswa</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">NISN</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Kelas</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-emerald-700">Hadir</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-amber-700">Telat</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-blue-700">Izin</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-purple-700">Sakit</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-rose-700">Alpha</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-slate-700">Libur</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase bg-emerald-50 text-emerald-950">Total Hadir</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {rekapRows.length === 0 ? (
-                      <tr>
-                        <td colSpan="11" className="text-center py-12 text-gray-400 font-bold">
-                          Tidak ada data matriks siswa.
-                        </td>
-                      </tr>
-                    ) : (
-                      rekapRows.map((r, i) => {
-                        const s = r.summary || {};
-                        return (
-                          <tr key={r.id || i} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-3.5 py-2.5 text-center font-bold text-xs text-gray-500">{i + 1}</td>
-                            <td className="px-3.5 py-2.5 font-black text-gray-900">{r.nama}</td>
-                            <td className="px-3.5 py-2.5 text-gray-600 font-mono text-xs">{r.nisn || "-"}</td>
-                            <td className="px-3.5 py-2.5 font-bold text-gray-700">{formatKelas(r.kelas) || "-"}</td>
-                            <td className="px-3.5 py-2.5 text-center font-black text-emerald-600">{s.hadir ?? 0}</td>
-                            <td className="px-3.5 py-2.5 text-center font-black text-amber-600">{s.terlambat ?? 0}</td>
-                            <td className="px-3.5 py-2.5 text-center font-black text-blue-600">{s.izin ?? 0}</td>
-                            <td className="px-3.5 py-2.5 text-center font-black text-purple-600">{s.sakit ?? 0}</td>
-                            <td className="px-3.5 py-2.5 text-center font-black text-rose-600">{s.alpha ?? 0}</td>
-                            <td className="px-3.5 py-2.5 text-center font-bold text-slate-500">{s.libur ?? 0}</td>
-                            <td className="px-3.5 py-2.5 text-center font-black text-emerald-800 bg-emerald-50/70">
-                              {r.total_hadir ?? 0}
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* D. REKAP GURU TABLE */}
-            {tab === "rekap_guru" && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
-                    <tr>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide w-12">No</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Nama Dewan Guru</th>
-                      <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">NIP / NPK</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-emerald-700">Hadir</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-amber-700">Telat</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-blue-700">Izin</th>
-                      <th className="px-3.5 py-3 text-center font-black text-purple-700">Sakit</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-rose-700">Alpha</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-slate-700">Libur</th>
-                      <th className="px-3.5 py-3 text-center font-black text-xs uppercase bg-emerald-50 text-emerald-950">Total Hadir</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {rekapGuruRows.length === 0 ? (
-                      <tr>
-                        <td colSpan="10" className="text-center py-12 text-gray-400 font-bold">
-                          Tidak ada data rekapitulasi guru.
-                        </td>
-                      </tr>
-                    ) : (
-                      rekapGuruRows.map((r, i) => (
-                        <tr key={r.id || i} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-3.5 py-2.5 text-center font-bold text-xs text-gray-500">{i + 1}</td>
-                          <td className="px-3.5 py-2.5 font-black text-gray-900">{r.nama}</td>
-                          <td className="px-3.5 py-2.5 text-gray-600 font-mono text-xs">{r.nip || "-"}</td>
-                          <td className="px-3.5 py-2.5 text-center font-black text-emerald-600">{r.hadir}</td>
-                          <td className="px-3.5 py-2.5 text-center font-black text-amber-600">{r.terlambat}</td>
-                          <td className="px-3.5 py-2.5 text-center font-black text-blue-600">{r.izin}</td>
-                          <td className="px-3.5 py-2.5 text-center font-black text-purple-600">{r.sakit}</td>
-                          <td className="px-3.5 py-2.5 text-center font-black text-rose-600">{r.alpha}</td>
-                          <td className="px-3.5 py-2.5 text-center font-bold text-slate-500">{r.libur}</td>
-                          <td className="px-3.5 py-2.5 text-center font-black text-emerald-800 bg-emerald-50/70">
-                            {r.total_hadir}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
 
-        {/* 5. ROBUST PAGINATION BAR (Dukungan Halaman Penuh) */}
-        {(tab === "siswa" || tab === "guru") && paginationMeta && paginationMeta.total > 0 && (
+        {/* 5. ROBUST PAGINATION BAR (Untuk Mode Detail Log) */}
+        {isDetailView && paginationMeta && paginationMeta.total > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t-2 border-gray-900 bg-gray-50 gap-3">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-gray-700">
