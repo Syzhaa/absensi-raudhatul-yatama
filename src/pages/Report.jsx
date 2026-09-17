@@ -10,6 +10,7 @@ import autoTable from "jspdf-autotable";
 import { TableRowSkeleton } from "../components/Skeleton";
 import { useKelasFormat } from "../hooks/useKelasFormat";
 import { useAttendanceSettings } from "../hooks/useAttendanceSettings";
+import { OFFICIAL_LOGO_BASE64 } from "../assets/logoBase64";
 
 const formatTgl = (val) => {
   if (!val) return "-";
@@ -46,16 +47,9 @@ const formatTglLengkap = (val) => {
   }
 };
 
-// Helper Alamat Resmi Per Lembaga (Sesuai Maps & Kontak Yayasan)
-const getLembagaAddress = (lembagaCode) => {
-  const norm = (lembagaCode || "").toLowerCase();
-  if (norm === "mts") {
-    return "Jl. Handil Jambu, Kertak Hanyar, Kab. Banjar, Kalimantan Selatan";
-  }
-  if (norm === "ma") {
-    return "Jl. A. Yani KM 10,700 Gang H. Antung, Kertak Hanyar, Kab. Banjar, Kalsel";
-  }
-  return "Jl. A. Yani KM 10,700 Gang H. Antung & Jl. Handil Jambu, Kertak Hanyar, Kab. Banjar, Kalsel";
+// Helper Alamat Resmi Per Lembaga (Sesuai Permintaan Resmi Yayasan)
+const getLembagaAddress = () => {
+  return "Simpang Empat, Kec. Kertak Hanyar, Kabupaten Banjar, Kalimantan Selatan 70654";
 };
 
 // Helper Email Resmi Per Lembaga
@@ -88,38 +82,34 @@ const STATUS_COLORS = {
   libur: "bg-slate-100 text-slate-700 border-slate-300 font-bold",
 };
 
-// Helper: Ambil logo resmi dari API / public untuk Kop PDF
+// Helper: Ambil logo resmi dari API / public untuk Kop PDF (fallback ke logo resmi base64 bawaan)
 const getLogoBase64 = async () => {
   try {
-    let url = "/logo.png";
-    try {
-      const res = await api.get("/logo");
-      if (res.data?.data?.url) {
-        url = res.data.data.url;
-      }
-    } catch {}
+    const res = await api.get("/logo");
+    if (res.data?.data?.url) {
+      const dataUri = await new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth || 200;
+            canvas.height = img.naturalHeight || 200;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          } catch {
+            resolve(null);
+          }
+        };
+        img.onerror = () => resolve(null);
+        img.src = res.data.data.url;
+      });
+      if (dataUri) return dataUri;
+    }
+  } catch {}
 
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.onload = () => {
-        try {
-          const canvas = document.createElement("canvas");
-          canvas.width = img.naturalWidth || 200;
-          canvas.height = img.naturalHeight || 200;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL("image/png"));
-        } catch {
-          resolve(null);
-        }
-      };
-      img.onerror = () => resolve(null);
-      img.src = url;
-    });
-  } catch {
-    return null;
-  }
+  return OFFICIAL_LOGO_BASE64;
 };
 
 export default function Report() {
@@ -478,9 +468,10 @@ export default function Report() {
   // ==========================================
   const drawKopSurat = (d, institutionFull, title, subtitle, logoData, lembagaCode) => {
     // Logo Resmi di Kiri Kop
-    if (logoData) {
+    const logoToUse = logoData || OFFICIAL_LOGO_BASE64;
+    if (logoToUse) {
       try {
-        d.addImage(logoData, "PNG", 16, 9.5, 21, 21);
+        d.addImage(logoToUse, "PNG", 16, 9.5, 21, 21);
       } catch (e) {}
     }
 
