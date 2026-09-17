@@ -30,7 +30,7 @@ export default function WhatsappApi() {
   const [simNamaSiswa, setSimNamaSiswa] = useState("Ahmad Zaki (Uji Coba)");
   const [simKelas, setSimKelas] = useState("X-A");
   const [simJam, setSimJam] = useState("07:15");
-  const [selectedChannelId, setSelectedChannelId] = useState("auto");
+  const [selectedChannelId, setSelectedChannelId] = useState("");
   const [selectedRecipientId, setSelectedRecipientId] = useState("manual");
   const [customPhone, setCustomPhone] = useState("");
   const [saveAsNewRecipient, setSaveAsNewRecipient] = useState(false);
@@ -191,6 +191,10 @@ export default function WhatsappApi() {
 
   const handleSimulate = (e) => {
     e.preventDefault();
+    if (!selectedChannelId) {
+      useNoticeStore.getState().showWarning("Pilih saluran / API Key terlebih dahulu untuk simulasi.");
+      return;
+    }
     const isGroup = formData.wa_target_type === "group";
     if (!isGroup && !customPhone.trim()) {
       useNoticeStore.getState().showWarning("Masukkan atau pilih nomor WhatsApp tujuan simulasi.");
@@ -665,12 +669,13 @@ export default function WhatsappApi() {
               onChange={(e) => setSelectedChannelId(e.target.value)}
               className="w-full px-3.5 py-2.5 bg-white border-2 border-gray-900 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-green"
             >
-              <option value="auto">⚡ Otomatis (Sesuai Kelas Siswa / Fallback API Key Utama)</option>
-              {channelsList.map((ch) => (
+              <option value="" disabled>-- Pilih Saluran / API Key untuk Simulasi --</option>
+              {channelsList.map((ch, idx) => (
                 <option key={ch.id} value={ch.id}>
-                  {ch.name} — [{ch.target_scope === 'class' ? `Kelas ${ch.kelas}` : ch.target_scope === 'teacher' ? 'Dewan Guru' : 'Umum'}] ({ch.target_type === 'group' ? 'Grup' : 'Pribadi'})
+                  {idx + 1}. {ch.name} — [{ch.target_scope === 'class' ? `Kelas ${ch.kelas}` : ch.target_scope === 'teacher' ? 'Dewan Guru' : 'Umum'}] ({ch.target_type === 'group' ? 'Grup' : 'Pribadi'})
                 </option>
               ))}
+              <option value="auto">⚡ Otomatis (Sesuai Kelas Siswa / Fallback API Key Utama)</option>
             </select>
             <p className="text-[10px] text-gray-500 font-medium">
               Mode otomatis mencocokkan input kelas siswa tiruan dengan daftar saluran di Tab 2.
