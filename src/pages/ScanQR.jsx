@@ -407,6 +407,7 @@ export default function ScanQR() {
     };
     try {
       localStorage.setItem(getLocationSessionKey(effectiveLembaga), JSON.stringify(fullSession));
+      localStorage.setItem("yatama_location_sync_session", JSON.stringify(fullSession));
     } catch {}
     setCoords(fullSession);
     if (typeof coordsRef !== 'undefined' && coordsRef) {

@@ -26,14 +26,17 @@ function getDistance(lat1, lon1, lat2, lon2) {
 
 const LOCATION_SESSION_KEY = "yatama_location_sync_session";
 
-function getCachedLocationSession() {
+function getCachedLocationSession(currentLembaga = "ma") {
   try {
-    const raw = localStorage.getItem(LOCATION_SESSION_KEY);
+    const norm = (currentLembaga || "ma").toLowerCase();
+    const specificKey = `yatama_location_sync_session_${norm}`;
+    let raw = localStorage.getItem(specificKey) || localStorage.getItem(LOCATION_SESSION_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (parsed && parsed.expiresAt && Date.now() < parsed.expiresAt) {
       return parsed;
     }
+    localStorage.removeItem(specificKey);
     localStorage.removeItem(LOCATION_SESSION_KEY);
   } catch {
     localStorage.removeItem(LOCATION_SESSION_KEY);
@@ -364,6 +367,16 @@ export default function ScanGuru() {
     setIsScanning(false);
   };
 
+  // Auto-start camera when unblocked and in camera mode
+  useEffect(() => {
+    if (!isDesktopBlocked && activeMethod === "camera") {
+      const timer = setTimeout(() => {
+        startCamera();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [isDesktopBlocked, activeMethod, lembaga]);
+
   useEffect(() => {
     return () => {
       stopCamera();
@@ -380,6 +393,7 @@ export default function ScanGuru() {
     };
     try {
       localStorage.setItem(LOCATION_SESSION_KEY, JSON.stringify(fullSession));
+      localStorage.setItem(`yatama_location_sync_session_${(lembaga || "ma").toLowerCase()}`, JSON.stringify(fullSession));
     } catch {}
     setCoords(fullSession);
     setIsDesktopBlocked(false);
