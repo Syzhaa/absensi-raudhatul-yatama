@@ -343,7 +343,7 @@ export default function Report() {
         const wsData = [
           ["YAYASAN RAUDHATUL YATAMA"],
           [`${institutionFull} RAUDHATUL YATAMA`],
-          ["{currentInstitutionAddress}"],
+          [currentInstitutionAddress],
           [`Website: raudhatulyatama.sch.id, ppdb.raudhatulyatama.sch.id | Email: ${email}`],
           [`LAPORAN PRESENSI HARIAN ${targetTitle}`],
           [`Hari & Tanggal: ${formatTglLengkap(dateFrom)} | Dicetak: ${format(new Date(), "dd/MM/yyyy HH:mm")}`],
@@ -383,7 +383,7 @@ export default function Report() {
         const sumHeader = [
           ["YAYASAN RAUDHATUL YATAMA"],
           [`${institutionFull} RAUDHATUL YATAMA`],
-          ["{currentInstitutionAddress}"],
+          [currentInstitutionAddress],
           [`Website: raudhatulyatama.sch.id, ppdb.raudhatulyatama.sch.id | Email: ${email}`],
           [`REKAPITULASI JUMLAH PRESENSI ${targetTitle}`],
           [`Periode: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)} | Dicetak: ${format(new Date(), "dd/MM/yyyy HH:mm")}`],
@@ -499,7 +499,8 @@ export default function Report() {
     d.setFont("helvetica", "normal");
     d.setFontSize(8.5);
     d.setTextColor(75, 85, 99);
-    d.text("{currentInstitutionAddress}", 152, 25, { align: "center" });
+    const address = getLembagaAddress(lembagaCode);
+    d.text(address, 152, 25, { align: "center" });
     // 2 Website Resmi (Tanpa domain absen) & Email sesuai lembaga
     d.text(`Website: raudhatulyatama.sch.id • ppdb.raudhatulyatama.sch.id | Email: ${email}`, 152, 29, { align: "center" });
 
@@ -1076,66 +1077,9 @@ export default function Report() {
         </div>
       </div>
 
-      {/* 4. KOP SURAT RESMI DI WEB SEBELUM TABEL */}
-      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-3xl p-4 sm:p-5 shadow-neo">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 pb-3.5 border-b-2 border-gray-900">
-          <img
-            src="/logo.png"
-            alt="Logo Raudhatul Yatama"
-            className="w-16 h-16 sm:w-18 sm:h-18 object-contain flex-shrink-0"
-          />
-          <div className="flex-1 text-center sm:text-left">
-            <h2 className="text-base sm:text-lg font-black text-gray-900 uppercase tracking-tight">
-              YAYASAN RAUDHATUL YATAMA
-            </h2>
-            <h3 className="text-sm sm:text-base font-black text-emerald-600 uppercase tracking-tight">
-              {currentInstitutionFull} RAUDHATUL YATAMA
-            </h3>
-            <p className="text-xs text-gray-600 font-medium mt-0.5">
-              {currentInstitutionAddress}
-            </p>
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-3 gap-y-1 mt-1.5 text-[11px] font-bold text-gray-700">
-              <span>
-                Website:{" "}
-                <a href="https://raudhatulyatama.sch.id" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
-                  raudhatulyatama.sch.id
-                </a>{" "}
-                •{" "}
-                <a href="https://ppdb.raudhatulyatama.sch.id" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
-                  ppdb.raudhatulyatama.sch.id
-                </a>
-              </span>
-              <span>•</span>
-              <span>
-                Email:{" "}
-                <a href={`mailto:${currentLembagaEmail}`} className="text-emerald-700 hover:underline">
-                  {currentLembagaEmail}
-                </a>
-              </span>
-            </div>
-          </div>
-        </div>
 
-        <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
-          <div>
-            <h4 className="text-xs sm:text-sm font-black text-gray-900 uppercase">
-              {category === "siswa"
-                ? (isSingleDay ? "Laporan Presensi Harian Santri / Siswa" : "Rekapitulasi Jumlah Presensi Santri / Siswa")
-                : (isSingleDay ? "Laporan Presensi Harian Dewan Guru" : "Rekapitulasi Jumlah Presensi Dewan Guru")}
-            </h4>
-            <p className="text-xs text-gray-500 font-semibold mt-0.5">
-              {isSingleDay
-                ? `Hari & Tanggal: ${formatTglLengkap(dateFrom)}`
-                : `Periode Rekap: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)}`}
-            </p>
-          </div>
-          <span className="px-3 py-1 bg-gray-100 border-2 border-gray-900 rounded-full text-xs font-mono font-black text-gray-800 shadow-xs">
-            {isSingleDay ? "1 Hari (Log Detail)" : "Rentang Tanggal (Rekap Angka)"}
-          </span>
-        </div>
-      </div>
 
-      {/* 5. MAIN DATA TABLE */}
+      {/* 4. MAIN DATA TABLE */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-3xl shadow-neo overflow-hidden">
         {isLoading ? (
           <div className="overflow-x-auto p-4">
