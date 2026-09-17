@@ -55,9 +55,10 @@ export default function CredentialsModal({
       `👤 *Nama:* ${teacher?.nama || credentials?.name}\n` +
       `📧 *Email:* ${email}\n` +
       `🔑 *Password:* ${password || "Yatama10"}\n\n` +
-      `🌐 *Webmail:* https://mail.raudhatulyatama.sch.id\n` +
-      `📱 *Presensi:* https://absen.raudhatulyatama.sch.id/login\n\n` +
-      `_Akun ini otomatis terhubung ke Webmail Madrasah dan Aplikasi Presensi Digital._`;
+      `🌐 *Portal Madrasah:* https://raudhatulyatama.sch.id/login\n` +
+      `📱 *Presensi Digital:* https://absen.raudhatulyatama.sch.id\n` +
+      `📧 *Webmail Madrasah:* https://mail.raudhatulyatama.sch.id\n\n` +
+      `_1 Akun resmi otomatis terhubung ke Portal, Presensi Digital, dan Webmail Madrasah._`;
 
     navigator.clipboard.writeText(textToCopy).then(() => {
       setCopyFeedback(true);
@@ -92,28 +93,28 @@ export default function CredentialsModal({
   const isLoading = isActivatePending || isResetPending || isDeactivatePending;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4">
       <div
         className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
-      <div className="relative bg-white border-3 border-gray-900 rounded-2xl shadow-neo max-w-md w-full p-5 sm:p-6 z-10 animate-slide-up space-y-4">
+      <div className="relative bg-white border-2 sm:border-3 border-gray-900 rounded-2xl shadow-neo max-w-md w-full p-4 sm:p-6 z-10 animate-slide-up space-y-3.5">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b-2 border-gray-100 pb-3">
+        <div className="flex items-center justify-between border-b-2 border-gray-100 pb-2.5">
           <div className="flex items-center gap-2.5">
-            <div className={`w-10 h-10 rounded-xl border-2 border-gray-900 flex items-center justify-center ${
+            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-gray-900 flex items-center justify-center shrink-0 ${
               isExistingAccount ? "bg-cyan-100 text-cyan-800" : "bg-emerald-100 text-emerald-800"
             }`}>
-              <span className="material-symbols-outlined text-2xl font-bold">
+              <span className="material-symbols-outlined text-xl sm:text-2xl font-bold">
                 {isExistingAccount ? "manage_accounts" : "key"}
               </span>
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-black text-gray-900 leading-tight">
-                {isExistingAccount ? "Kelola Kredensial Login" : "Buat Akun Login & Webmail Guru"}
+              <h2 className="text-sm sm:text-base font-black text-gray-900 leading-tight">
+                {isExistingAccount ? "Kelola Kredensial Login" : "Buat Akun Guru (SSO)"}
               </h2>
-              <p className="text-[11px] text-emerald-800 font-bold">
-                Terhubung ke mail.raudhatulyatama.sch.id & Absensi
+              <p className="text-[10px] sm:text-[11px] text-emerald-800 font-bold">
+                1 Akun: Portal, Absensi & Webmail
               </p>
             </div>
           </div>
