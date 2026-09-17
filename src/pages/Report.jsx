@@ -1051,42 +1051,7 @@ export default function Report() {
           </div>
         </div>
 
-        {/* View Mode Toggle (Khusus saat rentang hari) */}
-        {!isSingleDay && (
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100 flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black text-gray-600 uppercase">Mode Tampilan Layar:</span>
-              <div className="inline-flex bg-gray-100 p-0.5 rounded-xl border border-gray-400">
-                <button
-                  type="button"
-                  onClick={() => setRangeViewMode("rekap")}
-                  className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                    rangeViewMode === "rekap"
-                      ? "bg-white text-gray-900 shadow-xs border border-gray-300"
-                      : "text-gray-500 hover:text-gray-900"
-                  }`}
-                >
-                  Rekapitulasi Angka (Rekomendasi)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRangeViewMode("detail")}
-                  className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                    rangeViewMode === "detail"
-                      ? "bg-white text-gray-900 shadow-xs border border-gray-300"
-                      : "text-gray-500 hover:text-gray-900"
-                  }`}
-                >
-                  Log Harian Lengkap
-                </button>
-              </div>
-            </div>
 
-            <span className="text-xs font-bold text-gray-500">
-              Rentang: <strong>{formatTgl(dateFrom)}</strong> s/d <strong>{formatTgl(dateTo)}</strong>
-            </span>
-          </div>
-        )}
       </div>
 
       {/* 4. MAIN DATA TABLE */}
