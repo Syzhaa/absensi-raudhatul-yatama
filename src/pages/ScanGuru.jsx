@@ -65,6 +65,7 @@ export default function ScanGuru() {
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const html5QrCodeRef = useRef(null);
+  const isStartingRef = useRef(false);
 
   // Result popup state
   const [result, setResult] = useState(null);
@@ -227,13 +228,26 @@ export default function ScanGuru() {
 
   // Camera start/stop handlers
   const startCamera = async () => {
+    if (isStartingRef.current) return;
+    isStartingRef.current = true;
     setCameraError(null);
+
     try {
       if (html5QrCodeRef.current) {
-        await stopCamera();
+        try {
+          if (html5QrCodeRef.current.isScanning) {
+            await html5QrCodeRef.current.stop();
+          }
+          html5QrCodeRef.current.clear();
+        } catch (e) {}
+        html5QrCodeRef.current = null;
       }
       const element = document.getElementById("teacher-qr-reader");
-      if (!element) return;
+      if (!element) {
+        isStartingRef.current = false;
+        return;
+      }
+      element.innerHTML = "";
 
       const qr = new Html5Qrcode("teacher-qr-reader");
       html5QrCodeRef.current = qr;
@@ -386,15 +400,24 @@ export default function ScanGuru() {
     } catch (err) {
       setCameraError("Kamera tidak dapat diakses. Pastikan izin kamera telah diberikan atau gunakan opsi input manual di bawah.");
       setIsScanning(false);
+    } finally {
+      isStartingRef.current = false;
     }
   };
 
   const stopCamera = async () => {
+    isStartingRef.current = false;
     try {
       if (html5QrCodeRef.current) {
-        await html5QrCodeRef.current.stop();
+        if (html5QrCodeRef.current.isScanning) {
+          await html5QrCodeRef.current.stop();
+        }
         html5QrCodeRef.current.clear();
         html5QrCodeRef.current = null;
+      }
+      const element = document.getElementById("teacher-qr-reader");
+      if (element) {
+        element.innerHTML = "";
       }
     } catch (e) {
       // Ignore
@@ -631,7 +654,7 @@ export default function ScanGuru() {
             <div className="space-y-3 text-center">
               <div
                 id="teacher-qr-reader"
-                className="w-full aspect-square bg-gray-900 rounded-xl overflow-hidden border-2 border-gray-900 relative flex items-center justify-center"
+                className="w-full aspect-square bg-gray-900 rounded-xl overflow-hidden border-2 border-gray-900 relative"
               >
                 {!isScanning && (
                   <div className="text-white text-xs space-y-2 p-4">

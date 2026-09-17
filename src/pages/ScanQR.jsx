@@ -583,7 +583,7 @@ export default function ScanQR() {
           {!showManualForm && (
             <div className="relative w-full aspect-square sm:aspect-[4/3] md:aspect-[4/3] lg:aspect-[16/10] bg-gray-950 rounded-2xl md:rounded-3xl border-2 border-gray-900 overflow-hidden shadow-sm md:shadow-md flex items-center justify-center">
               {/* QR Reader Viewport */}
-              <div id="qr-reader" className="w-full h-full flex items-center justify-center overflow-hidden" />
+              <div id="qr-reader" className="w-full h-full relative overflow-hidden" />
 
               {/* Visual Bracket Scanner Corners (Frame Persegi Pas di Tengah) */}
               <div className="absolute inset-6 sm:inset-10 pointer-events-none z-10 flex flex-col justify-between">

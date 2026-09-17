@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import useAppStore from "../store/useAppStore";
 import api from "../services/api";
 import { Html5Qrcode } from "html5-qrcode";
@@ -15,19 +16,34 @@ export function useScanner({
   onBeforeScan,
   coordsRef,
 }) {
+  const isStartingRef = useRef(false);
+
   const startScanning = async () => {
+    if (isStartingRef.current) return;
+    isStartingRef.current = true;
     setCameraError(null);
     setResult(null);
     try {
       if (html5QrCodeRef.current) {
-        await stopScanning();
-      }
-      setTimeout(async () => {
-        const readerElement = document.getElementById("qr-reader");
-        if (!readerElement) return;
         try {
-          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-          html5QrCodeRef.current = new Html5Qrcode("qr-reader");
+          if (html5QrCodeRef.current.isScanning) {
+            await html5QrCodeRef.current.stop();
+          }
+          html5QrCodeRef.current.clear();
+        } catch (e) {}
+        html5QrCodeRef.current = null;
+      }
+
+      const readerElement = document.getElementById("qr-reader");
+      if (!readerElement) {
+        isStartingRef.current = false;
+        return;
+      }
+      readerElement.innerHTML = "";
+
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const qrInstance = new Html5Qrcode("qr-reader");
+      html5QrCodeRef.current = qrInstance;
           const scanCallback =
             async (decodedText) => {
               if (
@@ -292,20 +308,25 @@ export function useScanner({
           else if (err.name === "NotSupportedError")
             errorMsg = "Browser tidak mendukung atau halaman tidak HTTPS.";
           setCameraError(errorMsg);
+        } finally {
+          isStartingRef.current = false;
         }
-      }, 100);
-    } catch (err) {
-      setCameraError("Gagal memulai scanner kamera.");
-    }
   };
 
   const stopScanning = async () => {
+    isStartingRef.current = false;
     if (html5QrCodeRef.current) {
       try {
-        await html5QrCodeRef.current.stop();
+        if (html5QrCodeRef.current.isScanning) {
+          await html5QrCodeRef.current.stop();
+        }
         html5QrCodeRef.current.clear();
       } catch (e) {}
       html5QrCodeRef.current = null;
+    }
+    const readerElement = document.getElementById("qr-reader");
+    if (readerElement) {
+      readerElement.innerHTML = "";
     }
     setScanning(false);
   };
