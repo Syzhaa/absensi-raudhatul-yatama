@@ -25,11 +25,20 @@ export default function WhatsappApi() {
   const [testResult, setTestResult] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  // Teacher specific test state
+  const [teacherTestPhoneNumber, setTeacherTestPhoneNumber] = useState("");
+  const [teacherTestResult, setTeacherTestResult] = useState(null);
+
   // Simulator state
+  const [simTargetRole, setSimTargetRole] = useState("siswa"); // "siswa" | "guru"
   const [simStatus, setSimStatus] = useState("hadir");
   const [simNamaSiswa, setSimNamaSiswa] = useState("Ahmad Zaki (Uji Coba)");
   const [simKelas, setSimKelas] = useState("X-A");
   const [simJam, setSimJam] = useState("07:15");
+  const [simNamaGuru, setSimNamaGuru] = useState("Ustadz H. Ahmad Ridho, S.Pd");
+  const [simMapel, setSimMapel] = useState("Fiqih & Keagamaan");
+  const [simJamGuru, setSimJamGuru] = useState("06:45");
+  const [simGuruPhone, setSimGuruPhone] = useState("");
   const [selectedChannelId, setSelectedChannelId] = useState("");
   const [selectedRecipientId, setSelectedRecipientId] = useState("manual");
   const [customPhone, setCustomPhone] = useState("");
@@ -133,6 +142,30 @@ export default function WhatsappApi() {
     },
   });
 
+  const teacherTestMutation = useMutation({
+    mutationFn: async ({ teacher_whatsapp_api_key, phone_number }) => {
+      const response = await api.post(`/attendance/whatsapp-settings/test`, {
+        wa_api_key: teacher_whatsapp_api_key,
+        wa_target_type: "group",
+        for_role: "guru",
+        phone_number: phone_number || undefined,
+      });
+      return response.data;
+    },
+    onSuccess: (res) => {
+      setTeacherTestResult({
+        success: true,
+        message: res.message || "Koneksi Berhasil! API Key Grup Dewan Guru aktif dan terhubung.",
+      });
+    },
+    onError: (err) => {
+      setTeacherTestResult({
+        success: false,
+        message: err.response?.data?.message || "Gagal terhubung. Pastikan API Key Grup Guru benar dan akun aktif di wa.tappdigital.id",
+      });
+    },
+  });
+
   const simulateMutation = useMutation({
     mutationFn: async (payload) => {
       const params = effectiveLembaga ? { lembaga: effectiveLembaga } : {};
@@ -189,34 +222,64 @@ export default function WhatsappApi() {
     });
   };
 
+  const handleTestTeacher = (e) => {
+    e.preventDefault();
+    if (!formData.teacher_whatsapp_api_key?.trim()) {
+      useNoticeStore.getState().showWarning("Masukkan API Key Grup Dewan Guru terlebih dahulu.");
+      return;
+    }
+    setTeacherTestResult(null);
+    teacherTestMutation.mutate({
+      teacher_whatsapp_api_key: formData.teacher_whatsapp_api_key.trim(),
+      phone_number: teacherTestPhoneNumber.trim(),
+    });
+  };
+
   const handleSimulate = (e) => {
     e.preventDefault();
-    if (!selectedChannelId) {
+    const isTeacher = simTargetRole === "guru";
+    const isGroup = formData.wa_target_type === "group";
+
+    if (!isTeacher && !selectedChannelId) {
       useNoticeStore.getState().showWarning("Pilih saluran / API Key terlebih dahulu untuk simulasi.");
       return;
     }
-    const isGroup = formData.wa_target_type === "group";
-    if (!isGroup && !customPhone.trim()) {
+    if (!isGroup && !customPhone.trim() && !isTeacher) {
       useNoticeStore.getState().showWarning("Masukkan atau pilih nomor WhatsApp tujuan simulasi.");
       return;
     }
-    if (!isGroup && saveAsNewRecipient && !newRecipientName.trim()) {
+    if (!isGroup && saveAsNewRecipient && !newRecipientName.trim() && !isTeacher) {
       useNoticeStore.getState().showWarning("Masukkan nama label untuk nomor tester baru.");
       return;
     }
 
     setSimResult(null);
-    simulateMutation.mutate({
-      status: simStatus,
-      nama_siswa: simNamaSiswa.trim(),
-      kelas: simKelas.trim(),
-      jam: simJam.trim(),
-      target_type: formData.wa_target_type,
-      phone_number: customPhone.trim(),
-      channel_id: selectedChannelId !== "auto" ? selectedChannelId : undefined,
-      save_recipient: !isGroup && saveAsNewRecipient,
-      recipient_name: newRecipientName.trim(),
-    });
+
+    if (isTeacher) {
+      simulateMutation.mutate({
+        user_type: "teacher",
+        status: simStatus,
+        nama_guru: simNamaGuru.trim(),
+        mata_pelajaran: simMapel.trim(),
+        jam: simJamGuru.trim(),
+        target_type: "group",
+        phone_number: simGuruPhone.trim(),
+        channel_id: selectedChannelId && selectedChannelId !== "auto" && selectedChannelId !== "auto_teacher" ? selectedChannelId : undefined,
+      });
+    } else {
+      simulateMutation.mutate({
+        user_type: "student",
+        status: simStatus,
+        nama_siswa: simNamaSiswa.trim(),
+        kelas: simKelas.trim(),
+        jam: simJam.trim(),
+        target_type: formData.wa_target_type,
+        phone_number: customPhone.trim(),
+        channel_id: selectedChannelId !== "auto" ? selectedChannelId : undefined,
+        save_recipient: !isGroup && saveAsNewRecipient,
+        recipient_name: newRecipientName.trim(),
+      });
+    }
   };
 
   const handleSave = (e) => {
@@ -440,7 +503,7 @@ export default function WhatsappApi() {
           {formData.wa_target_type === "group" && (
             <div className="space-y-4">
               {/* 2A. Pengaturan Absensi Guru ke Grup */}
-              <div className="p-4 bg-purple-50/60 border-2 border-purple-200 rounded-xl space-y-2">
+              <div className="p-4 bg-purple-50/60 border-2 border-purple-300 rounded-xl space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-lg text-purple-700">badge</span>
@@ -448,8 +511,8 @@ export default function WhatsappApi() {
                       A. API Key Grup Dewan Guru
                     </h3>
                   </div>
-                  <span className="text-[10px] font-bold text-purple-800 bg-purple-100 px-2 py-0.5 rounded border border-purple-300">
-                    Grup Guru
+                  <span className="text-[10px] font-black uppercase text-purple-800 bg-purple-100 px-2.5 py-0.5 rounded-lg border border-purple-300 shadow-xs">
+                    Grup Dewan Guru
                   </span>
                 </div>
 
@@ -467,6 +530,60 @@ export default function WhatsappApi() {
                   <p className="text-[10px] text-gray-500">
                     Setiap guru/staf yang presensi, notifikasinya otomatis masuk ke grup WhatsApp dewan guru ini.
                   </p>
+                </div>
+
+                {/* Direct Testing untuk API Key Guru */}
+                <div className="pt-2 border-t border-purple-200/80 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-black uppercase text-purple-950 flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm text-purple-700">phonelink_ring</span>
+                      <span>Tes Koneksi API Key Guru Langsung</span>
+                    </label>
+                    <span className="text-[10px] text-gray-500 font-medium">Bisa 08... atau 8...</span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="tel"
+                      value={teacherTestPhoneNumber}
+                      onChange={(e) => setTeacherTestPhoneNumber(e.target.value)}
+                      placeholder="No. WA Guru untuk di-tag @ di grup (Opsional, misal: 08123456789)"
+                      className="flex-1 px-3 py-2 bg-white border-2 border-purple-200 focus:border-gray-900 rounded-xl text-xs font-mono text-gray-900 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleTestTeacher}
+                      disabled={teacherTestMutation.isPending || !formData.teacher_whatsapp_api_key?.trim()}
+                      className="px-4 py-2 bg-purple-700 hover:bg-purple-800 text-white font-black text-xs rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 disabled:opacity-40 flex items-center justify-center gap-1.5 flex-shrink-0 cursor-pointer"
+                    >
+                      {teacherTestMutation.isPending ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                          <span>Menguji Guru...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-sm">send</span>
+                          <span>Tes Koneksi Guru</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {teacherTestResult && (
+                    <div
+                      className={`p-2.5 rounded-lg border text-xs font-medium flex items-start gap-2 ${
+                        teacherTestResult.success
+                          ? "bg-emerald-50 border-emerald-400 text-emerald-900"
+                          : "bg-red-50 border-red-400 text-red-900"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-base flex-shrink-0 mt-0.5">
+                        {teacherTestResult.success ? "check_circle" : "error"}
+                      </span>
+                      <span className="leading-snug">{teacherTestResult.message}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -650,7 +767,52 @@ export default function WhatsappApi() {
           <div className="p-3 bg-amber-50 border-2 border-amber-300 rounded-xl flex items-start gap-2.5">
             <span className="material-symbols-outlined text-amber-600 text-xl flex-shrink-0 mt-0.5">verified_user</span>
             <div className="text-xs text-amber-900 leading-relaxed font-medium">
-              <strong className="font-black text-amber-950">Mode Sandbox Terisolasi:</strong> Pengujian di simulator ini <span className="underline font-bold">tidak akan mengotori</span> tabel data presensi maupun rekap siswa/guru. Pesan WhatsApp dikirim langsung sesuai saluran & tujuan yang dipilih.
+              <strong className="font-black text-amber-950">Mode Sandbox Terisolasi:</strong> Pengujian di simulator ini <span className="underline font-bold">tidak akan mengotori</span> tabel data presensi maupun rekap kehadiran asli siswa/guru. Pesan WhatsApp dikirim langsung sesuai saluran & tujuan yang dipilih.
+            </div>
+          </div>
+
+          {/* PILIHAN MODE SIMULATOR: SISWA VS DEWAN GURU */}
+          <div className="p-3.5 bg-gray-50 border-2 border-gray-900 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-neo-sm">
+            <div>
+              <span className="font-black text-xs uppercase text-gray-900 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-base text-gray-700">tune</span>
+                <span>Pilih Sasaran Presensi yang Disimulasikan:</span>
+              </span>
+              <p className="text-[11px] font-medium text-gray-500 mt-0.5">
+                Uji format template pesan dan saluran pengiriman untuk Santri atau Dewan Guru.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  setSimTargetRole("siswa");
+                  setSelectedChannelId("");
+                }}
+                className={`px-4 py-2.5 rounded-xl border-2 font-black text-xs uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  simTargetRole === "siswa"
+                    ? "bg-primary-green text-gray-950 border-gray-900 shadow-neo-sm"
+                    : "bg-white text-gray-600 border-gray-300 hover:border-gray-900"
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">school</span>
+                <span>Siswa / Santri</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSimTargetRole("guru");
+                  setSelectedChannelId("");
+                }}
+                className={`px-4 py-2.5 rounded-xl border-2 font-black text-xs uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  simTargetRole === "guru"
+                    ? "bg-purple-600 text-white border-gray-900 shadow-neo-sm"
+                    : "bg-white text-gray-600 border-gray-300 hover:border-gray-900"
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">badge</span>
+                <span>Dewan Guru</span>
+              </button>
             </div>
           </div>
 
@@ -658,10 +820,10 @@ export default function WhatsappApi() {
           <div className="space-y-1.5 p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl">
             <div className="flex items-center justify-between">
               <label className="text-xs font-black uppercase tracking-wider text-gray-800">
-                Pilih Saluran / API Key untuk Simulasi:
+                Pilih Saluran / API Key untuk Simulasi {simTargetRole === "guru" ? "Guru" : "Siswa"}:
               </label>
               <span className="text-[10px] font-bold text-gray-500">
-                Multi-Grup Routing
+                {simTargetRole === "guru" ? "Grup Dewan Guru" : "Multi-Grup Routing"}
               </span>
             </div>
             <select
@@ -670,15 +832,34 @@ export default function WhatsappApi() {
               className="w-full px-3.5 py-2.5 bg-white border-2 border-gray-900 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-green"
             >
               <option value="" disabled>-- Pilih Saluran / API Key untuk Simulasi --</option>
-              {channelsList.map((ch, idx) => (
-                <option key={ch.id} value={ch.id}>
-                  {idx + 1}. {ch.name} — [{ch.target_scope === 'class' ? `Kelas ${ch.kelas}` : ch.target_scope === 'teacher' ? 'Dewan Guru' : 'Umum'}] ({ch.target_type === 'group' ? 'Grup' : 'Pribadi'})
-                </option>
-              ))}
-              <option value="auto">⚡ Otomatis (Sesuai Kelas Siswa / Fallback API Key Utama)</option>
+              {simTargetRole === "guru" ? (
+                <>
+                  <option value="auto_teacher">
+                    ⚡ Otomatis (API Key Grup Dewan Guru: {formData.teacher_whatsapp_api_key ? "Aktif" : "Belum diisi"})
+                  </option>
+                  {channelsList
+                    .filter((ch) => ch.target_scope === "teacher" || ch.target_scope === "all")
+                    .map((ch, idx) => (
+                      <option key={ch.id} value={ch.id}>
+                        {idx + 1}. {ch.name} — [Dewan Guru] ({ch.target_type === "group" ? "Grup" : "Pribadi"})
+                      </option>
+                    ))}
+                </>
+              ) : (
+                <>
+                  {channelsList.map((ch, idx) => (
+                    <option key={ch.id} value={ch.id}>
+                      {idx + 1}. {ch.name} — [{ch.target_scope === "class" ? `Kelas ${ch.kelas}` : ch.target_scope === "teacher" ? "Dewan Guru" : "Umum"}] ({ch.target_type === "group" ? "Grup" : "Pribadi"})
+                    </option>
+                  ))}
+                  <option value="auto">⚡ Otomatis (Sesuai Kelas Siswa / Fallback API Key Utama)</option>
+                </>
+              )}
             </select>
             <p className="text-[10px] text-gray-500 font-medium">
-              Mode otomatis mencocokkan input kelas siswa tiruan dengan daftar saluran di Tab 2.
+              {simTargetRole === "guru"
+                ? "Pesan presensi guru diarahkan ke Grup WhatsApp Dewan Guru melalui API Key Grup Guru."
+                : "Mode otomatis mencocokkan input kelas siswa tiruan dengan daftar saluran di Tab 2."}
             </p>
           </div>
 
@@ -701,7 +882,7 @@ export default function WhatsappApi() {
                 >
                   <div className="flex items-center justify-between w-full">
                     <span className="font-black text-xs">{st.label}</span>
-                    <span className={`w-2 h-2 rounded-full ${st.id === simStatus ? "bg-primary-green" : "bg-gray-400"}`}></span>
+                    <span className={`w-2 h-2 rounded-full ${st.id === simStatus ? (simTargetRole === "guru" ? "bg-purple-400" : "bg-primary-green") : "bg-gray-400"}`}></span>
                   </div>
                   <span className={`text-[10px] mt-1 ${simStatus === st.id ? "text-gray-300" : "text-gray-500"}`}>
                     {st.desc}
@@ -711,148 +892,206 @@ export default function WhatsappApi() {
             </div>
           </div>
 
-          {/* Form Variabel Simulasi */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl">
-            <div className="space-y-1">
-              <label className="text-[11px] font-black uppercase text-gray-700">Nama Siswa Tiruan</label>
-              <input
-                type="text"
-                value={simNamaSiswa}
-                onChange={(e) => setSimNamaSiswa(e.target.value)}
-                placeholder="Ahmad Zaki"
-                className="w-full px-3 py-2 bg-white border-2 border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-gray-900"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[11px] font-black uppercase text-gray-700">Kelas Tiruan</label>
-              <input
-                type="text"
-                value={simKelas}
-                onChange={(e) => setSimKelas(e.target.value)}
-                placeholder="X-A"
-                className="w-full px-3 py-2 bg-white border-2 border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-gray-900"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[11px] font-black uppercase text-gray-700">Waktu / Jam Scan</label>
-              <input
-                type="text"
-                value={simJam}
-                onChange={(e) => setSimJam(e.target.value)}
-                placeholder="07:15"
-                className="w-full px-3 py-2 bg-white border-2 border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-gray-900"
-              />
-            </div>
-          </div>
-
-          {/* Info Mode Pengiriman Simulasi */}
-          {formData.wa_target_type === "group" ? (
-            <div className="p-3.5 bg-emerald-50 border-2 border-emerald-500 rounded-xl flex items-center gap-3">
-              <span className="material-symbols-outlined text-emerald-600 text-2xl">groups</span>
-              <div className="flex-1">
-                <span className="font-black text-xs text-emerald-900 block">Mode Pengiriman Aktif: Grup WhatsApp</span>
-                <span className="text-[11px] text-emerald-700 font-medium">
-                  Pesan simulasi akan langsung dikirim ke grup WhatsApp. Nomor orang tua di bawah akan otomatis di-tag / mention (@) di dalam grup.
-                </span>
-              </div>
-            </div>
-          ) : null}
-
-          {/* Nomor Tujuan Tester */}
-          <div className="space-y-3 p-3.5 sm:p-4 bg-emerald-50/50 border-2 border-emerald-200 rounded-xl">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-base text-emerald-600">contacts</span>
-                <span>{formData.wa_target_type === "group" ? "Nomor WhatsApp Orang Tua (Di-tag @ di Grup)" : "Pilih Nomor WhatsApp Orang Tua Penerima *"}</span>
-              </label>
-              <span className="text-[10px] text-gray-500 font-medium">Bisa 08... atau 8...</span>
-            </div>
-
-            {/* Dropdown Nomor Tersimpan di DB */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] font-bold text-gray-600 mb-1 block">
-                  {formData.wa_target_type === "group" ? `Daftar Contoh Nomor Ortu (${effectiveLembaga.toUpperCase()})` : `Daftar Nomor Ortu Tester (${effectiveLembaga.toUpperCase()})`}
+          {/* Form Variabel Simulasi (Siswa vs Guru) */}
+          {simTargetRole === "guru" ? (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-purple-50/60 border-2 border-purple-200 rounded-xl">
+              <div className="space-y-1">
+                <label className="text-[11px] font-black uppercase text-purple-950 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">person</span>
+                  <span>Nama Guru Tiruan</span>
                 </label>
-                <select
-                  value={selectedRecipientId}
-                  onChange={(e) => setSelectedRecipientId(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-bold text-gray-900 focus:outline-none"
-                >
-                  <option value="manual">+ Ketik Nomor Manual Baru</option>
-                  {recipients.map((rec) => (
-                    <option key={rec.id} value={rec.id}>
-                      {rec.nama} ({rec.nomor_wa})
-                    </option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  value={simNamaGuru}
+                  onChange={(e) => setSimNamaGuru(e.target.value)}
+                  placeholder="Ustadz H. Ahmad Ridho, S.Pd"
+                  className="w-full px-3 py-2 bg-white border-2 border-purple-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-gray-900"
+                />
               </div>
 
-              {/* Input Nomor HP */}
-              <div>
-                <label className="text-[11px] font-bold text-gray-600 mb-1 block">
-                  {formData.wa_target_type === "group" ? "Nomor HP Ortu untuk di-tag" : "Nomor WhatsApp Target"}
+              <div className="space-y-1">
+                <label className="text-[11px] font-black uppercase text-purple-950 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">menu_book</span>
+                  <span>Mata Pelajaran / Tugas</span>
                 </label>
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="tel"
-                    required={formData.wa_target_type !== "group"}
-                    value={customPhone}
-                    onChange={(e) => {
-                      setCustomPhone(e.target.value);
-                      if (selectedRecipientId !== "manual") {
-                        setSelectedRecipientId("manual");
-                      }
-                    }}
-                    placeholder={formData.wa_target_type === "group" ? "Contoh: 08123456789 (akan di-tag @ di grup)" : "Contoh: 08123456789 atau 8123456789"}
-                    className="flex-1 px-3 py-2.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none"
-                  />
-                  {selectedRecipientId !== "manual" && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (confirm("Hapus nomor tester ini dari database?")) {
-                          deleteRecipientMutation.mutate(selectedRecipientId);
+                <input
+                  type="text"
+                  value={simMapel}
+                  onChange={(e) => setSimMapel(e.target.value)}
+                  placeholder="Fiqih & Keagamaan"
+                  className="w-full px-3 py-2 bg-white border-2 border-purple-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-gray-900"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-black uppercase text-purple-950 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">schedule</span>
+                  <span>Waktu / Jam Scan</span>
+                </label>
+                <input
+                  type="text"
+                  value={simJamGuru}
+                  onChange={(e) => setSimJamGuru(e.target.value)}
+                  placeholder="06:45"
+                  className="w-full px-3 py-2 bg-white border-2 border-purple-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-gray-900"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl">
+              <div className="space-y-1">
+                <label className="text-[11px] font-black uppercase text-gray-700">Nama Siswa Tiruan</label>
+                <input
+                  type="text"
+                  value={simNamaSiswa}
+                  onChange={(e) => setSimNamaSiswa(e.target.value)}
+                  placeholder="Ahmad Zaki"
+                  className="w-full px-3 py-2 bg-white border-2 border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-gray-900"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-black uppercase text-gray-700">Kelas Tiruan</label>
+                <input
+                  type="text"
+                  value={simKelas}
+                  onChange={(e) => setSimKelas(e.target.value)}
+                  placeholder="X-A"
+                  className="w-full px-3 py-2 bg-white border-2 border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-gray-900"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-black uppercase text-gray-700">Waktu / Jam Scan</label>
+                <input
+                  type="text"
+                  value={simJam}
+                  onChange={(e) => setSimJam(e.target.value)}
+                  placeholder="07:15"
+                  className="w-full px-3 py-2 bg-white border-2 border-gray-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:border-gray-900"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Nomor Tujuan Tester & Mode Info */}
+          {simTargetRole === "guru" ? (
+            <div className="space-y-3 p-3.5 sm:p-4 bg-purple-50/50 border-2 border-purple-200 rounded-xl">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-black uppercase tracking-wider text-purple-950 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base text-purple-700">contacts</span>
+                  <span>Nomor WhatsApp Guru (Akan di-tag @ di Grup Dewan Guru)</span>
+                </label>
+                <span className="text-[10px] text-gray-500 font-medium">Opsional (Bisa 08... atau 628...)</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="tel"
+                  value={simGuruPhone}
+                  onChange={(e) => setSimGuruPhone(e.target.value)}
+                  placeholder="Contoh: 08123456789 atau 628123456789 (akan di-tag @ di grup guru)"
+                  className="w-full px-3 py-2.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none"
+                />
+              </div>
+              <p className="text-[10px] text-gray-500">
+                Pesan presensi guru dikirimkan ke Grup WhatsApp Dewan Guru via API Key Guru. Jika nomor diisi, bot akan otomatis menyebut (@) nama guru bersangkutan di dalam grup.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3 p-3.5 sm:p-4 bg-emerald-50/50 border-2 border-emerald-200 rounded-xl">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-black uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base text-emerald-600">contacts</span>
+                  <span>{formData.wa_target_type === "group" ? "Nomor WhatsApp Orang Tua (Di-tag @ di Grup)" : "Pilih Nomor WhatsApp Orang Tua Penerima *"}</span>
+                </label>
+                <span className="text-[10px] text-gray-500 font-medium">Bisa 08... atau 8...</span>
+              </div>
+
+              {/* Dropdown Nomor Tersimpan di DB */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-bold text-gray-600 mb-1 block">
+                    {formData.wa_target_type === "group" ? `Daftar Contoh Nomor Ortu (${effectiveLembaga.toUpperCase()})` : `Daftar Nomor Ortu Tester (${effectiveLembaga.toUpperCase()})`}
+                  </label>
+                  <select
+                    value={selectedRecipientId}
+                    onChange={(e) => setSelectedRecipientId(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-bold text-gray-900 focus:outline-none"
+                  >
+                    <option value="manual">+ Ketik Nomor Manual Baru</option>
+                    {recipients.map((rec) => (
+                      <option key={rec.id} value={rec.id}>
+                        {rec.nama} ({rec.nomor_wa})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Input Nomor HP */}
+                <div>
+                  <label className="text-[11px] font-bold text-gray-600 mb-1 block">
+                    {formData.wa_target_type === "group" ? "Nomor HP Ortu untuk di-tag" : "Nomor WhatsApp Target"}
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="tel"
+                      required={formData.wa_target_type !== "group"}
+                      value={customPhone}
+                      onChange={(e) => {
+                        setCustomPhone(e.target.value);
+                        if (selectedRecipientId !== "manual") {
+                          setSelectedRecipientId("manual");
                         }
                       }}
-                      title="Hapus dari database"
-                      className="p-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl border border-red-300 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-base">delete</span>
-                    </button>
-                  )}
+                      placeholder={formData.wa_target_type === "group" ? "Contoh: 08123456789 (akan di-tag @ di grup)" : "Contoh: 08123456789 atau 8123456789"}
+                      className="flex-1 px-3 py-2.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none"
+                    />
+                    {selectedRecipientId !== "manual" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm("Hapus nomor tester ini dari database?")) {
+                            deleteRecipientMutation.mutate(selectedRecipientId);
+                          }
+                        }}
+                        title="Hapus dari database"
+                        className="p-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl border border-red-300 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-base">delete</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              {/* Opsi Simpan Nomor Baru ke Database */}
+              {selectedRecipientId === "manual" && (
+                <div className="pt-2 border-t border-emerald-200/70 flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={saveAsNewRecipient}
+                      onChange={(e) => setSaveAsNewRecipient(e.target.checked)}
+                      className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
+                    />
+                    <span className="text-xs font-bold text-gray-800">Simpan nomor ini ke database lembaga</span>
+                  </label>
+
+                  {saveAsNewRecipient && (
+                    <input
+                      type="text"
+                      required
+                      value={newRecipientName}
+                      onChange={(e) => setNewRecipientName(e.target.value)}
+                      placeholder="Label/Nama (cth: HP Admin Piket)"
+                      className="px-3 py-1.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-lg text-xs font-bold text-gray-900 focus:outline-none flex-1"
+                    />
+                  )}
+                </div>
+              )}
             </div>
-
-            {/* Opsi Simpan Nomor Baru ke Database */}
-            {selectedRecipientId === "manual" && (
-              <div className="pt-2 border-t border-emerald-200/70 flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={saveAsNewRecipient}
-                    onChange={(e) => setSaveAsNewRecipient(e.target.checked)}
-                    className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
-                  />
-                  <span className="text-xs font-bold text-gray-800">Simpan nomor ini ke database lembaga</span>
-                </label>
-
-                {saveAsNewRecipient && (
-                  <input
-                    type="text"
-                    required
-                    value={newRecipientName}
-                    onChange={(e) => setNewRecipientName(e.target.value)}
-                    placeholder="Label/Nama (cth: HP Admin Piket)"
-                    className="px-3 py-1.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-lg text-xs font-bold text-gray-900 focus:outline-none flex-1"
-                  />
-                )}
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Feedback Hasil Simulasi */}
           {simResult && (
@@ -883,17 +1122,23 @@ export default function WhatsappApi() {
             <button
               type="submit"
               disabled={simulateMutation.isPending}
-              className="w-full sm:w-auto px-6 py-3 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black text-xs sm:text-sm rounded-xl border-2 md:border-3 border-gray-900 shadow-neo transition-all active:translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2"
+              className={`w-full sm:w-auto px-6 py-3 ${
+                simTargetRole === "guru"
+                  ? "bg-purple-600 hover:bg-purple-700 text-white"
+                  : "bg-primary-green hover:bg-emerald-400 text-gray-900"
+              } font-black text-xs sm:text-sm rounded-xl border-2 md:border-3 border-gray-900 shadow-neo transition-all active:translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer`}
             >
               {simulateMutation.isPending ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></span>
+                  <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
                   <span>Mengirim Pesan Simulasi...</span>
                 </>
               ) : (
                 <>
                   <span className="material-symbols-outlined text-lg">send</span>
-                  <span>Kirim Pesan Uji Coba (Status: {simStatus.toUpperCase()})</span>
+                  <span>
+                    Kirim Simulasi WA {simTargetRole === "guru" ? "Dewan Guru" : "Siswa"} (Status: {simStatus.toUpperCase()})
+                  </span>
                 </>
               )}
             </button>
