@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useKelasFormat } from "../hooks/useKelasFormat";
 import { useQueryClient } from "@tanstack/react-query";
 import { logsService } from "../services";
+import { useAppStore } from "../store/useAppStore";
 
 const STATUS_OPTIONS = [
   {
@@ -50,12 +51,21 @@ export default function AttendanceModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
   const { formatKelas } = useKelasFormat();
+  const userRole = useAppStore((state) => state.userRole);
+  const isGuru = userRole === "guru";
+
+  const filteredStatusOptions = isGuru
+    ? STATUS_OPTIONS.filter((opt) => !["hadir", "terlambat"].includes(opt.value))
+    : STATUS_OPTIONS;
 
   useEffect(() => {
     if (isOpen) {
-      const currentStatus = student?.status && student.status !== "belum_absen"
+      let currentStatus = student?.status && student.status !== "belum_absen"
         ? student.status
-        : "hadir";
+        : (isGuru ? "izin" : "hadir");
+      if (isGuru && ["hadir", "terlambat"].includes(currentStatus)) {
+        currentStatus = "izin";
+      }
       setStatus(currentStatus);
       setNotes(student?.notes || "");
       document.body.style.overflow = "hidden";
@@ -65,7 +75,7 @@ export default function AttendanceModal({
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isOpen, student?.status, student?.notes]);
+  }, [isOpen, student?.status, student?.notes, isGuru]);
 
   if (!isOpen) return null;
 
@@ -73,6 +83,12 @@ export default function AttendanceModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isGuru && ["hadir", "terlambat"].includes(status)) {
+      alert("Role Guru hanya dapat menginput status selain Hadir (Izin, Sakit, Alpha). Status Hadir wajib melalui scan QR.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -176,11 +192,28 @@ export default function AttendanceModal({
 
           {/* Status Dropdown */}
           <div className="space-y-2">
-            <label className="block text-sm font-bold text-gray-900">
-              Status Absensi
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {STATUS_OPTIONS.map((opt) => (
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-bold text-gray-900">
+                Status Absensi
+              </label>
+              {isGuru && (
+                <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-full">
+                  Mode Guru: Non-Hadir
+                </span>
+              )}
+            </div>
+
+            {isGuru && (
+              <div className="p-2.5 bg-amber-50 border border-amber-300 rounded-xl flex items-start gap-2">
+                <span className="material-symbols-outlined text-amber-700 text-base shrink-0 mt-0.5">info</span>
+                <p className="text-[11px] text-amber-950 font-bold leading-tight">
+                  Akun Guru hanya dapat mencatat izin, sakit, atau alpha. Status <u>Hadir</u> hanya sah melalui scan QR Code di sekolah.
+                </p>
+              </div>
+            )}
+
+            <div className={`grid ${filteredStatusOptions.length <= 3 ? "grid-cols-3" : "grid-cols-2"} gap-2`}>
+              {filteredStatusOptions.map((opt) => (
                 <label
                   key={opt.value}
                   className={`relative cursor-pointer border-2 rounded-xl px-3 py-2.5 flex items-center justify-center gap-2 transition-all ${

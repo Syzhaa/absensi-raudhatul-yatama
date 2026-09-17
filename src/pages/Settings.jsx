@@ -9,26 +9,69 @@ import { AVAILABLE_PAGES, DEFAULT_PERMISSIONS } from "../auth/accessPolicy";
 import LocationPickerMap from "../components/LocationPickerMap";
 import { useNoticeStore } from "../store/useNoticeStore";
 
-// TimeInput Helper
+// TimeInput Helper (24-Hour Explicit Selector)
 function TimeInput({ label, value, onChange, description, required = true }) {
-  const displayValue = value ? value.slice(0, 5) : "";
+  const raw = value ? value.slice(0, 5) : "00:00";
+  const [h = "06", m = "00"] = raw.split(":");
+  const currentH = (parseInt(h, 10) >= 0 && parseInt(h, 10) <= 23) ? h.padStart(2, "0") : "06";
+  const currentM = (parseInt(m, 10) >= 0 && parseInt(m, 10) <= 59) ? m.padStart(2, "0") : "00";
+
+  const handleHourChange = (newH) => {
+    onChange(`${newH}:${currentM}`);
+  };
+
+  const handleMinuteChange = (newM) => {
+    onChange(`${currentH}:${newM}`);
+  };
+
+  const hoursList = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+  const minutesList = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 
   return (
-    <div>
-      <label className="block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5">
-        {label} {required && "*"}
-      </label>
-      <div className="relative">
-        <input
-          type="time"
-          value={displayValue}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3.5 py-2.5 min-h-[44px] bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl font-bold text-sm text-gray-900 focus:outline-none transition-all"
-          required={required}
-        />
+    <div className="bg-gray-50/80 border-2 border-gray-300 rounded-xl p-3 focus-within:border-gray-900 transition-colors">
+      <div className="flex items-center justify-between mb-2">
+        <label className="block font-bold text-xs md:text-sm text-gray-900 uppercase tracking-wider">
+          {label} {required && "*"}
+        </label>
+        <span className="font-mono font-black text-xs px-2 py-0.5 bg-emerald-100 text-emerald-950 border border-emerald-400 rounded-md">
+          {currentH}:{currentM} (24J)
+        </span>
       </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Jam (00 - 23)</span>
+          <select
+            value={currentH}
+            onChange={(e) => handleHourChange(e.target.value)}
+            className="w-full px-2.5 py-2 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-lg font-mono font-black text-sm text-gray-900 focus:outline-none cursor-pointer"
+          >
+            {hoursList.map((hr) => (
+              <option key={hr} value={hr}>
+                Jam {hr}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Menit (00 - 59)</span>
+          <select
+            value={currentM}
+            onChange={(e) => handleMinuteChange(e.target.value)}
+            className="w-full px-2.5 py-2 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-lg font-mono font-black text-sm text-gray-900 focus:outline-none cursor-pointer"
+          >
+            {minutesList.map((mn) => (
+              <option key={mn} value={mn}>
+                {mn} Menit
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {description && (
-        <p className="text-[11px] text-gray-500 font-medium mt-1 leading-snug">
+        <p className="text-[11px] text-gray-500 font-medium mt-2 leading-snug">
           {description}
         </p>
       )}
