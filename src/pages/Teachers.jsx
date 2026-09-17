@@ -5,6 +5,7 @@ import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import TeacherForm from "../components/TeacherForm";
 import TeacherCard from "../components/TeacherCard";
 import CredentialsModal from "../components/CredentialsModal";
+import TeacherBulkCredentialsModal from "../components/TeacherBulkCredentialsModal";
 import ConfirmModal from "../components/ConfirmModal";
 import ExcelImportModal from "../components/ExcelImportModal";
 import StudentCardPrint from "../components/StudentCardPrint";
@@ -53,6 +54,7 @@ export default function Teachers() {
     count: 0,
   });
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [showBulkCredentialsModal, setShowBulkCredentialsModal] = useState(false);
   const [generatedCredentials, setGeneratedCredentials] = useState(null);
   const [credentialsTeacher, setCredentialsTeacher] = useState(null);
   const [formData, setFormData] = useState({
@@ -392,6 +394,16 @@ export default function Teachers() {
             </>
           )}
 
+          {/* Cetak Akun Guru (PDF/WA) Button */}
+          <button
+            onClick={() => setShowBulkCredentialsModal(true)}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0 cursor-pointer"
+            title="Cetak PDF Akun Login Pertama Guru & Kirimkan ke WhatsApp"
+          >
+            <span className="material-symbols-outlined text-base">key</span>
+            <span>Cetak Akun Guru (PDF/WA)</span>
+          </button>
+
           {/* Import Excel Button */}
           <button
             onClick={() => setShowImportModal(true)}
@@ -710,6 +722,13 @@ export default function Teachers() {
           isDeactivatePending={deactivateAccessMutation.isPending}
         />
       )}
+
+      {/* Bulk Credentials Modal - Unduh PDF & Kirim WA Akun Guru */}
+      <TeacherBulkCredentialsModal
+        isOpen={showBulkCredentialsModal}
+        onClose={() => setShowBulkCredentialsModal(false)}
+        effectiveLembaga={effectiveLembaga}
+      />
 
       {/* Excel Import Modal */}
       {showImportModal && (
