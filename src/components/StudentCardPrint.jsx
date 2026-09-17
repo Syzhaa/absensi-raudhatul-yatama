@@ -458,8 +458,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             justify-content: center;
           }
           .photo-box-nct {
-            width: 105px;
-            height: 130px;
+            width: 100px;
+            height: 122px;
             border-radius: 8px;
             border: 1.5px solid #064e3b;
             background: #f8fafc;
@@ -479,17 +479,17 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
 
           /* BOTTOM ZONE: Personal Info with Dashed Line Separators */
           .card-info-nct {
-            padding: 0 14px 11px 14px;
+            padding: 0 14px 8px 14px;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 1.5px;
           }
           .info-dashed-row {
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
             gap: 8px;
-            padding: 2.5px 0;
+            padding: 2px 0;
             border-bottom: 0.8px dashed #cbd5e1;
           }
           .info-dashed-row:last-child {
@@ -798,7 +798,12 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                       </>
                     ) : (
                       <>
-                        {/* Row 2 Siswa: Kelas (Langsung X, XI, XII tanpa kata 'Kelas') */}
+                        {/* Row 2 Siswa: NISN */}
+                        <div className="info-dashed-row">
+                          <span className="label-typewriter">NISN</span>
+                          <span className="value-text font-mono font-bold">{person.nisn || person.nis || "-"}</span>
+                        </div>
+                        {/* Row 3 Siswa: Kelas (Langsung X, XI, XII tanpa kata 'Kelas') */}
                         <div className="info-dashed-row">
                           <span className="label-typewriter">KELAS</span>
                           <span className="value-text value-class">{cleanKelas}</span>
