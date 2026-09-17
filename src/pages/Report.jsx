@@ -79,8 +79,7 @@ export default function Report() {
   // Category: "siswa" | "guru"
   const [category, setCategory] = useState("siswa");
   
-  // View mode for date range: "rekap" (angka ringkasan) | "detail" (log mentah)
-  const [rangeViewMode, setRangeViewMode] = useState("rekap");
+  
 
   const [dateFrom, setDateFrom] = useState("2026-08-01");
   const [dateTo, setDateTo] = useState("2026-09-17");
@@ -96,10 +95,8 @@ export default function Report() {
   const isSingleDay = dateFrom === dateTo;
   const activeKelas = kelasFilterLocal || selectedKelas || "";
 
-  // Set default view mode based on isSingleDay
-  // 1 hari -> detail log harian (jam masuk, pulang, status, ket)
-  // rentang hari -> rekap jumlah angka
-  const isDetailView = isSingleDay || rangeViewMode === "detail";
+  // Otomatis: 1 hari = list detail jam masuk/pulang/status/ket, rentang hari = rekap angka murni
+  const isDetailView = isSingleDay;
 
   const baseParams = useMemo(() => ({
     date_from: dateFrom,
