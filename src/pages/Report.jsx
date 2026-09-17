@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format, startOfMonth, subMonths } from "date-fns";
 import api from "../services/api";
 import { useAppStore } from "../store/useAppStore";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
@@ -64,6 +64,40 @@ const STATUS_COLORS = {
   libur: "bg-slate-100 text-slate-700 border-slate-300 font-bold",
 };
 
+// Helper: Ambil logo resmi dari API / public untuk Kop PDF
+const getLogoBase64 = async () => {
+  try {
+    let url = "/logo.png";
+    try {
+      const res = await api.get("/logo");
+      if (res.data?.data?.url) {
+        url = res.data.data.url;
+      }
+    } catch {}
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth || 200;
+          canvas.height = img.naturalHeight || 200;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL("image/png"));
+        } catch {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  } catch {
+    return null;
+  }
+};
+
 export default function Report() {
   const userRole = useAppStore((state) => state.userRole);
   const selectedKelas = useAppStore((state) => state.selectedKelas);
@@ -78,8 +112,6 @@ export default function Report() {
 
   // Category: "siswa" | "guru"
   const [category, setCategory] = useState("siswa");
-  
-  
 
   const [dateFrom, setDateFrom] = useState("2026-08-01");
   const [dateTo, setDateTo] = useState("2026-09-17");
@@ -95,7 +127,7 @@ export default function Report() {
   const isSingleDay = dateFrom === dateTo;
   const activeKelas = kelasFilterLocal || selectedKelas || "";
 
-  // Otomatis: 1 hari = list detail jam masuk/pulang/status/ket, rentang hari = rekap angka murni
+  // Otomatis: 1 hari = list detail log (masuk, pulang, status, ket), rentang hari = rekap angka murni
   const isDetailView = isSingleDay;
 
   const baseParams = useMemo(() => ({
@@ -190,7 +222,7 @@ export default function Report() {
     return guruData?.data?.data || null;
   }, [category, siswaData, guruData]);
 
-  // Rows for Detailed view (Page list)
+  // Rows for Detailed view (1 Hari)
   const detailRows = useMemo(() => {
     const rawData = paginationMeta?.data || [];
     const rows = Array.isArray(rawData) ? rawData : [];
@@ -204,7 +236,7 @@ export default function Report() {
     });
   }, [paginationMeta, search]);
 
-  // Rows for Rekap Jumlah view
+  // Rows for Rekap Jumlah view (Rentang Hari)
   const rekapRows = useMemo(() => {
     let rawData = [];
     if (category === "siswa") {
@@ -227,7 +259,7 @@ export default function Report() {
   const summary = category === "siswa" ? siswaData?.data?.summary : guruData?.data?.summary;
 
   // ==========================================
-  // HELPER DATA FETCHING FOR EXPORTS
+  // HELPER DATA FETCHING FOR COMPLETE EXPORTS
   // ==========================================
   const fetchAllDetailedLogs = async () => {
     if (category === "siswa") {
@@ -262,7 +294,7 @@ export default function Report() {
   // ==========================================
   const exportExcel = async () => {
     setIsExporting(true);
-    setExportProgress("Mengambil seluruh data...");
+    setExportProgress("Menyiapkan dokumen Excel...");
     try {
       const institutionName = (isSuperAdmin && lembagaFilter ? lembagaFilter : effectiveLembaga || "MA").toUpperCase();
       const institutionFull = institutionName === "MTS" ? "MADRASAH TSANAWIYAH" : "MADRASAH ALIYAH";
@@ -271,7 +303,7 @@ export default function Report() {
       const wb = XLSX.utils.book_new();
 
       if (isSingleDay) {
-        // --- Single Day: 1 Sheet Detail Harian ---
+        // --- 1 HARI: 1 Sheet List Log Harian Lengkap ---
         const logs = await fetchAllDetailedLogs();
         if (logs.length === 0) {
           alert("Tidak ada data presensi pada tanggal ini.");
@@ -304,7 +336,7 @@ export default function Report() {
         ws["!cols"] = [{ wch: 6 }, { wch: 28 }, { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 25 }];
         XLSX.utils.book_append_sheet(wb, ws, "Presensi_Harian");
       } else {
-        // --- Date Range: Sheet 1 = Ringkasan Jumlah, Sheet 2..N = Sheet per Tanggal ---
+        // --- RENTANG HARI: Sheet 1 = Ringkasan Jumlah, Sheet 2..N = Sheet per Tanggal ---
         const [summaries, logs] = await Promise.all([
           fetchAllSummaryCounts(),
           fetchAllDetailedLogs(),
@@ -315,7 +347,7 @@ export default function Report() {
           return;
         }
 
-        // 1. SHEET 1: RINGKASAN JUMLAH
+        // 1. SHEET DEPAN: RINGKASAN JUMLAH ANGKA
         const sumHeader = [
           ["YAYASAN RAUDHATUL YATAMA"],
           [`${institutionFull} RAUDHATUL YATAMA`],
@@ -357,7 +389,7 @@ export default function Report() {
         wsSummary["!cols"] = [{ wch: 6 }, { wch: 28 }, { wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 12 }];
         XLSX.utils.book_append_sheet(wb, wsSummary, "Ringkasan_Jumlah");
 
-        // 2. SHEET 2..N: PER TANGGAL DI DALAM RENTANG
+        // 2. SHEET LAINNYA: PER TANGGAL DI DALAM RENTANG
         const groupedByDate = {};
         logs.forEach((r) => {
           const rawDate = r.attendance_date ? String(r.attendance_date).split("T")[0].split(" ")[0] : "Lainnya";
@@ -392,7 +424,6 @@ export default function Report() {
 
           const wsDate = XLSX.utils.aoa_to_sheet(dateWsData);
           wsDate["!cols"] = [{ wch: 6 }, { wch: 28 }, { wch: 18 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 25 }];
-          // Excel sheet name max 31 chars
           XLSX.utils.book_append_sheet(wb, wsDate, sheetName.slice(0, 31));
         });
       }
@@ -409,23 +440,31 @@ export default function Report() {
   };
 
   // ==========================================
-  // EXPORT PDF FORMAL & RESMI (KOP SURAT + TTD)
+  // KOP SURAT, TANDA TANGAN & FOOTER RESMI PDF
   // ==========================================
-  const drawKopSurat = (d, institutionFull, title, subtitle) => {
+  const drawKopSurat = (d, institutionFull, title, subtitle, logoData) => {
+    // Logo Resmi di Kiri Kop
+    if (logoData) {
+      try {
+        d.addImage(logoData, "PNG", 16, 9.5, 21, 21);
+      } catch (e) {}
+    }
+
+    // Teks Kop Tengah
     d.setFont("helvetica", "bold");
     d.setFontSize(14);
     d.setTextColor(17, 24, 39);
-    d.text("YAYASAN RAUDHATUL YATAMA", 148.5, 14, { align: "center" });
+    d.text("YAYASAN RAUDHATUL YATAMA", 152, 14, { align: "center" });
 
     d.setFontSize(12);
-    d.setTextColor(16, 185, 129);
-    d.text(`${institutionFull} RAUDHATUL YATAMA`, 148.5, 20, { align: "center" });
+    d.setTextColor(16, 185, 129); // Primary green
+    d.text(`${institutionFull} RAUDHATUL YATAMA`, 152, 20, { align: "center" });
 
     d.setFont("helvetica", "normal");
     d.setFontSize(8.5);
     d.setTextColor(75, 85, 99);
-    d.text("Jl. Trans Kalimantan Km. 21, Desa Sungai Bakung, Kec. Sungai Tabuk, Kab. Banjar, Kalsel", 148.5, 25, { align: "center" });
-    d.text("Website: www.raudhatulyatama.sch.id | Email: madrasah@raudhatulyatama.sch.id", 148.5, 29, { align: "center" });
+    d.text("Jl. Trans Kalimantan Km. 21, Desa Sungai Bakung, Kec. Sungai Tabuk, Kab. Banjar, Kalimantan Selatan", 152, 25, { align: "center" });
+    d.text("Website: raudhatulyatama.sch.id | Email: ma@raudhatulyatama.sch.id / mts@raudhatulyatama.sch.id", 152, 29, { align: "center" });
 
     // Garis Ganda Pemisah Kop
     d.setDrawColor(17, 24, 39);
@@ -448,8 +487,9 @@ export default function Report() {
 
   const drawSignatures = (d, institutionFull, finalY) => {
     const pageHeight = d.internal.pageSize.height;
-    let startY = finalY + 12;
+    let startY = finalY + 10;
 
+    // Jika ruang mepet, buat halaman baru untuk tanda tangan
     if (startY + 35 > pageHeight) {
       d.addPage("a4", "landscape");
       startY = 20;
@@ -461,18 +501,39 @@ export default function Report() {
     d.setFontSize(9);
     d.setTextColor(30, 41, 59);
 
+    // Kiri: Petugas Presensi
     d.text("Mengetahui,", 30, startY);
     d.text("Petugas Presensi Madrasah,", 30, startY + 5);
-    d.text("( .................................................... )", 30, startY + 26);
-    d.text("NIP. -", 30, startY + 30);
+    d.text("( .................................................... )", 30, startY + 25);
+    d.text("NIP. -", 30, startY + 29);
 
+    // Kanan: Kepala Madrasah
     d.text(`Banjar, ${dateStr}`, 210, startY);
     d.text(`Kepala ${institutionFull},`, 210, startY + 5);
-    d.text("( .................................................... )", 210, startY + 26);
-    d.text("NIP. -", 210, startY + 30);
+    d.text("( .................................................... )", 210, startY + 25);
+    d.text("NIP. -", 210, startY + 29);
   };
 
-  // PDF Export Router: "ringkasan" | "gabungan" | "zip"
+  const drawFooterResmi = (d, pageNum, totalPages) => {
+    d.setDrawColor(203, 213, 225);
+    d.setLineWidth(0.3);
+    d.line(14, 198, 283, 198);
+
+    d.setFont("helvetica", "normal");
+    d.setFontSize(7.5);
+    d.setTextColor(100, 116, 139);
+
+    // Kiri: 3 Domain Utama Resmi & Email
+    d.text("Web: raudhatulyatama.sch.id  •  absen.raudhatulyatama.sch.id  •  ppdb.raudhatulyatama.sch.id", 14, 202);
+    d.text("Email: ma@raudhatulyatama.sch.id  •  mts@raudhatulyatama.sch.id", 14, 205.5);
+
+    // Kanan: Nomor Halaman
+    d.text(`Halaman ${pageNum} dari ${totalPages}`, 283, 203.5, { align: "right" });
+  };
+
+  // ==========================================
+  // EXPORT PDF: REKAP / GABUNGAN
+  // ==========================================
   const exportPdf = async (mode = "ringkasan") => {
     setIsExporting(true);
     setExportProgress("Menyiapkan dokumen PDF...");
@@ -481,80 +542,12 @@ export default function Report() {
       const institutionFull = institutionName === "MTS" ? "MADRASAH TSANAWIYAH" : "MADRASAH ALIYAH";
       const targetTitle = category === "siswa" ? "SANTRI / SISWA" : "DEWAN GURU";
 
-      if (mode === "zip") {
-        // --- ZIP: 1 PDF PER TANGGAL TERPISAH ---
-        setExportProgress("Mengambil data per tanggal...");
-        const logs = await fetchAllDetailedLogs();
-        if (logs.length === 0) {
-          alert("Tidak ada data presensi pada rentang tanggal ini.");
-          return;
-        }
+      setExportProgress("Memuat logo madrasah...");
+      const logoData = await getLogoBase64();
 
-        const groupedByDate = {};
-        logs.forEach((r) => {
-          const rawDate = r.attendance_date ? String(r.attendance_date).split("T")[0].split(" ")[0] : "Lainnya";
-          if (!groupedByDate[rawDate]) groupedByDate[rawDate] = [];
-          groupedByDate[rawDate].push(r);
-        });
-
-        const uniqueDates = Object.keys(groupedByDate).sort();
-
-        const JSZip = (await import("jszip")).default;
-        const { saveAs } = await import("file-saver");
-        const zip = new JSZip();
-
-        setExportProgress(`Mengemas ${uniqueDates.length} file PDF harian...`);
-
-        for (let i = 0; i < uniqueDates.length; i++) {
-          const tgl = uniqueDates[i];
-          const singleDoc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-          const dayRows = groupedByDate[tgl] || [];
-
-          const title = `LAPORAN PRESENSI HARIAN ${targetTitle}`;
-          const subtitle = `Hari & Tanggal: ${formatTglLengkap(tgl)} | Lembaga: ${institutionFull}`;
-          drawKopSurat(singleDoc, institutionFull, title, subtitle);
-
-          const head = category === "siswa"
-            ? [["No", "Nama Siswa", "NISN", "Kelas", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"]]
-            : [["No", "Nama Guru", "NIP / NUPTK / NPK", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"]];
-
-          const body = dayRows.map((r, idx) => [
-            idx + 1,
-            category === "siswa" ? (r.student?.nama || "-") : (r.teacher?.nama || "-"),
-            category === "siswa" ? (r.student?.nisn || "-") : (r.teacher?.nip || "-"),
-            category === "siswa" ? (formatKelas(r.student?.kelas) || "-") : (STATUS_LABELS[r.status] || r.status),
-            STATUS_LABELS[r.status] || r.status,
-            r.check_in ? r.check_in.slice(0, 5) : "-",
-            r.check_out ? r.check_out.slice(0, 5) : "-",
-            r.notes || "-",
-          ]);
-
-          autoTable(singleDoc, {
-            startY: 47,
-            head,
-            body,
-            theme: "grid",
-            styles: { fontSize: 8.5, cellPadding: 2, textColor: [30, 41, 59], lineColor: [203, 213, 225], lineWidth: 0.15 },
-            headStyles: { fillColor: [241, 245, 249], textColor: [15, 23, 42], fontStyle: "bold", lineWidth: 0.3, lineColor: [15, 23, 42] },
-            alternateRowStyles: { fillColor: [248, 250, 252] },
-            columnStyles: { 0: { halign: "center", cellWidth: 10 } },
-          });
-
-          drawSignatures(singleDoc, institutionFull, singleDoc.lastAutoTable.finalY);
-
-          singleDoc.setFontSize(8);
-          singleDoc.setTextColor(148, 163, 184);
-          singleDoc.text(`Dokumen Resmi Yayasan Raudhatul Yatama  •  Tanggal: ${formatTgl(tgl)}`, 14, 202);
-
-          const blob = singleDoc.output("blob");
-          zip.file(`Laporan_${category}_${tgl}.pdf`, blob);
-        }
-
-        setExportProgress("Menghasilkan arsip ZIP...");
-        const zipContent = await zip.generateAsync({ type: "blob" });
-        saveAs(zipContent, `Laporan_Absensi_${category.toUpperCase()}_ZIP_${dateFrom}_sd_${dateTo}.zip`);
-      } else if (mode === "gabungan" && !isSingleDay) {
+      if (mode === "gabungan" && !isSingleDay) {
         // --- MULTI-PAGE PDF: Hal 1 = Ringkasan Jumlah, Hal 2..N = Detail per hari ---
+        setExportProgress("Mengambil data rekap & detail...");
         const [summaries, logs] = await Promise.all([
           fetchAllSummaryCounts(),
           fetchAllDetailedLogs(),
@@ -565,7 +558,7 @@ export default function Report() {
         // 1. Halaman 1: Ringkasan Jumlah
         const titleSum = `REKAPITULASI JUMLAH PRESENSI ${targetTitle}`;
         const subtitleSum = `Periode: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)} | Lembaga: ${institutionFull}`;
-        drawKopSurat(doc, institutionFull, titleSum, subtitleSum);
+        drawKopSurat(doc, institutionFull, titleSum, subtitleSum, logoData);
 
         const headSum = category === "siswa"
           ? [["No", "Nama Siswa", "NISN", "Kelas", "Hadir", "Telat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]]
@@ -615,7 +608,7 @@ export default function Report() {
           doc.addPage("a4", "landscape");
           const titleDay = `LAPORAN PRESENSI HARIAN ${targetTitle}`;
           const subtitleDay = `Hari & Tanggal: ${formatTglLengkap(tgl)} | Lembaga: ${institutionFull}`;
-          drawKopSurat(doc, institutionFull, titleDay, subtitleDay);
+          drawKopSurat(doc, institutionFull, titleDay, subtitleDay, logoData);
 
           const dayRows = groupedByDate[tgl] || [];
           const headDay = category === "siswa"
@@ -647,13 +640,11 @@ export default function Report() {
           drawSignatures(doc, institutionFull, doc.lastAutoTable.finalY);
         });
 
-        // Page Numbering
+        // Tulis Footer Resmi di Setiap Halaman
         const totalPages = doc.internal.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
           doc.setPage(i);
-          doc.setFontSize(8);
-          doc.setTextColor(148, 163, 184);
-          doc.text(`Halaman ${i} dari ${totalPages}  •  Dokumen Resmi Raudhatul Yatama`, 14, 202);
+          drawFooterResmi(doc, i, totalPages);
         }
 
         doc.save(`Laporan_Gabungan_${category.toUpperCase()}_${institutionName}_${dateFrom}_sd_${dateTo}.pdf`);
@@ -662,11 +653,12 @@ export default function Report() {
         const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
         if (isSingleDay) {
-          // 1 Hari: Print detail list hari tersebut
+          // 1 HARI: Cetak list harian detail
+          setExportProgress("Mengambil data harian...");
           const logs = await fetchAllDetailedLogs();
           const title = `LAPORAN PRESENSI HARIAN ${targetTitle}`;
           const subtitle = `Hari & Tanggal: ${formatTglLengkap(dateFrom)} | Lembaga: ${institutionFull}`;
-          drawKopSurat(doc, institutionFull, title, subtitle);
+          drawKopSurat(doc, institutionFull, title, subtitle, logoData);
 
           const head = category === "siswa"
             ? [["No", "Nama Siswa", "NISN", "Kelas", "Status", "Jam Masuk", "Jam Pulang", "Keterangan"]]
@@ -695,13 +687,21 @@ export default function Report() {
           });
 
           drawSignatures(doc, institutionFull, doc.lastAutoTable.finalY);
+
+          const totalPages = doc.internal.getNumberOfPages();
+          for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            drawFooterResmi(doc, i, totalPages);
+          }
+
           doc.save(`Laporan_Harian_${category.toUpperCase()}_${institutionName}_${dateFrom}.pdf`);
         } else {
-          // Rentang Hari: Print tabel rekapitulasi angka per orang
+          // RENTANG HARI: Cetak tabel rekapitulasi angka per orang
+          setExportProgress("Mengambil data rekapitulasi...");
           const summaries = await fetchAllSummaryCounts();
           const title = `REKAPITULASI JUMLAH PRESENSI ${targetTitle}`;
           const subtitle = `Periode: ${formatTgl(dateFrom)} s/d ${formatTgl(dateTo)} | Lembaga: ${institutionFull}`;
-          drawKopSurat(doc, institutionFull, title, subtitle);
+          drawKopSurat(doc, institutionFull, title, subtitle, logoData);
 
           const head = category === "siswa"
             ? [["No", "Nama Siswa", "NISN", "Kelas", "Hadir", "Telat", "Izin", "Sakit", "Alpha", "Libur", "Total Hadir"]]
@@ -740,9 +740,7 @@ export default function Report() {
           const totalPages = doc.internal.getNumberOfPages();
           for (let i = 1; i <= totalPages; i++) {
             doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor(148, 163, 184);
-            doc.text(`Halaman ${i} dari ${totalPages}  •  Dokumen Resmi Raudhatul Yatama`, 14, 202);
+            drawFooterResmi(doc, i, totalPages);
           }
 
           doc.save(`Laporan_Rekap_Angka_${category.toUpperCase()}_${institutionName}_${dateFrom}_sd_${dateTo}.pdf`);
@@ -820,29 +818,17 @@ export default function Report() {
             <span>{isSingleDay ? "PDF Harian" : "PDF Rekap"}</span>
           </button>
 
-          {/* Tombol Tambahan Rentang Hari: PDF Gabungan & ZIP Per Tanggal */}
+          {/* Tombol PDF Gabungan (Khusus Rentang Hari) */}
           {!isSingleDay && (
-            <>
-              <button
-                onClick={() => exportPdf("gabungan")}
-                disabled={isExporting}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-2xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
-                title="Download 1 File PDF Gabungan (Ringkasan + Semua Halaman Tanggal)"
-              >
-                <span className="material-symbols-outlined text-base">layers</span>
-                <span>PDF Gabungan</span>
-              </button>
-
-              <button
-                onClick={() => exportPdf("zip")}
-                disabled={isExporting}
-                className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-gray-900 font-black text-xs md:text-sm border-2 border-gray-900 rounded-2xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
-                title="Download Arsip ZIP Berisi File PDF Terpisah per Tanggal"
-              >
-                <span className="material-symbols-outlined text-base">folder_zip</span>
-                <span>PDF ZIP</span>
-              </button>
-            </>
+            <button
+              onClick={() => exportPdf("gabungan")}
+              disabled={isExporting}
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-2xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
+              title="Download 1 File PDF Gabungan (Ringkasan + Semua Halaman Tanggal)"
+            >
+              <span className="material-symbols-outlined text-base">layers</span>
+              <span>PDF Gabungan</span>
+            </button>
           )}
         </div>
       </div>
@@ -973,7 +959,7 @@ export default function Report() {
             />
           </div>
 
-          {/* Filter Status (Hanya saat mode detail list) */}
+          {/* Filter Status (Hanya saat mode detail list 1 hari) */}
           {isDetailView && (
             <div className="flex flex-col gap-1">
               <label className="text-[11px] font-black text-gray-700 uppercase">Status Presensi</label>
@@ -1050,8 +1036,6 @@ export default function Report() {
             </div>
           </div>
         </div>
-
-
       </div>
 
       {/* 4. MAIN DATA TABLE */}
@@ -1076,7 +1060,7 @@ export default function Report() {
           </div>
         ) : isDetailView ? (
           /* =========================================================================
-             A. TAMPILAN 1 HARI / MODE DETAIL LOG HARIAN:
+             A. TAMPILAN 1 HARI (LIST DETAIL HARIAN):
              List nama, jam masuk, jam keluar, status (hadir/terlambat/izin/sakit/alpha), keterangan
              ========================================================================= */
           <div className="overflow-x-auto">
@@ -1084,7 +1068,6 @@ export default function Report() {
               <thead className="bg-slate-100 border-b-2 border-gray-900 text-gray-800 select-none">
                 <tr>
                   <th className="px-3.5 py-3 text-center font-black text-xs uppercase tracking-wide w-12">No</th>
-                  {!isSingleDay && <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">Tanggal</th>}
                   <th className="px-3.5 py-3 text-left font-black text-xs uppercase tracking-wide">
                     {category === "siswa" ? "Nama Siswa" : "Nama Dewan Guru"}
                   </th>
@@ -1101,8 +1084,8 @@ export default function Report() {
               <tbody className="divide-y divide-gray-200">
                 {detailRows.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="text-center py-12 text-gray-400 font-bold">
-                      Tidak ada rekaman presensi pada periode ini.
+                    <td colSpan="8" className="text-center py-12 text-gray-400 font-bold">
+                      Tidak ada rekaman presensi pada tanggal ini.
                     </td>
                   </tr>
                 ) : (
@@ -1111,11 +1094,6 @@ export default function Report() {
                       <td className="px-3.5 py-2.5 text-center font-bold text-xs text-gray-500">
                         {paginationMeta ? (paginationMeta.current_page - 1) * perPage + i + 1 : i + 1}
                       </td>
-                      {!isSingleDay && (
-                        <td className="px-3.5 py-2.5 font-bold text-xs text-gray-800 whitespace-nowrap">
-                          {formatTgl(r.attendance_date)}
-                        </td>
-                      )}
                       <td className="px-3.5 py-2.5 font-black text-gray-900">
                         {category === "siswa" ? (r.student?.nama || "-") : (r.teacher?.nama || "-")}
                       </td>
@@ -1147,8 +1125,8 @@ export default function Report() {
           </div>
         ) : (
           /* =========================================================================
-             B. TAMPILAN RENTANG HARI (MODE REKAPITULASI ANGKA):
-             Header: No, Nama, Hadir (angka), Terlambat (angka), Izin, Sakit, Alpha, Libur, Total
+             B. TAMPILAN RENTANG HARI (REKAPITULASI ANGKA):
+             Header: No, Nama, Hadir (angka), Terlambat (angka), Izin, Sakit, Alpha, Libur, Total Hadir
              ========================================================================= */
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -1217,7 +1195,7 @@ export default function Report() {
           </div>
         )}
 
-        {/* 5. ROBUST PAGINATION BAR (Untuk Mode Detail Log) */}
+        {/* 5. ROBUST PAGINATION BAR (Khusus 1 Hari saat list panjang) */}
         {isDetailView && paginationMeta && paginationMeta.total > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t-2 border-gray-900 bg-gray-50 gap-3">
             <div className="flex items-center gap-2">
