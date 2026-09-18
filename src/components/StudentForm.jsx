@@ -85,7 +85,7 @@ export default function StudentForm({
       isOpen={isOpen}
       onClose={onClose}
       title={editingStudent ? "Edit Siswa" : "Tambah Siswa"}
-      size="md"
+      size="lg"
       footer={
         <div className="flex items-center gap-2 justify-end">
           <button
@@ -121,10 +121,10 @@ export default function StudentForm({
           onSubmit(photoFile);
         }}
         id="student-form"
-        className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5"
       >
         {/* Photo Upload Compact */}
-        <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-2.5 flex items-center gap-3">
+        <div className="col-span-full bg-gray-50 border border-gray-200 rounded-xl p-2 sm:p-2.5 flex items-center gap-3">
           {photoPreview && (
             <div className="relative shrink-0">
               <img
@@ -266,12 +266,12 @@ export default function StudentForm({
           </select>
         </div>
 
-        <div className="md:col-span-2">
+        <div className="col-span-full">
           <label className={labelClass}>Alamat Lengkap</label>
           <textarea
             {...field("alamat")}
-            className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all placeholder:text-gray-400"
-            rows="3"
+            className="w-full px-3 py-1.5 bg-gray-50 border-2 border-gray-300 rounded-xl font-medium text-xs sm:text-sm text-gray-900 focus:border-gray-900 focus:bg-white focus:outline-none transition-all placeholder:text-gray-400"
+            rows="2"
             placeholder="Alamat domisili siswa"
           ></textarea>
         </div>

@@ -331,10 +331,10 @@ export default function TeacherBulkCredentialsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-fade-in" onClick={onClose} />
 
-      <div className="relative bg-white border-2 sm:border-3 border-gray-900 rounded-2xl shadow-neo-xl max-w-2xl w-full max-h-[88vh] sm:max-h-[82vh] flex flex-col z-10 animate-slide-up overflow-hidden">
+      <div className="relative bg-white border-2 sm:border-3 border-gray-900 rounded-2xl shadow-neo-xl max-w-2xl md:max-w-4xl lg:max-w-5xl w-full max-h-[92vh] sm:max-h-[88vh] flex flex-col z-10 animate-slide-up overflow-hidden">
         {/* Header Modal */}
         <div className="bg-purple-50 border-b-2 sm:border-b-3 border-gray-900 px-3.5 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">

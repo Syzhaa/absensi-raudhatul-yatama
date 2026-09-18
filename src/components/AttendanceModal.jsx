@@ -151,7 +151,7 @@ export default function AttendanceModal({
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-sm sm:max-w-md bg-white border-2 sm:border-3 border-gray-900 rounded-2xl shadow-neo-xl overflow-hidden animate-[scaleIn_0.2s_ease-out]">
+      <div className="relative w-full max-w-sm sm:max-w-md md:max-w-lg bg-white border-2 sm:border-3 border-gray-900 rounded-2xl shadow-neo-xl overflow-hidden animate-[scaleIn_0.2s_ease-out]">
         {/* Header */}
         <div className="bg-gray-50/50 border-b border-gray-200 px-4 py-2.5 sm:px-5 sm:py-3 flex items-center justify-between">
           <div>

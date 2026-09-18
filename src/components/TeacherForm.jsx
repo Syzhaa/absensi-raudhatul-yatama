@@ -169,7 +169,7 @@ export default function TeacherForm({
       isOpen={isOpen}
       onClose={onClose}
       title={editingTeacher ? "Edit Data Guru" : "Tambah Guru Baru"}
-      size="md"
+      size="lg"
       footer={
         <div className="flex items-center gap-2 justify-end">
           <button

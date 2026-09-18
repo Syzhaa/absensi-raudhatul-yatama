@@ -22,10 +22,10 @@ export default function Modal({
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: "max-w-sm",
-    md: "max-w-lg",
-    lg: "max-w-xl",
-    xl: "max-w-3xl",
+    sm: "max-w-sm sm:max-w-md",
+    md: "max-w-md md:max-w-xl lg:max-w-2xl",
+    lg: "max-w-lg md:max-w-3xl lg:max-w-4xl",
+    xl: "max-w-xl md:max-w-4xl lg:max-w-5xl",
   };
 
   return (

@@ -98,7 +98,7 @@ export default function CredentialsModal({
         className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
-      <div className="relative bg-white border-2 sm:border-3 border-gray-900 rounded-2xl shadow-neo max-w-sm w-full p-3.5 sm:p-4 z-10 animate-slide-up space-y-2.5">
+      <div className="relative bg-white border-2 sm:border-3 border-gray-900 rounded-2xl shadow-neo max-w-sm sm:max-w-md md:max-w-lg w-full p-3.5 sm:p-4 z-10 animate-slide-up space-y-2.5">
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b-2 border-gray-100 pb-2">
           <div className="flex items-center gap-2">
