@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { QRCodeSVG } from "qrcode.react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useNoticeStore } from "../store/useNoticeStore";
@@ -8,7 +7,6 @@ import { format } from "date-fns";
 
 export default function TeacherSelfCard() {
   const queryClient = useQueryClient();
-  const [showQRModal, setShowQRModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [leaveStatus, setLeaveStatus] = useState("izin");
   const [leaveNote, setLeaveNote] = useState("");
@@ -136,32 +134,21 @@ export default function TeacherSelfCard() {
 
         {/* Tombol Aksi Mandiri Guru */}
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
-          {/* Tombol Tampilkan QR Card */}
-          <button
-            type="button"
-            onClick={() => setShowQRModal(true)}
-            className="flex-1 sm:flex-initial px-3.5 py-2.5 bg-primary-green hover:bg-lime-400 text-gray-900 border-2 border-gray-900 rounded-xl shadow-neo text-xs font-black flex items-center justify-center gap-1.5 active:translate-y-0.5 transition-all cursor-pointer"
-            title="Tampilkan QR Code pribadi saya untuk discan di madrasah"
-          >
-            <span className="material-symbols-outlined text-base">qr_code</span>
-            <span>QR Saya</span>
-          </button>
-
-          {/* Tombol Kamera Scan */}
+          {/* Tombol Kamera Scan QR Sekolah */}
           <Link
             to="/scan"
-            className="flex-1 sm:flex-initial px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 border-2 border-gray-900 rounded-xl shadow-neo text-xs font-black flex items-center justify-center gap-1.5 active:translate-y-0.5 transition-all"
-            title="Buka kamera untuk memindai QR presensi"
+            className="flex-1 sm:flex-initial px-4 py-2.5 bg-primary-green hover:bg-lime-400 text-gray-900 border-2 border-gray-900 rounded-xl shadow-neo text-xs font-black flex items-center justify-center gap-1.5 active:translate-y-0.5 transition-all"
+            title="Buka kamera untuk scan QR Code presensi sekolah"
           >
             <span className="material-symbols-outlined text-base">qr_code_scanner</span>
-            <span>Buka Scanner</span>
+            <span>Scan QR Sekolah</span>
           </Link>
 
           {/* Tombol Ajukan Izin / Sakit Sendiri */}
           <button
             type="button"
             onClick={() => setShowLeaveModal(true)}
-            className="flex-1 sm:flex-initial px-3.5 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-gray-900 rounded-xl shadow-neo text-xs font-black flex items-center justify-center gap-1.5 active:translate-y-0.5 transition-all cursor-pointer"
+            className="flex-1 sm:flex-initial px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-gray-900 rounded-xl shadow-neo text-xs font-black flex items-center justify-center gap-1.5 active:translate-y-0.5 transition-all cursor-pointer"
             title="Ajukan izin atau sakit mandiri jika berhalangan hadir"
           >
             <span className="material-symbols-outlined text-base">edit_calendar</span>
@@ -169,56 +156,6 @@ export default function TeacherSelfCard() {
           </button>
         </div>
       </div>
-
-      {/* Modal QR Code Guru Mandiri */}
-      {showQRModal && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="relative bg-white border-3 border-gray-900 rounded-3xl shadow-neo p-6 max-w-xs sm:max-w-sm w-full text-center animate-fade-in space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-              <h3 className="font-black text-sm uppercase text-gray-900">
-                Kartu QR Presensi Guru
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowQRModal(false)}
-                className="p-1 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-lg">close</span>
-              </button>
-            </div>
-
-            <div className="p-4 bg-emerald-50/50 border-2 border-emerald-400 rounded-2xl flex flex-col items-center justify-center">
-              <div className="bg-white p-3 border-2 border-gray-900 rounded-xl shadow-sm">
-                <QRCodeSVG
-                  value={teacher.uuid}
-                  size={180}
-                  level="H"
-                  includeMargin={false}
-                />
-              </div>
-
-              <h4 className="font-black text-base text-gray-900 mt-3 truncate max-w-full">
-                {teacher.nama}
-              </h4>
-              <p className="text-xs text-gray-600 font-mono font-bold">
-                {teacher.nip || `GURU ${teacher.lembaga?.toUpperCase() || "MA"}`}
-              </p>
-            </div>
-
-            <p className="text-xs text-gray-600 font-medium leading-relaxed">
-              Tunjukkan QR Code ini ke kamera scanner sekolah untuk mencatat kehadiran <strong>Hadir Masuk</strong> atau <strong>Pulang</strong>.
-            </p>
-
-            <button
-              type="button"
-              onClick={() => setShowQRModal(false)}
-              className="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-black text-xs rounded-xl shadow-sm transition-all cursor-pointer"
-            >
-              Tutup
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Modal Izin / Sakit Mandiri */}
       {showLeaveModal && (
@@ -312,7 +249,7 @@ export default function TeacherSelfCard() {
                   rows={3}
                   value={leaveNote}
                   onChange={(e) => setLeaveNote(e.target.value)}
-                  placeholder="Misal: Keperluan keluarga mendesak / Istirahat medis..."
+                  placeholder="Misal: Keperluan dinas / keluarga mendesak..."
                   className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl text-xs font-medium focus:outline-none transition-all"
                 />
               </div>
