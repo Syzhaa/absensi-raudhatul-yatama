@@ -4,6 +4,7 @@ import api from "../services/api";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { useAppStore } from "../store/useAppStore";
 import AttendanceModal from "../components/AttendanceModal";
+import TeacherSelfCard from "../components/TeacherSelfCard";
 import { getAutoHoliday } from "../utils/holidays";
 import { format } from "date-fns";
 import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
@@ -62,6 +63,9 @@ export default function GuruAttendance() {
 
   return (
     <div className="w-full md:max-w-none max-w-4xl mx-auto space-y-4">
+      {/* Presensi Mandiri Dewan Guru */}
+      <TeacherSelfCard />
+
       <div className="bg-white border-3 border-gray-900 rounded-2xl shadow-neo p-3 md:p-4 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
         <div>
           <h1 className="text-lg md:text-xl font-black">Daftar Hadir Siswa</h1>
@@ -112,7 +116,7 @@ export default function GuruAttendance() {
               <AttendanceItem
                 key={item.id}
                 item={item}
-                onEdit={() => setSelected(student)}
+                onEdit={(customItem) => setSelected(customItem ? { ...student, ...customItem } : student)}
               />
             );
           })

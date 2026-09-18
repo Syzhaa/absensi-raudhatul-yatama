@@ -7,6 +7,7 @@ import { useAppStore } from "../store/useAppStore";
 import { getAutoHoliday } from "../utils/holidays";
 import { format } from "date-fns";
 import api from "../services/api";
+import TeacherSelfCard from "../components/TeacherSelfCard";
 import { StatCardSkeleton, SkeletonBox } from "../components/Skeleton";
 
 export default function Dashboard() {
@@ -155,6 +156,9 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {/* Kartu Presensi Mandiri Khusus Akun Guru */}
+      <TeacherSelfCard />
+
       {/* Holiday Banner if Today is a Holiday */}
       {isHoliday && (
         <div className="bg-emerald-400 border-2 md:border-3 border-gray-900 rounded-2xl p-4 md:p-6 shadow-neo flex items-center gap-4 text-gray-900 animate-slide-up">

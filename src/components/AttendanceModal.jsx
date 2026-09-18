@@ -60,11 +60,12 @@ export default function AttendanceModal({
 
   useEffect(() => {
     if (isOpen) {
-      let currentStatus = student?.status && student.status !== "belum_absen"
-        ? student.status
-        : (isGuru ? "izin" : "hadir");
+      let currentStatus = student?.initialStatus
+        || (student?.status && student.status !== "belum_absen"
+          ? student.status
+          : (isGuru ? "izin" : "hadir"));
       if (isGuru && ["hadir", "terlambat"].includes(currentStatus)) {
-        currentStatus = "izin";
+        currentStatus = student?.initialStatus || "izin";
       }
       setStatus(currentStatus);
       setNotes(student?.notes || "");

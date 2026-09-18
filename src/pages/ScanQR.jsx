@@ -274,11 +274,7 @@ export default function ScanQR() {
       
       // Play error sound
       playErrorSound();
-
-      // Auto-clear result after 2.5 seconds to ready for next scan visually
-      setTimeout(() => {
-        setResult(null);
-      }, 2500);
+      // Tetap tampilkan modal kegagalan agar user bisa membaca diagnosis penyebab kegagalan
     },
   });
 
@@ -679,11 +675,12 @@ export default function ScanQR() {
         </div>
       </div>
 
-      {/* 4. Modal Dialog Sukses Absensi (Popup) */}
+      {/* 4. Modal Dialog Sukses & Gagal Absensi (Popup dengan Diagnostik Cerdas) */}
       <ScanResultModal
         result={result}
         scanType={scanType}
         handleCloseModal={handleCloseModal}
+        onSwitchScanType={handleScanTypeChange}
       />
     </div>
   );

@@ -1,9 +1,12 @@
 import { memo } from "react";
 import { useKelasFormat } from "../hooks/useKelasFormat";
+import { useAppStore } from "../store/useAppStore";
 
 export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
   const isStudent = item.role === "student";
   const { formatKelas } = useKelasFormat();
+  const userRole = useAppStore((state) => state.userRole);
+  const isGuru = userRole === "guru";
   const person = isStudent ? item.student || item : item.teacher || item;
   const isBelumAbsen = !item.status || item.status === "belum_absen";
 
@@ -123,18 +126,51 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
           </div>
         )}
 
-        {/* Manual Button for Belum Absen */}
+        {/* Manual Buttons for Belum Absen */}
         {isBelumAbsen && (
-          <div className="flex items-center gap-1.5 ml-auto">
-            {onEdit && (
-              <button
-                onClick={() => onEdit(item)}
-                title="Absen Manual"
-                className="px-2.5 py-1 bg-primary-green text-gray-900 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo hover:bg-emerald-400 active:translate-y-0.5 transition-all flex items-center gap-1"
-              >
-                <span className="material-symbols-outlined text-sm">check_circle</span>
-                Hadir
-              </button>
+          <div className="flex items-center gap-1.5 ml-auto flex-wrap justify-end">
+            {isGuru ? (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => onEdit && onEdit({ ...person, ...item, initialStatus: "izin" })}
+                  title="Pintasan Izin"
+                  className="px-2 py-1 bg-purple-100 hover:bg-purple-200 text-purple-950 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-0.5 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-xs">info</span>
+                  <span>Izin</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onEdit && onEdit({ ...person, ...item, initialStatus: "sakit" })}
+                  title="Pintasan Sakit"
+                  className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-950 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-0.5 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-xs">emergency</span>
+                  <span>Sakit</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onEdit && onEdit({ ...person, ...item, initialStatus: "alpha" })}
+                  title="Pintasan Alpha"
+                  className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-950 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-0.5 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-xs">cancel</span>
+                  <span>Alpha</span>
+                </button>
+              </div>
+            ) : (
+              onEdit && (
+                <button
+                  type="button"
+                  onClick={() => onEdit(item)}
+                  title="Absen Manual Hadir"
+                  className="px-2.5 py-1 bg-primary-green text-gray-900 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo hover:bg-emerald-400 active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">check_circle</span>
+                  Hadir
+                </button>
+              )
             )}
           </div>
         )}
