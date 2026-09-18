@@ -30,3 +30,5 @@ CODEBASE_STRUCTURE_AND_LOC.md
 *CODEBASE_STRUCTURE*
 update_codebase_loc.py
 *.loc.md
+graphify-out/
+.graphify*
