@@ -11,7 +11,12 @@ import { useScanner } from "../hooks/useScanner";
 import ScanResultModal from "../components/ScanResultModal";
 import ManualAttendanceForm from "../components/ManualAttendanceForm";
 import RecentScanLogs from "../components/RecentScanLogs";
-import { playSuccessSound, playErrorSound, playCheckoutSound } from "../utils/scanAudio";
+import {
+  playSuccessCheckin,
+  playLateCheckin,
+  playSuccessCheckout,
+  playSpecificErrorSound,
+} from "../utils/scanAudio";
 
 // Formula Haversine: Hitung jarak akurat antar titik koordinat dalam satuan meter
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -242,6 +247,10 @@ export default function ScanQR() {
     mutationFn: (uuid) => attendanceService.scan(uuid, scanTypeRef.current, coordsRef.current),
     onSuccess: (data) => {
       const activeScanType = scanTypeRef.current;
+      const person = data.data?.student || data.data?.teacher;
+      const personName = person?.nama || "";
+      const attendanceStatus = data.data?.attendance?.status;
+
       setResult({
         success: true,
         type: data.data.type,
@@ -249,12 +258,15 @@ export default function ScanQR() {
         scanType: activeScanType,
       });
       
-      // Play audio feedback
+      // Play audio feedback spesifik sesuai tipe & ketepatan waktu
       if (activeScanType === 'check_out') {
-        playCheckoutSound(); // Double beep untuk pulang
+        playSuccessCheckout(personName);
+      } else if (attendanceStatus === 'terlambat') {
+        playLateCheckin(personName);
       } else {
-        playSuccessSound(); // Single beep untuk masuk
+        playSuccessCheckin(personName);
       }
+
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
       queryClient.invalidateQueries({ queryKey: ["recentLogs"] });
       queryClient.invalidateQueries({ queryKey: ["attendance_students"] });
@@ -267,13 +279,14 @@ export default function ScanQR() {
       }, 2500);
     },
     onError: (error) => {
+      const errorMsg = error.response?.data?.message || "Scan gagal";
       setResult({
         success: false,
-        message: error.response?.data?.message || "Scan gagal",
+        message: errorMsg,
       });
       
-      // Play error sound
-      playErrorSound();
+      // Play sound spesifik dengan pengumuman suara sesuai jenis kesalahan
+      playSpecificErrorSound(errorMsg);
       // Tetap tampilkan modal kegagalan agar user bisa membaca diagnosis penyebab kegagalan
     },
   });
@@ -287,7 +300,8 @@ export default function ScanQR() {
         date: format(new Date(), "yyyy-MM-dd"),
       });
     },
-    onSuccess: () => {
+    onSuccess: (_res, variables) => {
+      import("../utils/scanAudio").then((m) => m.playLeaveSubmitted(variables?.status || "izin"));
       queryClient.invalidateQueries({ queryKey: ["attendance_teachers"] });
       queryClient.invalidateQueries({ queryKey: ["attendance_students"] });
       queryClient.invalidateQueries({ queryKey: ["recentLogs"] });

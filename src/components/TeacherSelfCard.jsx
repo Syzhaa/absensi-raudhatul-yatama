@@ -34,6 +34,7 @@ export default function TeacherSelfCard() {
       return res.data;
     },
     onSuccess: (data) => {
+      import("../utils/scanAudio").then((m) => m.playLeaveSubmitted(leaveStatus));
       queryClient.invalidateQueries({ queryKey: ["me"] });
       queryClient.invalidateQueries({ queryKey: ["guru-roster"] });
       queryClient.invalidateQueries({ queryKey: ["attendance_teachers"] });

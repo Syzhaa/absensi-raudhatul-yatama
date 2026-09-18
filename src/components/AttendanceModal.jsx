@@ -131,6 +131,7 @@ export default function AttendanceModal({
       });
 
       if (onStatusUpdate) onStatusUpdate();
+      import("../utils/scanAudio").then((m) => m.playLeaveSubmitted(status));
       onClose();
       
       if (onSuccessMessage) {
