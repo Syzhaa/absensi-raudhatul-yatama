@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useKelasFormat } from "../hooks/useKelasFormat";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
+import { filterKelasByLembaga, sortKelasList } from "../utils/kelasHelper";
 
 export default function PromoteClassModal({
   selectedCount,
@@ -16,16 +17,15 @@ export default function PromoteClassModal({
   const targetLembaga = (effectiveLembaga || "ma").toLowerCase();
 
   const optionsKelas = useMemo(() => {
-    let list = [];
-    if (kelasData?.data && Array.isArray(kelasData.data) && kelasData.data.length > 0) {
-      list = kelasData.data
-        .filter((k) => !k.lembaga || k.lembaga.toLowerCase() === targetLembaga)
-        .map((k) => k.nama || k.tingkat);
-    }
-    if (list.length === 0) {
-      list = targetLembaga === "mts" ? ["VII", "VIII", "IX"] : ["X", "XI", "XII"];
-    }
-    return [...new Set(list)];
+    const rawList = kelasData?.data && Array.isArray(kelasData.data) && kelasData.data.length > 0
+      ? filterKelasByLembaga(kelasData.data, targetLembaga).map((k) => k.nama || k.tingkat)
+      : [];
+
+    const list = rawList.length > 0
+      ? rawList
+      : (targetLembaga === "mts" ? ["VII", "VIII", "IX"] : ["X", "XI", "XII"]);
+
+    return sortKelasList([...new Set(list)]);
   }, [kelasData, targetLembaga]);
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">

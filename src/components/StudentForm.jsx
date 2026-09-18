@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useKelasFormat } from "../hooks/useKelasFormat";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
+import { filterKelasByLembaga, sortKelasList } from "../utils/kelasHelper";
 import Modal from "./Modal";
 import { getPhotoUrl } from "../services/api";
 import { useAppStore } from "../store/useAppStore";
@@ -23,19 +24,18 @@ export default function StudentForm({
   const targetLembaga = (formData.lembaga || effectiveLembaga || "ma").toLowerCase();
 
   const optionsKelas = useMemo(() => {
-    let list = [];
-    if (kelasData?.data && Array.isArray(kelasData.data) && kelasData.data.length > 0) {
-      list = kelasData.data
-        .filter((k) => !k.lembaga || k.lembaga.toLowerCase() === targetLembaga)
-        .map((k) => k.nama || k.tingkat);
-    }
-    if (list.length === 0) {
-      list = targetLembaga === "mts" ? ["VII", "VIII", "IX"] : ["X", "XI", "XII"];
-    }
+    const rawList = kelasData?.data && Array.isArray(kelasData.data) && kelasData.data.length > 0
+      ? filterKelasByLembaga(kelasData.data, targetLembaga).map((k) => k.nama || k.tingkat)
+      : [];
+
+    let list = rawList.length > 0
+      ? rawList
+      : (targetLembaga === "mts" ? ["VII", "VIII", "IX"] : ["X", "XI", "XII"]);
+
     if (formData.kelas && !list.includes(formData.kelas)) {
       list = [formData.kelas, ...list];
     }
-    return [...new Set(list)];
+    return sortKelasList([...new Set(list)]);
   }, [kelasData, targetLembaga, formData.kelas]);
 
   useEffect(() => {

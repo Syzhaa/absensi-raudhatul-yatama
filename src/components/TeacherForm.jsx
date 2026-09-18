@@ -6,6 +6,7 @@ import {
   parseAssignments,
   serializeAssignments,
 } from "../utils/mapelHelper";
+import { filterKelasByLembaga, sortKelasList } from "../utils/kelasHelper";
 
 export default function TeacherForm({
   isOpen,
@@ -54,16 +55,15 @@ export default function TeacherForm({
   // Determine available classes based on teacher lembaga
   const targetLembaga = (formData.lembaga || "MA").toLowerCase();
   const availableKelasList = useMemo(() => {
-    let list = [];
-    if (kelasData?.data && Array.isArray(kelasData.data) && kelasData.data.length > 0) {
-      list = kelasData.data
-        .filter((k) => !k.lembaga || k.lembaga.toLowerCase() === targetLembaga)
-        .map((k) => k.nama || k.tingkat);
-    }
-    if (list.length === 0) {
-      list = targetLembaga === "mts" ? ["VII", "VIII", "IX"] : ["X", "XI", "XII"];
-    }
-    return [...new Set(list)];
+    const rawList = kelasData?.data && Array.isArray(kelasData.data) && kelasData.data.length > 0
+      ? filterKelasByLembaga(kelasData.data, targetLembaga).map((k) => k.nama || k.tingkat)
+      : [];
+
+    const list = rawList.length > 0
+      ? rawList
+      : (targetLembaga === "mts" ? ["VII", "VIII", "IX"] : ["X", "XI", "XII"]);
+
+    return sortKelasList([...new Set(list)]);
   }, [kelasData, targetLembaga]);
 
   // Map of taken subjects per class by other teachers: { "Kelas:Mapel": "Nama Guru" }

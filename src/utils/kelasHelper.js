@@ -140,3 +140,31 @@ export function validateKelas(kelas, format = 'roman') {
   const validList = getValidKelas(format);
   return validList.includes(normalized);
 }
+
+/**
+ * Filter list of classes (objects or strings) strictly by target lembaga (mts: 7, 8, 9 vs ma: 10, 11, 12)
+ * @param {Array} kelasList
+ * @param {string} targetLembaga
+ * @returns {Array}
+ */
+export function filterKelasByLembaga(kelasList = [], targetLembaga = null) {
+  if (!targetLembaga) return kelasList;
+  const lem = String(targetLembaga).toLowerCase();
+  return kelasList.filter((k) => {
+    const name = typeof k === 'object' ? (k.nama || k.tingkat || '') : String(k);
+    const kLem = typeof k === 'object' ? (k.lembaga || '').toLowerCase() : '';
+    const num = getKelasNumericVal(name);
+
+    if (lem === 'mts') {
+      if (kLem === 'mts') return true;
+      if (kLem === 'ma') return false;
+      return num >= 7 && num <= 9;
+    }
+    if (lem === 'ma') {
+      if (kLem === 'ma') return true;
+      if (kLem === 'mts') return false;
+      return num >= 10 && num <= 12;
+    }
+    return true;
+  });
+}
