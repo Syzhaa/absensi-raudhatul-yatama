@@ -98,22 +98,22 @@ export default function CredentialsModal({
         className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
-      <div className="relative bg-white border-2 sm:border-3 border-gray-900 rounded-2xl shadow-neo max-w-md w-full p-4 sm:p-6 z-10 animate-slide-up space-y-3.5">
+      <div className="relative bg-white border-2 sm:border-3 border-gray-900 rounded-2xl shadow-neo max-w-sm w-full p-3.5 sm:p-4 z-10 animate-slide-up space-y-2.5">
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b-2 border-gray-100 pb-2.5">
-          <div className="flex items-center gap-2.5">
-            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-gray-900 flex items-center justify-center shrink-0 ${
+        <div className="flex items-center justify-between border-b-2 border-gray-100 pb-2">
+          <div className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-xl border-2 border-gray-900 flex items-center justify-center shrink-0 ${
               isExistingAccount ? "bg-cyan-100 text-cyan-800" : "bg-emerald-100 text-emerald-800"
             }`}>
-              <span className="material-symbols-outlined text-xl sm:text-2xl font-bold">
+              <span className="material-symbols-outlined text-lg font-bold">
                 {isExistingAccount ? "manage_accounts" : "key"}
               </span>
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-black text-gray-900 leading-tight">
+              <h2 className="text-xs sm:text-sm font-black text-gray-900 leading-tight">
                 {isExistingAccount ? "Kelola Kredensial Login" : "Buat Akun Guru (SSO)"}
               </h2>
-              <p className="text-[10px] sm:text-[11px] text-emerald-800 font-bold">
+              <p className="text-[10px] text-emerald-800 font-bold">
                 1 Akun: Portal, Absensi & Webmail
               </p>
             </div>
@@ -121,45 +121,45 @@ export default function CredentialsModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-gray-900"
+            className="p-1 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-gray-900 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-xl">close</span>
+            <span className="material-symbols-outlined text-lg">close</span>
           </button>
         </div>
 
         {/* Teacher Information Box */}
-        <div className="p-3 bg-gray-50 border-2 border-gray-200 rounded-xl flex items-center justify-between">
+        <div className="p-2.5 bg-gray-50 border border-gray-300 rounded-xl flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">
+            <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">
               Nama Dewan Guru
             </span>
-            <span className="font-black text-xs sm:text-sm text-gray-900">
+            <span className="font-black text-xs text-gray-900">
               {teacher?.nama || credentials?.name}
             </span>
-            <span className="text-[11px] font-mono text-gray-600 block">
+            <span className="text-[10px] font-mono text-gray-600 block">
               NPK: {teacher?.nip || "-"} • {teacher?.lembaga ? teacher.lembaga.toUpperCase() : "MA"}
             </span>
           </div>
-          <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-md border ${
+          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${
             isExistingAccount
               ? "bg-emerald-100 text-emerald-800 border-emerald-400"
               : "bg-amber-100 text-amber-800 border-amber-400"
           }`}>
-            {isExistingAccount ? "Akun Aktif" : "Belum Punya Akun"}
+            {isExistingAccount ? "Aktif" : "Belum Ada"}
           </span>
         </div>
 
         {validationError && (
-          <div className="p-2.5 bg-red-50 border-2 border-red-300 rounded-xl text-xs font-bold text-red-700 flex items-center gap-1.5">
+          <div className="p-2 bg-red-50 border border-red-300 rounded-xl text-xs font-bold text-red-700 flex items-center gap-1.5">
             <span className="material-symbols-outlined text-base">error</span>
             <span>{validationError}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+        <form onSubmit={handleSubmit} className="space-y-2.5">
           {/* Email Input */}
           <div className="space-y-1">
-            <label className="block text-xs font-black uppercase text-gray-800 tracking-wider">
+            <label className="block text-[11px] font-black uppercase text-gray-800 tracking-wider">
               Email Resmi Guru *
             </label>
             <input
@@ -168,26 +168,23 @@ export default function CredentialsModal({
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="nama@raudhatulyatama.sch.id"
-              className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl font-mono text-xs sm:text-sm font-bold text-gray-900 focus:outline-none transition-all"
+              className="w-full px-2.5 py-1.5 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl font-mono text-xs font-bold text-gray-900 focus:outline-none transition-all"
             />
-            <p className="text-[10px] text-gray-500 font-medium">
-              Alamat email resmi di subdomain mail.raudhatulyatama.sch.id & akun login absen
-            </p>
           </div>
 
           {/* Password Input */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-black uppercase text-gray-800 tracking-wider">
-                {isExistingAccount ? "Ubah Password (Kosongkan jika tetap)" : "Password Login *"}
+              <label className="block text-[11px] font-black uppercase text-gray-800 tracking-wider">
+                {isExistingAccount ? "Ubah Sandi (Kosongkan jika tetap)" : "Password Login *"}
               </label>
               <button
                 type="button"
                 onClick={generateRandomPassword}
-                className="text-[11px] font-black text-emerald-700 hover:text-emerald-900 flex items-center gap-0.5 cursor-pointer underline"
+                className="text-[10px] font-black text-emerald-700 hover:text-emerald-900 flex items-center gap-0.5 cursor-pointer underline"
               >
                 <span className="material-symbols-outlined text-xs">refresh</span>
-                Acak Sandi
+                Acak
               </button>
             </div>
 
@@ -197,15 +194,15 @@ export default function CredentialsModal({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={isExistingAccount ? "Ketik sandi baru..." : "Minimal 6 karakter"}
-                className="w-full pl-3 pr-10 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl font-mono text-xs sm:text-sm font-bold text-gray-900 focus:outline-none transition-all"
+                className="w-full pl-2.5 pr-8 py-1.5 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl font-mono text-xs font-bold text-gray-900 focus:outline-none transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800 p-1"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800 p-0.5 cursor-pointer"
                 title={showPassword ? "Sembunyikan" : "Tampilkan"}
               >
-                <span className="material-symbols-outlined text-lg">
+                <span className="material-symbols-outlined text-base">
                   {showPassword ? "visibility_off" : "visibility"}
                 </span>
               </button>
@@ -214,35 +211,35 @@ export default function CredentialsModal({
 
           {/* WhatsApp Copy Preview Bar */}
           {password && (
-            <div className="pt-1">
+            <div className="pt-0.5">
               <button
                 type="button"
                 onClick={handleCopyFormatted}
-                className="w-full py-2 px-3 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-500 text-emerald-900 font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                className="w-full py-1.5 px-2.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-500 text-emerald-900 font-black text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
               >
-                <span className="material-symbols-outlined text-base text-emerald-600">
+                <span className="material-symbols-outlined text-sm text-emerald-600">
                   {copyFeedback ? "check_circle" : "content_copy"}
                 </span>
-                <span>{copyFeedback ? "Kredensial Tersalin!" : "Salin Kredensial untuk WhatsApp"}</span>
+                <span>{copyFeedback ? "Kredensial Tersalin!" : "Salin untuk WhatsApp"}</span>
               </button>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="pt-2 flex flex-col sm:flex-row gap-2">
+          <div className="pt-1.5 flex gap-2">
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 py-2.5 px-4 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black text-xs sm:text-sm border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 py-2 px-3 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black text-xs border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer"
             >
               {isLoading ? (
-                <span className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></span>
+                <span className="w-3.5 h-3.5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></span>
               ) : (
                 <span className="material-symbols-outlined text-base">
                   {isExistingAccount ? "save" : "check"}
                 </span>
               )}
-              <span>{isExistingAccount ? "Simpan Perubahan Sandi" : "Buat Akun Login"}</span>
+              <span>{isExistingAccount ? "Simpan Sandi" : "Buat Akun"}</span>
             </button>
 
             {isExistingAccount && (
@@ -250,11 +247,11 @@ export default function CredentialsModal({
                 type="button"
                 onClick={onDeactivateAccess}
                 disabled={isLoading}
-                className="py-2.5 px-3 bg-red-100 hover:bg-red-200 text-red-700 font-black text-xs border-2 border-gray-900 rounded-xl shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer"
+                className="py-2 px-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-black text-xs border-2 border-gray-900 rounded-xl shadow-xs transition-all disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer"
                 title="Hapus akun login guru"
               >
                 <span className="material-symbols-outlined text-base">person_off</span>
-                <span>Nonaktifkan</span>
+                <span>Nonaktif</span>
               </button>
             )}
           </div>

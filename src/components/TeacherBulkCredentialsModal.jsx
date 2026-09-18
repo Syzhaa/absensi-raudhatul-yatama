@@ -331,25 +331,25 @@ export default function TeacherBulkCredentialsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-fade-in" onClick={onClose} />
 
-      <div className="relative bg-white border-2 sm:border-3 border-gray-900 rounded-2xl sm:rounded-3xl shadow-neo-xl max-w-4xl w-full max-h-[95vh] sm:max-h-[92vh] flex flex-col z-10 animate-slide-up overflow-hidden">
-        {/* Header Modal - Responsif Mobile */}
-        <div className="bg-purple-50 border-b-2 sm:border-b-3 border-gray-900 p-3 sm:p-4.5 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-purple-600 text-white rounded-xl border-2 border-gray-900 flex items-center justify-center shrink-0 shadow-sm">
-              <span className="material-symbols-outlined text-xl sm:text-2xl">key</span>
+      <div className="relative bg-white border-2 sm:border-3 border-gray-900 rounded-2xl shadow-neo-xl max-w-2xl w-full max-h-[88vh] sm:max-h-[82vh] flex flex-col z-10 animate-slide-up overflow-hidden">
+        {/* Header Modal */}
+        <div className="bg-purple-50 border-b-2 sm:border-b-3 border-gray-900 px-3.5 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-purple-600 text-white rounded-xl border-2 border-gray-900 flex items-center justify-center shrink-0 shadow-xs">
+              <span className="material-symbols-outlined text-lg sm:text-xl">key</span>
             </div>
             <div className="min-w-0">
-              <h2 className="font-black text-sm sm:text-lg text-gray-900 leading-tight truncate">
-                Kredensial Login Guru
+              <h2 className="font-black text-xs sm:text-base text-gray-900 leading-tight truncate">
+                Kredensial Login Dewan Guru
               </h2>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[10px] sm:text-xs text-purple-900 font-bold bg-purple-100/80 px-1.5 py-0.5 rounded border border-purple-200">
-                  1 Akun: Portal, Absen & Webmail
+                <span className="text-[9px] sm:text-[10px] text-purple-900 font-black bg-purple-100/80 px-1.5 py-0.5 rounded border border-purple-200">
+                  SSO: Portal, Absen & Webmail
                 </span>
-                <span className="text-[10px] sm:text-xs text-gray-500 font-semibold hidden xs:inline">
+                <span className="text-[9px] sm:text-[10px] text-gray-500 font-semibold hidden xs:inline">
                   • {effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA & MTS"}
                 </span>
               </div>
@@ -358,22 +358,22 @@ export default function TeacherBulkCredentialsModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 sm:p-2 rounded-xl border-2 border-gray-900 hover:bg-gray-100 transition-colors text-gray-700 shrink-0 ml-2"
+            className="p-1 sm:p-1.5 rounded-xl border-2 border-gray-900 hover:bg-gray-100 transition-colors text-gray-700 shrink-0 ml-2 cursor-pointer"
             title="Tutup"
           >
-            <span className="material-symbols-outlined text-lg sm:text-xl">close</span>
+            <span className="material-symbols-outlined text-base sm:text-lg">close</span>
           </button>
         </div>
 
         {/* Action Toolbar & Info Banner */}
-        <div className="p-3 sm:p-4 border-b border-gray-200 bg-gray-50/70 space-y-2.5 shrink-0">
-          {/* Action Buttons Grid (Responsif Mobile) */}
-          <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2">
+        <div className="p-2.5 sm:p-3 border-b border-gray-200 bg-gray-50/70 space-y-2 shrink-0">
+          {/* Action Buttons Grid */}
+          <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-1.5">
             {/* Tombol Cetak PDF */}
             <button
               onClick={handleExportPdf}
               disabled={isExportingPdf || isLoading}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white font-black border-2 border-gray-900 rounded-xl shadow-xs hover:shadow-neo transition-all text-xs cursor-pointer disabled:opacity-50"
+              className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-black border-2 border-gray-900 rounded-xl shadow-xs hover:shadow-neo transition-all text-xs cursor-pointer disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-base">picture_as_pdf</span>
               <span>{isExportingPdf ? "Membuat PDF..." : "Cetak PDF"}</span>
@@ -383,24 +383,22 @@ export default function TeacherBulkCredentialsModal({
             <button
               onClick={() => setShowWaConfirm(!showWaConfirm)}
               disabled={isLoading || sendWaMutation.isPending}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-black border-2 border-gray-900 rounded-xl shadow-xs hover:shadow-neo transition-all text-xs cursor-pointer disabled:opacity-50"
+              className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-gray-950 font-black border-2 border-gray-900 rounded-xl shadow-xs hover:shadow-neo transition-all text-xs cursor-pointer disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-base">send</span>
               <span>Kirim ke WA</span>
             </button>
 
-            {/* Tombol Salin Format WA (Full width di mobile row 2) */}
+            {/* Tombol Salin Format WA */}
             <button
               onClick={handleCopyFormattedWa}
-              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-100 text-gray-900 font-bold border-2 border-gray-900 rounded-xl shadow-xs transition-all text-xs cursor-pointer"
+              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1 px-2.5 py-1.5 bg-white hover:bg-gray-100 text-gray-900 font-bold border-2 border-gray-900 rounded-xl shadow-xs transition-all text-xs cursor-pointer"
               title="Salin seluruh format rekap untuk WhatsApp"
             >
               <span className="material-symbols-outlined text-base text-gray-600">
                 {copiedItem === "Format teks WhatsApp" ? "check" : "content_copy"}
               </span>
-              <span>
-                {copiedItem === "Format teks WhatsApp" ? "Format Tersalin!" : "Salin Teks WA"}
-              </span>
+              <span>{copiedItem === "Format teks WhatsApp" ? "Tersalin!" : "Salin Format WA"}</span>
             </button>
           </div>
 

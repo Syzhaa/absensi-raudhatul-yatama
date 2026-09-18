@@ -70,11 +70,11 @@ export default function StudentForm({
   };
 
   const baseClass =
-    "w-full px-4 py-3 min-h-[48px] bg-gray-100 border-2 border-gray-200 rounded-xl font-medium text-sm md:text-base text-gray-900 focus:border-primary-green focus:bg-white focus:outline-none transition-all";
-  const inputClass = `${baseClass} placeholder:text-gray-400`;
+    "w-full px-3 py-1.5 min-h-[36px] bg-gray-50 border-2 border-gray-300 rounded-xl font-bold text-xs sm:text-sm text-gray-900 focus:border-gray-900 focus:bg-white focus:outline-none transition-all";
+  const inputClass = `${baseClass} placeholder:text-gray-400 font-medium`;
   const selectClass = `${baseClass} cursor-pointer`;
   const labelClass =
-    "block font-bold text-xs md:text-sm text-gray-800 uppercase tracking-wider mb-1.5";
+    "block font-black text-[11px] text-gray-800 uppercase tracking-wider mb-1";
   const field = (key) => ({
     value: formData[key],
     onChange: (e) => setFormData({ ...formData, [key]: e.target.value }),
@@ -85,16 +85,23 @@ export default function StudentForm({
       isOpen={isOpen}
       onClose={onClose}
       title={editingStudent ? "Edit Siswa" : "Tambah Siswa"}
-      size="lg"
+      size="md"
       footer={
-        <div className="space-y-2">
+        <div className="flex items-center gap-2 justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl border border-gray-300 transition-colors cursor-pointer"
+          >
+            Batal
+          </button>
           <button
             type="button"
             onClick={() => onSubmit(photoFile)}
-            className="w-full py-3.5 px-6 bg-primary-green text-gray-900 font-bold text-base md:text-lg rounded-full border-2 border-gray-900 shadow-neo hover:clean-shadow-md active:translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 py-2 bg-primary-green hover:bg-lime-400 text-gray-900 font-black text-xs sm:text-sm rounded-xl border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
             disabled={isPending}
           >
-            <span className="material-symbols-outlined text-xl">
+            <span className="material-symbols-outlined text-base">
               {editingStudent ? "save" : "check"}
             </span>
             <span>
@@ -105,13 +112,6 @@ export default function StudentForm({
                   : "Simpan Siswa"}
             </span>
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full py-2 text-sm font-bold text-gray-500 hover:text-gray-800 transition-colors text-center"
-          >
-            Batal
-          </button>
         </div>
       }
     >
@@ -121,49 +121,44 @@ export default function StudentForm({
           onSubmit(photoFile);
         }}
         id="student-form"
-        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3"
       >
-        {/* Photo Upload */}
-        <div className="md:col-span-2">
-          <label className={labelClass}>Foto Siswa</label>
-          <div className="flex items-start gap-4">
-            {photoPreview && (
-              <div className="relative">
-                <img
-                  src={getPhotoUrl(photoPreview)}
-                  alt="Preview"
-                  className="w-24 h-24 object-cover rounded-lg border-2 border-gray-300"
-                />
-                <button
-                  type="button"
-                  onClick={handleRemovePhoto}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                >
-                  <span className="material-symbols-outlined text-sm">close</span>
-                </button>
-              </div>
-            )}
-            <div className="flex-1">
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/jpg"
-                onChange={handlePhotoChange}
-                className="hidden"
-                id="photo-upload"
+        {/* Photo Upload Compact */}
+        <div className="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl p-2.5 flex items-center gap-3">
+          {photoPreview && (
+            <div className="relative shrink-0">
+              <img
+                src={getPhotoUrl(photoPreview)}
+                alt="Preview"
+                className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-lg border-2 border-gray-300 shadow-xs"
               />
-              <label
-                htmlFor="photo-upload"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 border-2 border-gray-300 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
+              <button
+                type="button"
+                onClick={handleRemovePhoto}
+                className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600 shadow-xs cursor-pointer"
               >
-                <span className="material-symbols-outlined">upload</span>
-                <span className="text-sm font-medium">
-                  {photoPreview ? "Ganti Foto" : "Pilih Foto"}
-                </span>
-              </label>
-              <p className="text-xs text-gray-500 mt-1">
-                JPG, PNG. Max 2MB
-              </p>
+                <span className="material-symbols-outlined text-xs">close</span>
+              </button>
             </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/jpg"
+              onChange={handlePhotoChange}
+              className="hidden"
+              id="photo-upload"
+            />
+            <label
+              htmlFor="photo-upload"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors text-xs font-bold text-gray-800 shadow-xs"
+            >
+              <span className="material-symbols-outlined text-sm text-gray-600">upload</span>
+              <span>{photoPreview ? "Ganti Foto" : "Unggah Foto Siswa"}</span>
+            </label>
+            <span className="text-[10px] text-gray-500 font-medium ml-2">
+              JPG/PNG/WebP
+            </span>
           </div>
         </div>
 

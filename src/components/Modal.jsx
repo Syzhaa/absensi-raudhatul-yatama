@@ -22,10 +22,10 @@ export default function Modal({
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: "max-w-md",
-    md: "max-w-2xl",
-    lg: "max-w-3xl",
-    xl: "max-w-5xl",
+    sm: "max-w-sm",
+    md: "max-w-lg",
+    lg: "max-w-xl",
+    xl: "max-w-3xl",
   };
 
   return (
@@ -59,27 +59,27 @@ export default function Modal({
         </div>
 
         {/* Header */}
-        <div className="px-5 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-          <h2 className="text-lg sm:text-xl font-black uppercase text-gray-900 tracking-tight">
+        <div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+          <h2 className="text-base sm:text-lg font-black uppercase text-gray-900 tracking-tight">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900 border border-gray-300 flex items-center justify-center transition-colors"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-900 border border-gray-300 flex items-center justify-center transition-colors cursor-pointer"
             aria-label="Close"
           >
-            <span className="material-symbols-outlined text-xl">close</span>
+            <span className="material-symbols-outlined text-base sm:text-lg">close</span>
           </button>
         </div>
 
         {/* Scrollable Body */}
-        <div className="overflow-y-auto p-5 sm:p-6 flex-1 space-y-4">
+        <div className="overflow-y-auto p-3.5 sm:p-4 md:p-5 flex-1 space-y-3">
           {children}
         </div>
 
         {/* Sticky Footer if provided */}
         {footer && (
-          <div className="p-4 sm:p-5 border-t border-gray-200 bg-white rounded-b-2xl flex-shrink-0 sticky bottom-0">
+          <div className="px-3.5 py-2.5 sm:px-5 sm:py-3 border-t border-gray-200 bg-white rounded-b-2xl flex-shrink-0 sticky bottom-0">
             {footer}
           </div>
         )}

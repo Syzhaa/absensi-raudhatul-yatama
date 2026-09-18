@@ -142,10 +142,10 @@ export default function TeacherForm({
   };
 
   const baseClass =
-    "w-full px-4 py-2.5 min-h-[44px] bg-gray-50 border-2 border-gray-300 rounded-xl font-bold text-xs sm:text-sm text-gray-900 focus:border-gray-900 focus:bg-white focus:outline-none transition-all";
+    "w-full px-3 py-1.5 min-h-[36px] bg-gray-50 border-2 border-gray-300 rounded-xl font-bold text-xs sm:text-sm text-gray-900 focus:border-gray-900 focus:bg-white focus:outline-none transition-all";
   const inputClass = `${baseClass} placeholder:text-gray-400 font-medium`;
   const labelClass =
-    "block font-black text-xs text-gray-800 uppercase tracking-wider mb-1.5";
+    "block font-black text-[11px] text-gray-800 uppercase tracking-wider mb-1";
   const field = (key) => ({
     value: formData[key] || "",
     onChange: (e) => setFormData({ ...formData, [key]: e.target.value }),
@@ -169,32 +169,32 @@ export default function TeacherForm({
       isOpen={isOpen}
       onClose={onClose}
       title={editingTeacher ? "Edit Data Guru" : "Tambah Guru Baru"}
-      size="lg"
+      size="md"
       footer={
-        <div className="space-y-2">
+        <div className="flex items-center gap-2 justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl border border-gray-300 transition-colors cursor-pointer"
+          >
+            Batal
+          </button>
           <button
             type="submit"
             form="teacher-form"
-            className="w-full py-3 px-6 bg-primary-green text-gray-900 font-black text-sm md:text-base rounded-xl border-2 border-gray-900 shadow-neo hover:shadow-neo-lg active:translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            className="px-5 py-2 bg-primary-green hover:bg-lime-400 text-gray-900 font-black text-xs sm:text-sm rounded-xl border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
             disabled={isPending}
           >
-            <span className="material-symbols-outlined text-xl">
+            <span className="material-symbols-outlined text-base">
               {editingTeacher ? "save" : "person_add"}
             </span>
             <span>
               {isPending
                 ? "Menyimpan..."
                 : editingTeacher
-                  ? "Simpan Perubahan Guru"
-                  : "Simpan Guru"}
+                  ? "Simpan Guru"
+                  : "Tambah Guru"}
             </span>
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full py-2 text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors text-center cursor-pointer"
-          >
-            Batal
           </button>
         </div>
       }
@@ -202,10 +202,10 @@ export default function TeacherForm({
       <form
         onSubmit={handleFormSubmit}
         id="teacher-form"
-        className="space-y-4"
+        className="space-y-3"
       >
         {/* Row 1: Data Identitas Guru (Nama, NPK & No. HP/WA) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
           {/* 1. Nama Guru */}
           <div>
             <label className={labelClass}>Nama Lengkap Guru *</label>
