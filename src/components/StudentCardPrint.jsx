@@ -9,6 +9,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   const [qrCodes, setQrCodes] = useState({});
   const [logoUrl, setLogoUrl] = useState("/logo.png");
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState("");
   const [zoom, setZoom] = useState(() => {
     if (typeof window !== "undefined") {
       return window.innerWidth >= 1024 ? 1.4 : (window.innerWidth >= 640 ? 1.15 : 0.95);
@@ -118,25 +119,43 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     });
   }, [students, qrCodes]);
 
+  const waitForImages = async (element) => {
+    const images = Array.from(element.querySelectorAll("img"));
+    await Promise.all(
+      images.map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+          setTimeout(resolve, 2000);
+        });
+      })
+    );
+  };
+
   const handleDownloadPNG = async () => {
     setIsDownloading(true);
+    setDownloadProgress("Menyiapkan aset gambar kartu...");
     try {
       const wrappers = cardRef.current.querySelectorAll(".id-card-wrapper");
       if (wrappers.length === 0) return;
 
       const captureWrapper = async (wrapper) => {
+        await waitForImages(wrapper);
         return toPng(wrapper, {
-          pixelRatio: 3,
+          pixelRatio: 2.5,
           backgroundColor: "#ffffff",
           skipFonts: false,
-          cacheBust: true,
+          cacheBust: false,
         });
       };
 
       if (wrappers.length === 1) {
+        setDownloadProgress("Merender kartu...");
         const dataUrl = await captureWrapper(wrappers[0]);
         const link = document.createElement("a");
-        link.download = `kartu-${students[0].nama.replace(/\s+/g, "-")}.png`;
+        const safeName = (students[0]?.nama || "siswa").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-");
+        link.download = `kartu-${safeName}.png`;
         link.href = dataUrl;
         link.click();
       } else {
@@ -146,19 +165,84 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
 
         for (let i = 0; i < wrappers.length; i++) {
           const student = students[i];
+          setDownloadProgress(`Merender kartu ${i + 1}/${wrappers.length}: ${student.nama}...`);
           const dataUrl = await captureWrapper(wrappers[i]);
           const imgData = dataUrl.split("base64,")[1];
-          zip.file(`kartu-${student.nama.replace(/\s+/g, "-")}.png`, imgData, { base64: true });
+          const safeName = (student.nama || `siswa-${i + 1}`).replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-");
+          zip.file(`kartu-${safeName}-${student.nisn || student.id}.png`, imgData, { base64: true });
         }
 
+        setDownloadProgress(`Mengompresi ${wrappers.length} kartu ke file ZIP...`);
         const content = await zip.generateAsync({ type: "blob" });
-        saveAs(content, "kartu_identitas_batch.zip");
+        saveAs(content, `kartu_identitas_${students.length}_siswa.zip`);
       }
     } catch (error) {
-      console.error("Gagal mendownload PNG:", error);
-      alert("Gagal mendownload PNG. Pastikan gambar dapat diakses.");
+      console.error("Gagal mendownload PNG/ZIP:", error);
+      alert("Gagal mendownload kartu. Pastikan aset gambar termuat sempurna.");
     } finally {
       setIsDownloading(false);
+      setDownloadProgress("");
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    setIsDownloading(true);
+    setDownloadProgress("Menyiapkan file PDF ukuran kartu (CR80: 54x85.6mm)...");
+    try {
+      const { default: jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: [54, 85.6],
+      });
+
+      const wrappers = cardRef.current.querySelectorAll(".id-card-wrapper");
+      if (wrappers.length === 0) return;
+
+      let pageCount = 0;
+      for (let i = 0; i < wrappers.length; i++) {
+        const student = students[i];
+        setDownloadProgress(`Memproses PDF ${i + 1}/${wrappers.length}: ${student.nama}...`);
+
+        const cards = wrappers[i].querySelectorAll(".id-card");
+        if (cards.length >= 2) {
+          // 1. Kartu Depan
+          await waitForImages(cards[0]);
+          const frontDataUrl = await toPng(cards[0], {
+            pixelRatio: 2.5,
+            backgroundColor: "#ffffff",
+            skipFonts: false,
+            cacheBust: false,
+          });
+          if (pageCount > 0) pdf.addPage([54, 85.6], "portrait");
+          pdf.addImage(frontDataUrl, "PNG", 0, 0, 54, 85.6);
+          pageCount++;
+
+          // 2. Kartu Belakang
+          await waitForImages(cards[1]);
+          const backDataUrl = await toPng(cards[1], {
+            pixelRatio: 2.5,
+            backgroundColor: "#ffffff",
+            skipFonts: false,
+            cacheBust: false,
+          });
+          pdf.addPage([54, 85.6], "portrait");
+          pdf.addImage(backDataUrl, "PNG", 0, 0, 54, 85.6);
+          pageCount++;
+        }
+      }
+
+      setDownloadProgress("Menyimpan dokumen PDF...");
+      const filename = wrappers.length === 1
+        ? `kartu-${(students[0]?.nama || "siswa").replace(/\s+/g, "-")}-cr80.pdf`
+        : `kartu_siswa_cr80_${students.length}_data.pdf`;
+      pdf.save(filename);
+    } catch (error) {
+      console.error("Gagal membuat PDF kartu:", error);
+      alert("Gagal membuat PDF kartu. Silakan coba lagi.");
+    } finally {
+      setIsDownloading(false);
+      setDownloadProgress("");
     }
   };
 
@@ -216,19 +300,15 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
 
   const getPhotoUrl = (url) => {
     if (!url || url === "storage/" || url === "/storage/") return null;
-    let fullUrl = url;
-    if (!url.startsWith("http")) {
-      const apiBase = import.meta.env.VITE_API_BASE_URL || "https://api.raudhatulyatama.sch.id/api/v1";
-      const baseUrl = apiBase.replace(/\/api(\/v1)?$/, "");
-      let cleanPath = url.startsWith("/") ? url : `/${url}`;
-      if (!cleanPath.startsWith("/storage/")) {
-        cleanPath = `/storage${cleanPath}`;
-      }
-      fullUrl = `${baseUrl}${cleanPath}`;
+    if (url.startsWith("data:")) return url;
+    if (url.startsWith("http")) return url;
+    const apiBase = import.meta.env.VITE_API_BASE_URL || "https://api.raudhatulyatama.sch.id/api/v1";
+    const baseUrl = apiBase.replace(/\/api(\/v1)?$/, "");
+    let cleanPath = url.startsWith("/") ? url : `/${url}`;
+    if (!cleanPath.startsWith("/storage/")) {
+      cleanPath = `/storage${cleanPath}`;
     }
-    const encodedUrl = encodeURIComponent(fullUrl);
-    const cacheBuster = `&cb=${Date.now()}`;
-    return `https://wsrv.nl/?url=${encodedUrl}${cacheBuster}`;
+    return `${baseUrl}${cleanPath}`;
   };
 
   const getFallbackAvatar = () => {
@@ -271,27 +351,38 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           </button>
         </div>
 
-        {/* Action Toolbar - Bersih & Fokus: Hanya Unduh PNG, Cetak Kartu & Tutup */}
-        <div className="flex items-center gap-2 justify-end">
-          {/* Download PNG */}
+        {/* Action Toolbar */}
+        <div className="flex items-center gap-2 justify-end flex-wrap">
+          {/* Download PNG / ZIP */}
           <button
             onClick={handleDownloadPNG}
             disabled={isDownloading}
             className="py-2 px-3 sm:px-3.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-            title="Unduh file gambar PNG beresolusi tinggi"
+            title={students.length > 1 ? "Unduh seluruh kartu dalam file ZIP" : "Unduh kartu format PNG"}
           >
             <span className="material-symbols-outlined text-base">
-              {isDownloading ? "hourglass_empty" : "download"}
+              {isDownloading ? "hourglass_empty" : "folder_zip"}
             </span>
-            <span className="hidden sm:inline">{isDownloading ? "Memproses..." : "Unduh PNG"}</span>
-            <span className="sm:hidden">PNG</span>
+            <span>{students.length > 1 ? "Unduh ZIP (PNG)" : "Unduh PNG"}</span>
+          </button>
+
+          {/* Download PDF (Ukuran Kartu CR80) */}
+          <button
+            onClick={handleDownloadPDF}
+            disabled={isDownloading}
+            className="py-2 px-3 sm:px-3.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Unduh file PDF dengan ukuran standar kartu ID (CR80: 54x85.6mm)"
+          >
+            <span className="material-symbols-outlined text-base">picture_as_pdf</span>
+            <span>Unduh PDF (Kartu)</span>
           </button>
 
           {/* Print Card */}
           <button
             onClick={handlePrint}
-            className="py-2 px-3.5 sm:px-4 bg-primary-green hover:bg-lime-400 text-gray-900 text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-            title="Buka dialog cetak printer"
+            disabled={isDownloading}
+            className="py-2 px-3.5 sm:px-4 bg-primary-green hover:bg-lime-400 text-gray-900 text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Buka dialog cetak printer ukuran kartu"
           >
             <span className="material-symbols-outlined text-base">print</span>
             <span>Cetak Kartu</span>
@@ -308,6 +399,14 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           </button>
         </div>
       </div>
+
+      {/* Progress Notification Banner */}
+      {isDownloading && (
+        <div className="bg-amber-100 border-b-2 border-amber-400 px-4 py-2 flex items-center justify-center gap-2 text-xs font-black text-amber-900 animate-pulse">
+          <span className="material-symbols-outlined text-sm animate-spin">sync</span>
+          <span>{downloadProgress || "Sedang memproses unduhan kartu..."}</span>
+        </div>
+      )}
 
       {/* Main Preview Container */}
       <div className="flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6 bg-slate-200/90 flex flex-col items-center justify-center min-h-0">
@@ -624,58 +723,47 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             flex-shrink: 0;
           }
 
-          /* PRINT MEDIA OPTIMIZATION */
+          /* PRINT MEDIA OPTIMIZATION: CR80 EXACT CARD SIZE (54mm x 85.6mm) */
           @media print {
             @page {
-              margin: 8mm;
-              size: auto;
+              size: 54mm 85.6mm;
+              margin: 0;
             }
-            body {
+            html, body {
               background: #ffffff !important;
               padding: 0 !important;
               margin: 0 !important;
+              width: 54mm !important;
             }
             .print-container {
-              display: flex !important;
-              flex-direction: column !important;
-              align-items: center !important;
-              justify-content: flex-start !important;
-              gap: 8mm !important;
+              display: block !important;
               padding: 0 !important;
-              margin: 0 auto !important;
+              margin: 0 !important;
+              width: 54mm !important;
             }
             .id-card-wrapper {
-              display: flex !important;
-              flex-direction: row !important;
-              align-items: center !important;
-              justify-content: center !important;
-              gap: 8mm !important;
+              display: block !important;
+              gap: 0 !important;
+              margin: 0 !important;
+              padding: 0 !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
-              margin-bottom: 8mm !important;
-            }
-            .id-card-wrapper.no-gap {
-              gap: 0mm !important;
             }
             .id-card {
               width: 54mm !important;
               height: 85.6mm !important;
-              box-shadow: none !important;
-              border: 1px solid #94a3b8 !important;
-              border-radius: 3.5mm !important;
+              page-break-after: always !important;
+              break-after: page !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
+              box-shadow: none !important;
+              border: 1px solid #cbd5e1 !important;
+              border-radius: 3.5mm !important;
               margin: 0 !important;
-            }
-            .id-card-wrapper.no-gap .id-card:first-child {
-              border-top-right-radius: 0 !important;
-              border-bottom-right-radius: 0 !important;
-              border-right: 1px dashed #475569 !important;
-            }
-            .id-card-wrapper.no-gap .id-card:last-child {
-              border-top-left-radius: 0 !important;
-              border-bottom-left-radius: 0 !important;
-              border-left: none !important;
+              padding: 0 !important;
+              overflow: hidden !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
             }
           }
         `}</style>

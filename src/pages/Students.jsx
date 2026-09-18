@@ -53,6 +53,7 @@ export default function Students() {
     queryKey: ["students", effectiveLembaga, selectedKelas],
     queryFn: () => studentService.getAll({ 
       lembaga: effectiveLembaga,
+      per_page: 500,
       ...(selectedKelas && { kelas: selectedKelas })
     }),
     enabled: !isLembagaLoading,

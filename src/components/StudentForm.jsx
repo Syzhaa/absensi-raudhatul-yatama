@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useKelasFormat } from "../hooks/useKelasFormat";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import { filterKelasByLembaga, sortKelasList } from "../utils/kelasHelper";
+import { compressImage } from "../utils/imageCompressor";
 import Modal from "./Modal";
 import { getPhotoUrl } from "../services/api";
 import { useAppStore } from "../store/useAppStore";
@@ -45,15 +46,21 @@ export default function StudentForm({
     }
   }, [isOpen, editingStudent]);
 
-  const handlePhotoChange = (e) => {
+  const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2048 * 1024) {
-        alert("Ukuran foto maksimal 2MB");
+      if (file.size > 10 * 1024 * 1024) {
+        alert("Ukuran foto maksimal 10MB");
         return;
       }
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
+      try {
+        const compressed = await compressImage(file, 600, 0.8);
+        setPhotoFile(compressed);
+        setPhotoPreview(URL.createObjectURL(compressed));
+      } catch (err) {
+        setPhotoFile(file);
+        setPhotoPreview(URL.createObjectURL(file));
+      }
     }
   };
 
