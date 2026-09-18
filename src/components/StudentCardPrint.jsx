@@ -12,9 +12,9 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   const [downloadProgress, setDownloadProgress] = useState("");
   const [zoom, setZoom] = useState(() => {
     if (typeof window !== "undefined") {
-      return window.innerWidth >= 1024 ? 1.4 : (window.innerWidth >= 640 ? 1.15 : 0.95);
+      return window.innerWidth >= 1024 ? 1.05 : (window.innerWidth >= 640 ? 1.0 : 0.9);
     }
-    return 1.35;
+    return 1.0;
   });
   const [noGap, setNoGap] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -353,6 +353,34 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
 
         {/* Action Toolbar */}
         <div className="flex items-center gap-2 justify-end flex-wrap">
+          {/* Zoom Controls */}
+          <div className="hidden sm:flex items-center bg-gray-100 border border-gray-300 rounded-xl px-2 py-1 gap-1 text-xs">
+            <button
+              onClick={() => setZoom((z) => Math.max(0.6, Math.round((z - 0.1) * 10) / 10))}
+              className="p-1 hover:bg-gray-200 rounded text-gray-700 font-bold cursor-pointer"
+              title="Perkecil"
+            >
+              -
+            </button>
+            <span className="font-mono text-[11px] font-bold px-1 min-w-[36px] text-center">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              onClick={() => setZoom((z) => Math.min(1.8, Math.round((z + 0.1) * 10) / 10))}
+              className="p-1 hover:bg-gray-200 rounded text-gray-700 font-bold cursor-pointer"
+              title="Perbesar"
+            >
+              +
+            </button>
+            <button
+              onClick={() => setZoom(1.0)}
+              className="ml-1 text-[10px] text-blue-600 hover:underline cursor-pointer font-bold"
+              title="Reset Zoom ke 100%"
+            >
+              100%
+            </button>
+          </div>
+
           {/* Download PNG / ZIP */}
           <button
             onClick={handleDownloadPNG}
@@ -408,8 +436,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         </div>
       )}
 
-      {/* Main Preview Container */}
-      <div className="flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6 bg-slate-200/90 flex flex-col items-center justify-center min-h-0">
+      {/* Main Preview Container - Use justify-start with scroll padding so top header is never clipped */}
+      <div className="flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6 md:p-8 bg-slate-200/90 flex flex-col items-center justify-start min-h-0">
         <style id="id-card-styles">{`
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
@@ -770,7 +798,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
 
         <div
           ref={cardRef}
-          className="flex flex-wrap justify-center items-center gap-6 sm:gap-8 my-auto p-2 sm:p-4"
+          className="flex flex-wrap justify-center items-start gap-6 sm:gap-8 p-4 pt-6 pb-24 w-full max-w-full"
           style={{
             zoom: zoom,
           }}
