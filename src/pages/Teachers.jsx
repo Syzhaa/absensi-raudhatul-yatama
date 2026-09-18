@@ -61,6 +61,7 @@ export default function Teachers() {
     lembaga: "MA",
     nama: "",
     nip: "",
+    nomor_hp: "",
     mata_pelajaran: "",
   });
 
@@ -192,6 +193,7 @@ export default function Teachers() {
       lembaga: effectiveLembaga || "MA",
       nama: "",
       nip: "",
+      nomor_hp: "",
       mata_pelajaran: "",
     });
   };
@@ -202,6 +204,7 @@ export default function Teachers() {
       lembaga: teacher.lembaga || effectiveLembaga || "MA",
       nama: teacher.nama || "",
       nip: teacher.nip || "",
+      nomor_hp: teacher.nomor_hp || "",
       mata_pelajaran: teacher.mata_pelajaran || "",
     });
     setShowForm(true);
@@ -225,6 +228,7 @@ export default function Teachers() {
         lembaga: formattedLembaga,
         nama: (formData.nama || "").trim(),
         nip: (formData.nip || "").trim() || null,
+        nomor_hp: (formData.nomor_hp || "").trim() || null,
         mata_pelajaran: formData.mata_pelajaran || "",
       };
 

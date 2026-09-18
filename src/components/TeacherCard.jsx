@@ -85,6 +85,13 @@ export default function TeacherCard({
                   NPK: {teacher.nip}
                 </span>
               )}
+
+              {teacher.nomor_hp && (
+                <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[13px]">call</span>
+                  {teacher.nomor_hp}
+                </span>
+              )}
             </div>
           </div>
         </div>

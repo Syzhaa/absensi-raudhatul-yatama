@@ -198,8 +198,8 @@ export default function TeacherForm({
         id="teacher-form"
         className="space-y-4"
       >
-        {/* Row 1: Nama & NPK Side-by-side */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        {/* Row 1: Data Identitas Guru (Nama, NPK & No. HP/WA) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
           {/* 1. Nama Guru */}
           <div>
             <label className={labelClass}>Nama Lengkap Guru *</label>
@@ -220,11 +220,19 @@ export default function TeacherForm({
               type="text"
               {...field("nip")}
               className={`${inputClass} font-mono`}
-              placeholder="Nomor NIP / NUPTK / NPK Guru"
+              placeholder="Nomor NIP / NPK Guru"
             />
-            <p className="text-[10px] text-gray-500 font-medium mt-1">
-              Nomor unik identitas guru untuk kartu dan presensi.
-            </p>
+          </div>
+
+          {/* 3. Nomor WhatsApp / HP Asli Guru */}
+          <div>
+            <label className={labelClass}>No. HP / WhatsApp Guru</label>
+            <input
+              type="tel"
+              {...field("nomor_hp")}
+              className={`${inputClass} font-mono`}
+              placeholder="Contoh: 08123456789"
+            />
           </div>
         </div>
 
