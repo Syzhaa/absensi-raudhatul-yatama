@@ -390,6 +390,10 @@ export default function ScanQR() {
     }
   };
 
+  const handleScanTypeChange = (type) => {
+    handleSwitchTab(type);
+  };
+
   const handleManualSubmit = (e) => {
     e.preventDefault();
     if (!manualFormData.teacher_id) {
