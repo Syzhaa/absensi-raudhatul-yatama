@@ -181,6 +181,16 @@ export default function Report() {
   const currentLembagaEmail = getLembagaEmail(currentInstitutionCode);
   const currentInstitutionAddress = getLembagaAddress(currentInstitutionCode);
 
+  const reportKelasOptions = useMemo(() => {
+    if (currentInstitutionCode === "MTS") {
+      return ["VII", "VIII", "IX"];
+    }
+    if (currentInstitutionCode === "MA") {
+      return ["X", "XI", "XII"];
+    }
+    return ["VII", "VIII", "IX", "X", "XI", "XII"];
+  }, [currentInstitutionCode]);
+
   const baseParams = useMemo(() => ({
     date_from: dateFrom,
     date_to: dateTo,
@@ -1050,12 +1060,11 @@ export default function Report() {
                 className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-900 focus:bg-white rounded-xl font-bold text-xs text-gray-900 focus:outline-hidden cursor-pointer"
               >
                 <option value="">Semua Kelas</option>
-                <option value="X">Kelas X</option>
-                <option value="XI">Kelas XI</option>
-                <option value="XII">Kelas XII</option>
-                <option value="VII">Kelas VII</option>
-                <option value="VIII">Kelas VIII</option>
-                <option value="IX">Kelas IX</option>
+                {reportKelasOptions.map((k) => (
+                  <option key={k} value={k}>
+                    Kelas {formatKelas(k)}
+                  </option>
+                ))}
               </select>
             </div>
           )}
@@ -1066,7 +1075,11 @@ export default function Report() {
               <label className="text-[11px] font-black text-gray-700 uppercase">Lembaga</label>
               <select
                 value={lembagaFilter}
-                onChange={(e) => { setLembagaFilter(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setLembagaFilter(e.target.value);
+                  setKelasFilterLocal("");
+                  setPage(1);
+                }}
                 className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-900 focus:bg-white rounded-xl font-bold text-xs text-gray-900 focus:outline-hidden cursor-pointer"
               >
                 <option value="">Semua Lembaga</option>

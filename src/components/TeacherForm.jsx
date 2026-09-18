@@ -54,10 +54,16 @@ export default function TeacherForm({
   // Determine available classes based on teacher lembaga
   const targetLembaga = (formData.lembaga || "MA").toLowerCase();
   const availableKelasList = useMemo(() => {
+    let list = [];
     if (kelasData?.data && Array.isArray(kelasData.data) && kelasData.data.length > 0) {
-      return kelasData.data.map((k) => k.nama || k.tingkat);
+      list = kelasData.data
+        .filter((k) => !k.lembaga || k.lembaga.toLowerCase() === targetLembaga)
+        .map((k) => k.nama || k.tingkat);
     }
-    return targetLembaga === "mts" ? ["VII", "VIII", "IX"] : ["X", "XI", "XII"];
+    if (list.length === 0) {
+      list = targetLembaga === "mts" ? ["VII", "VIII", "IX"] : ["X", "XI", "XII"];
+    }
+    return [...new Set(list)];
   }, [kelasData, targetLembaga]);
 
   // Map of taken subjects per class by other teachers: { "Kelas:Mapel": "Nama Guru" }

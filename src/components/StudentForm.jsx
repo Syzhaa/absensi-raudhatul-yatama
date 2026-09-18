@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useKelasFormat } from "../hooks/useKelasFormat";
+import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 import Modal from "./Modal";
 import { getPhotoUrl } from "../services/api";
 import { useAppStore } from "../store/useAppStore";
@@ -18,6 +19,24 @@ export default function StudentForm({
   const [photoPreview, setPhotoPreview] = useState(editingStudent?.foto || null);
   const userRole = useAppStore((state) => state.userRole);
   const { formatKelas } = useKelasFormat();
+  const { effectiveLembaga } = useEffectiveLembaga();
+  const targetLembaga = (formData.lembaga || effectiveLembaga || "ma").toLowerCase();
+
+  const optionsKelas = useMemo(() => {
+    let list = [];
+    if (kelasData?.data && Array.isArray(kelasData.data) && kelasData.data.length > 0) {
+      list = kelasData.data
+        .filter((k) => !k.lembaga || k.lembaga.toLowerCase() === targetLembaga)
+        .map((k) => k.nama || k.tingkat);
+    }
+    if (list.length === 0) {
+      list = targetLembaga === "mts" ? ["VII", "VIII", "IX"] : ["X", "XI", "XII"];
+    }
+    if (formData.kelas && !list.includes(formData.kelas)) {
+      list = [formData.kelas, ...list];
+    }
+    return [...new Set(list)];
+  }, [kelasData, targetLembaga, formData.kelas]);
 
   useEffect(() => {
     if (isOpen) {
@@ -214,12 +233,12 @@ export default function StudentForm({
         </div>
 
         <div>
-          <label className={labelClass}>Kelas</label>
-          <select {...field("kelas")} className={selectClass}>
+          <label className={labelClass}>Kelas *</label>
+          <select {...field("kelas")} className={selectClass} required>
             <option value="">-- Pilih Kelas --</option>
-            {kelasData?.data?.map((kelas) => (
-              <option key={kelas.id} value={kelas.nama}>
-                {formatKelas(kelas.nama)}
+            {optionsKelas.map((namaKelas) => (
+              <option key={namaKelas} value={namaKelas}>
+                Kelas {formatKelas(namaKelas)}
               </option>
             ))}
           </select>

@@ -38,11 +38,18 @@ function HeaderSelectors() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const rawKelasList = [...new Set(
-    (userRole === 'guru' ? studentData?.data?.data || [] : studentData?.data || [])
-      .map(s => s.kelas)
-      .filter(Boolean)
-  )];
+  const baseClasses = useMemo(() => {
+    const lem = effectiveLembaga ? String(effectiveLembaga).toLowerCase() : null;
+    if (lem === 'mts') return ['VII', 'VIII', 'IX'];
+    if (lem === 'ma') return ['X', 'XI', 'XII'];
+    return ['VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+  }, [effectiveLembaga]);
+
+  const studentClasses = (userRole === 'guru' ? studentData?.data?.data || [] : studentData?.data || [])
+    .map(s => s.kelas)
+    .filter(Boolean);
+
+  const rawKelasList = [...new Set([...baseClasses, ...studentClasses])];
   const kelasList = sortKelasList(rawKelasList);
 
   const isSuperAdmin = userData?.data?.role === 'super_admin';

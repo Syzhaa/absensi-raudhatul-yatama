@@ -1,4 +1,6 @@
+import { useMemo } from "react";
 import { useKelasFormat } from "../hooks/useKelasFormat";
+import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
 
 export default function PromoteClassModal({
   selectedCount,
@@ -10,6 +12,21 @@ export default function PromoteClassModal({
   isPending,
 }) {
   const { formatKelas } = useKelasFormat();
+  const { effectiveLembaga } = useEffectiveLembaga();
+  const targetLembaga = (effectiveLembaga || "ma").toLowerCase();
+
+  const optionsKelas = useMemo(() => {
+    let list = [];
+    if (kelasData?.data && Array.isArray(kelasData.data) && kelasData.data.length > 0) {
+      list = kelasData.data
+        .filter((k) => !k.lembaga || k.lembaga.toLowerCase() === targetLembaga)
+        .map((k) => k.nama || k.tingkat);
+    }
+    if (list.length === 0) {
+      list = targetLembaga === "mts" ? ["VII", "VIII", "IX"] : ["X", "XI", "XII"];
+    }
+    return [...new Set(list)];
+  }, [kelasData, targetLembaga]);
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div
@@ -49,9 +66,9 @@ export default function PromoteClassModal({
             required
           >
             <option value="">-- Pilih Kelas Tujuan --</option>
-            {kelasData?.data?.map((kelas) => (
-              <option key={kelas.id} value={kelas.nama}>
-                {formatKelas(kelas.nama)}
+            {optionsKelas.map((namaKelas) => (
+              <option key={namaKelas} value={namaKelas}>
+                Kelas {formatKelas(namaKelas)}
               </option>
             ))}
           </select>
