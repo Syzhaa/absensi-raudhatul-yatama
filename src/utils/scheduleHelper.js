@@ -1,46 +1,8 @@
 /**
- * Schedule Helper - Jadwal Mengajar Dewan Guru MA Raudhatul Yatama
- * Berdasarkan Surat Keputusan Pembagian Tugas Mengajar Semester Ganjil 2026/2027
+ * Schedule Helper - Integrasi Dinamis Jadwal Mengajar Dewan Guru dari Backend API
+ * Seluruh data jadwal, hari, dan penugasan diekstrak dinamis dari response /api/v1/jadwal-pelajaran
+ * Tidak ada daftar guru / hari yang di-hardcode.
  */
-
-export const TEACHER_SCHEDULE_MA = {
-  SENIN: [
-    "Badt'urrijal, S. Ag",
-    "Haini Zumaida, S. Pd",
-    "Karimah, S. Pd",
-    "Tania, S. Ak",
-  ],
-  SELASA: [
-    "Milawati, S. Pd",
-    "Rima Melati, S. Pd",
-    "Sugiannor, S. Pd",
-    "Tania, S. Ak",
-  ],
-  RABU: [
-    "Milawati, S. Pd",
-    "Nor Aida, S. Pd",
-    "Rima Melati, S. Pd",
-    "Sugiannor, S. Pd",
-    "Tania, S. Ak",
-  ],
-  KAMIS: [
-    "Badt'urrijal, S. Ag",
-    "Haini Zumaida, S. Pd",
-    "Karimah, S. Pd",
-  ],
-  JUMAT: [
-    "Karimah, S. Pd",
-    "Sity Kholifah, S. Pd",
-    "Tania, S. Ak",
-  ],
-  SABTU: [
-    "Ahmad Mujahid, S. Pd",
-    "Rahmi Nike Rosahin, M. Pd",
-    "Rahmi Nike R, M. Pd",
-    "Tati Hartati, S. Ag",
-  ],
-  MINGGU: [],
-};
 
 const DAY_NAMES_ID = [
   "MINGGU", // 0
@@ -84,14 +46,56 @@ export function normalizeTeacherName(name) {
 }
 
 /**
- * Cek apakah seorang guru memiliki jadwal mengajar pada tanggal / hari tertentu
+ * Ekstrak daftar nama guru terjadwal dari struktur data API backend (scheduleData)
+ * Menggabungkan guru dari schedule_by_day dan teacher_workloads secara dinamis.
  */
-export function isTeacherScheduledOnDate(teacher, dateInput, lembaga = "ma") {
+export function getScheduledTeacherNamesForDay(dayName, scheduleData) {
+  if (!scheduleData || !dayName || dayName === "MINGGU") return [];
+
+  const teachers = new Set();
+  const dayUpper = dayName.toUpperCase();
+  const dayLower = dayUpper === "JUMAT" ? "jum" : dayUpper.toLowerCase();
+
+  // 1. Ekstrak dari schedule_by_day
+  const daySlots = scheduleData.schedule_by_day?.[dayUpper] || {};
+  Object.values(daySlots).forEach((classes) => {
+    if (typeof classes === "object" && classes !== null) {
+      Object.values(classes).forEach((detail) => {
+        const g = detail?.guru;
+        if (g && g !== "-") {
+          teachers.add(g);
+        }
+      });
+    }
+  });
+
+  // 2. Ekstrak dari teacher_workloads
+  const workloads = scheduleData.teacher_workloads || [];
+  workloads.forEach((tw) => {
+    const h = (tw.hari || "").toLowerCase();
+    if (h.includes(dayLower) && tw.nama) {
+      teachers.add(tw.nama);
+    }
+  });
+
+  return Array.from(teachers);
+}
+
+/**
+ * Cek apakah seorang guru memiliki jadwal mengajar pada tanggal / hari tertentu
+ * Berdasarkan data jadwal dinamis yang diterima dari backend.
+ */
+export function isTeacherScheduledOnDate(teacher, dateInput, scheduleData, lembaga = "ma") {
   if (!teacher) return false;
 
   const tLembaga = (teacher.lembaga || lembaga || "").toLowerCase();
-  // Khusus MTs: jika belum memiliki mapping jadwal per hari, tampilkan semua guru MTs
+  // Khusus MTs: sementara belum ada jadwal spesifik per hari, izinkan semua guru MTs
   if (tLembaga === "mts") {
+    return true;
+  }
+
+  // Jika scheduleData belum selesai dimuat dari BE, jangan blokir guru
+  if (!scheduleData) {
     return true;
   }
 
@@ -100,7 +104,11 @@ export function isTeacherScheduledOnDate(teacher, dateInput, lembaga = "ma") {
     return false;
   }
 
-  const scheduledNames = TEACHER_SCHEDULE_MA[dayName] || [];
+  const scheduledNames = getScheduledTeacherNamesForDay(dayName, scheduleData);
+  if (!scheduledNames || scheduledNames.length === 0) {
+    return false;
+  }
+
   const teacherName = teacher.nama || (typeof teacher === "string" ? teacher : "");
   const normTarget = normalizeTeacherName(teacherName);
 
@@ -117,39 +125,24 @@ export function isTeacherScheduledOnDate(teacher, dateInput, lembaga = "ma") {
 }
 
 /**
- * Ambil daftar hari di mana guru ini memiliki jadwal
+ * Ambil teks ringkasan hari jadwal mengajar langsung dari teacher_workloads backend
+ * Contoh: "Senin & Kamis", "Sabtu", dll.
  */
-export function getTeacherScheduledDays(teacher) {
-  if (!teacher) return [];
+export function getTeacherScheduleSummary(teacher, scheduleData) {
+  if (!teacher || !scheduleData?.teacher_workloads) return null;
   const teacherName = teacher.nama || (typeof teacher === "string" ? teacher : "");
-  const days = ["SENIN", "SELASA", "RABU", "KAMIS", "JUMAT", "SABTU"];
-  return days.filter((day) => {
-    const scheduledNames = TEACHER_SCHEDULE_MA[day] || [];
-    const normTarget = normalizeTeacherName(teacherName);
-    return scheduledNames.some((schedName) => {
-      const normSched = normalizeTeacherName(schedName);
-      return (
-        normTarget.includes(normSched) ||
-        normSched.includes(normTarget) ||
-        (normTarget.startsWith("rahminike") && normSched.startsWith("rahminike")) ||
-        (normTarget.startsWith("badturrijal") && normSched.startsWith("badturrijal")) ||
-        (normTarget.startsWith("sitykholifah") && normSched.startsWith("sitykholifah"))
-      );
-    });
-  });
-}
+  const normTarget = normalizeTeacherName(teacherName);
 
-/**
- * Ambil teks ringkasan hari jadwal mengajar (contoh: "Senin & Kamis")
- */
-export function getTeacherScheduleSummary(teacher) {
-  const days = getTeacherScheduledDays(teacher);
-  if (!days || days.length === 0) return null;
-  const formatted = days.map((d) => {
-    if (d === "JUMAT") return "Jum'at";
-    return d.charAt(0) + d.slice(1).toLowerCase();
+  const matched = scheduleData.teacher_workloads.find((tw) => {
+    const normTw = normalizeTeacherName(tw.nama || "");
+    return (
+      normTarget.includes(normTw) ||
+      normTw.includes(normTarget) ||
+      (normTarget.startsWith("rahminike") && normTw.startsWith("rahminike")) ||
+      (normTarget.startsWith("badturrijal") && normTw.startsWith("badturrijal")) ||
+      (normTarget.startsWith("sitykholifah") && normTw.startsWith("sitykholifah"))
+    );
   });
-  if (formatted.length === 1) return formatted[0];
-  if (formatted.length === 2) return `${formatted[0]} & ${formatted[1]}`;
-  return formatted.join(", ");
+
+  return matched?.hari || null;
 }

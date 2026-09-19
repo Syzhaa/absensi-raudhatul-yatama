@@ -154,6 +154,21 @@ export default function Attendance() {
     enabled: !isLembagaLoading,
   });
 
+  // 6. Fetch Academic Schedule dynamically from Backend API (/jadwal-pelajaran)
+  const { data: scheduleData } = useQuery({
+    queryKey: ["academic_schedule"],
+    queryFn: async () => {
+      try {
+        const res = await api.get("/jadwal-pelajaran");
+        return res.data?.data || null;
+      } catch (err) {
+        console.warn("Jadwal pelajaran fetch warning:", err);
+        return null;
+      }
+    },
+    staleTime: 1000 * 60 * 15,
+  });
+
   const activeHoliday = useMemo(() => {
     const list = Array.isArray(holidaysData) ? holidaysData : [];
 
@@ -241,10 +256,11 @@ export default function Attendance() {
         // 1. Jika guru sudah memiliki catatan/log presensi pada tanggal ini, SELALU sertakan
         if (teacherLogMap.has(teacher.id)) return true;
 
-        // 2. Hanya sertakan jika guru memiliki jadwal mengajar pada tanggal ini
+        // 2. Hanya sertakan jika guru memiliki jadwal mengajar pada tanggal ini (dinamis dari BE)
         return isTeacherScheduledOnDate(
           teacher,
           selectedDate,
+          scheduleData,
           teacher.lembaga || effectiveLembaga
         );
       })
@@ -261,7 +277,7 @@ export default function Attendance() {
           }
         }
 
-        const scheduleSummary = getTeacherScheduleSummary(teacher);
+        const scheduleSummary = getTeacherScheduleSummary(teacher, scheduleData);
 
         return {
           id: `teacher-${teacher.id}`,
@@ -280,13 +296,23 @@ export default function Attendance() {
           isScheduledToday: isTeacherScheduledOnDate(
             teacher,
             selectedDate,
+            scheduleData,
             teacher.lembaga || effectiveLembaga
           ),
         };
       });
 
     return [...studentRoster, ...teacherRoster];
-  }, [masterStudents, masterTeachers, studentLogs, teacherLogs, effectiveLembaga, activeHoliday, selectedDate]);
+  }, [
+    masterStudents,
+    masterTeachers,
+    studentLogs,
+    teacherLogs,
+    effectiveLembaga,
+    activeHoliday,
+    selectedDate,
+    scheduleData,
+  ]);
 
   // Counts for Stats & Filters
   const stats = useMemo(() => {
