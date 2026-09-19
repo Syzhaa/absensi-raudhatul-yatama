@@ -156,10 +156,12 @@ export default function Attendance() {
 
   // 6. Fetch Academic Schedule dynamically from Backend API (/jadwal-pelajaran)
   const { data: scheduleData } = useQuery({
-    queryKey: ["academic_schedule"],
+    queryKey: ["academic_schedule", effectiveLembaga],
     queryFn: async () => {
       try {
-        const res = await api.get("/jadwal-pelajaran");
+        const res = await api.get("/jadwal-pelajaran", {
+          params: { lembaga: effectiveLembaga || "ma" },
+        });
         return res.data?.data || null;
       } catch (err) {
         console.warn("Jadwal pelajaran fetch warning:", err);
