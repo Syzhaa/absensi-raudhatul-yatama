@@ -14,6 +14,10 @@ import { getKelasNumericVal, sortKelasList } from "../utils/kelasHelper";
 import { useKelasFormat } from "../hooks/useKelasFormat";
 import { useAttendanceSettings } from "../hooks/useAttendanceSettings";
 import { format } from "date-fns";
+import {
+  isTeacherScheduledOnDate,
+  getTeacherScheduleSummary,
+} from "../utils/scheduleHelper";
 
 export default function Attendance() {
   const [selectedDate, setSelectedDate] = useState(
@@ -231,38 +235,58 @@ export default function Attendance() {
       };
     });
 
-    // Build complete Teacher items
-    const teacherRoster = (masterTeachers || []).map((teacher) => {
-      const log = teacherLogMap.get(teacher.id);
-      let status = log ? log.status : "belum_absen";
-      let notes = log ? log.notes : null;
+    // Build complete Teacher items (Filter: only scheduled on selectedDate OR already attended)
+    const teacherRoster = (masterTeachers || [])
+      .filter((teacher) => {
+        // 1. Jika guru sudah memiliki catatan/log presensi pada tanggal ini, SELALU sertakan
+        if (teacherLogMap.has(teacher.id)) return true;
 
-      // If this date is an active holiday and teacher has no check_in or is alpha/belum_absen
-      if (activeHoliday && (activeHoliday.applies_to === "all" || activeHoliday.applies_to === "teachers")) {
-        if (!log || status === "alpha" || status === "belum_absen") {
-          status = "libur";
-          notes = `Libur: ${activeHoliday.name}`;
+        // 2. Hanya sertakan jika guru memiliki jadwal mengajar pada tanggal ini
+        return isTeacherScheduledOnDate(
+          teacher,
+          selectedDate,
+          teacher.lembaga || effectiveLembaga
+        );
+      })
+      .map((teacher) => {
+        const log = teacherLogMap.get(teacher.id);
+        let status = log ? log.status : "belum_absen";
+        let notes = log ? log.notes : null;
+
+        // If this date is an active holiday and teacher has no check_in or is alpha/belum_absen
+        if (activeHoliday && (activeHoliday.applies_to === "all" || activeHoliday.applies_to === "teachers")) {
+          if (!log || status === "alpha" || status === "belum_absen") {
+            status = "libur";
+            notes = `Libur: ${activeHoliday.name}`;
+          }
         }
-      }
 
-      return {
-        id: `teacher-${teacher.id}`,
-        teacher_id: teacher.id,
-        role: "teacher",
-        teacher: teacher,
-        lembaga: teacher.lembaga || effectiveLembaga,
-        status: status,
-        check_in: log ? log.check_in : null,
-        check_out: log ? log.check_out : null,
-        attendance_id: log ? log.id : null,
-        created_at: log ? log.created_at : null,
-        has_attended: !!log || status === "libur",
-        notes: notes,
-      };
-    });
+        const scheduleSummary = getTeacherScheduleSummary(teacher);
+
+        return {
+          id: `teacher-${teacher.id}`,
+          teacher_id: teacher.id,
+          role: "teacher",
+          teacher: teacher,
+          lembaga: teacher.lembaga || effectiveLembaga,
+          status: status,
+          check_in: log ? log.check_in : null,
+          check_out: log ? log.check_out : null,
+          attendance_id: log ? log.id : null,
+          created_at: log ? log.created_at : null,
+          has_attended: !!log || status === "libur",
+          notes: notes,
+          scheduleSummary: scheduleSummary,
+          isScheduledToday: isTeacherScheduledOnDate(
+            teacher,
+            selectedDate,
+            teacher.lembaga || effectiveLembaga
+          ),
+        };
+      });
 
     return [...studentRoster, ...teacherRoster];
-  }, [masterStudents, masterTeachers, studentLogs, teacherLogs, effectiveLembaga, activeHoliday]);
+  }, [masterStudents, masterTeachers, studentLogs, teacherLogs, effectiveLembaga, activeHoliday, selectedDate]);
 
   // Counts for Stats & Filters
   const stats = useMemo(() => {

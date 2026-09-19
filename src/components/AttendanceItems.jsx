@@ -12,7 +12,9 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
 
   const subtitle = isStudent
     ? `Kelas ${formatKelas(person?.kelas) || "-"} • NISN: ${person?.nisn || "-"}`
-    : `${person?.nip ? "NIP/NUPTK/NPK: " + person.nip : "Guru / Staf"}`;
+    : `${person?.nip ? "NIP/NUPTK/NPK: " + person.nip : "Dewan Guru"}${
+        item.scheduleSummary ? ` • Jadwal: ${item.scheduleSummary}` : ""
+      }`;
 
   const lembagaName = (item.lembaga || person?.lembaga || "MA").toUpperCase();
 
@@ -38,6 +40,11 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
             <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-gray-100 text-gray-700 border border-gray-300">
               {lembagaName}
             </span>
+            {item.role === "teacher" && item.isScheduledToday && (
+              <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">
+                Jadwal Hari Ini
+              </span>
+            )}
           </div>
           <p className="text-xs text-gray-500 font-medium">{subtitle}</p>
         </div>
