@@ -75,7 +75,7 @@ function HeaderSelectors() {
             setSuperAdminLembaga(e.target.value);
             setSelectedKelas(null);
           }}
-          className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-1 border-2 border-gray-900 rounded-lg bg-primary-green focus:outline-none cursor-pointer shadow-sm w-fit"
+          className="text-[10px] sm:text-xs font-bold px-2 py-1.5 border-2 border-gray-900 rounded-xl bg-primary-green focus:outline-none cursor-pointer shadow-xs w-fit"
         >
           <option value="">Semua Lembaga</option>
           <option value="MA">MA</option>
@@ -86,7 +86,7 @@ function HeaderSelectors() {
       <select
         value={selectedKelas || ''}
         onChange={(e) => setSelectedKelas(e.target.value || null)}
-        className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-1 border-2 border-gray-200 rounded-lg bg-gray-50 focus:border-primary-green focus:outline-none cursor-pointer shadow-sm w-fit"
+        className="text-[10px] sm:text-xs font-bold px-2.5 py-1.5 border-2 border-gray-900 rounded-xl bg-gray-50 focus:border-gray-900 focus:outline-none cursor-pointer shadow-xs w-fit"
       >
         <option value="">Semua Kelas</option>
         {kelasList.map((kls) => (
@@ -230,13 +230,15 @@ export default function Layout({ children }) {
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <button 
                 onClick={() => setIsSidebarOpen(true)}
-                className="flex portrait:!hidden md:!hidden p-1.5 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center flex-shrink-0"
+                className="flex portrait:!hidden md:!hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center flex-shrink-0 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
+                title="Buka Menu"
               >
                 <span className="material-symbols-outlined text-lg">menu</span>
               </button>
               <button 
                 onClick={() => setIsDesktopSidebarOpen(!isDesktopSidebarOpen)}
-                className="hidden md:flex p-1.5 rounded-lg border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center flex-shrink-0"
+                className="hidden md:flex w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center flex-shrink-0 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
+                title={isDesktopSidebarOpen ? "Sembunyikan Sidebar" : "Tampilkan Sidebar"}
               >
                 <span className="material-symbols-outlined text-lg">{isDesktopSidebarOpen ? 'menu_open' : 'menu'}</span>
               </button>
@@ -246,17 +248,17 @@ export default function Layout({ children }) {
             </div>
             
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              <Link to="/profile" className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 border-gray-900 flex items-center justify-center bg-blue-100 text-blue-900 hover:bg-blue-200 transition-colors shadow-sm" title="Profil">
+              <Link to="/profile" className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 border-gray-900 flex items-center justify-center bg-blue-100 text-blue-900 hover:bg-blue-200 transition-all shadow-xs active:translate-y-0.5 cursor-pointer" title="Profil">
                 <span className="material-symbols-outlined text-base sm:text-lg">person</span>
               </Link>
               {canAccessPath(userRole, '/settings', userPermissions) && (
-                <Link to="/settings" className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 border-gray-900 flex items-center justify-center bg-gray-100 text-gray-900 hover:bg-gray-200 transition-colors shadow-sm" title="Pengaturan">
+                <Link to="/settings" className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 border-gray-900 flex items-center justify-center bg-amber-100 text-amber-950 hover:bg-amber-200 transition-all shadow-xs active:translate-y-0.5 cursor-pointer" title="Pengaturan">
                   <span className="material-symbols-outlined text-base sm:text-lg">settings</span>
                 </Link>
               )}
               <button 
                 onClick={() => setIsLogoutModalOpen(true)} 
-                className="w-7 h-7 sm:w-9 sm:h-9 rounded-full border-2 border-red-500 flex items-center justify-center bg-red-50 text-red-600 hover:bg-red-100 transition-colors shadow-sm"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 border-gray-900 flex items-center justify-center bg-rose-100 text-rose-800 hover:bg-rose-200 transition-all shadow-xs active:translate-y-0.5 cursor-pointer"
                 title="Keluar"
               >
                 <span className="material-symbols-outlined text-base sm:text-lg">logout</span>

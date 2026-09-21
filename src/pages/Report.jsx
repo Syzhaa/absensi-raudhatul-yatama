@@ -870,7 +870,7 @@ export default function Report() {
           <button
             onClick={exportExcel}
             disabled={isExporting}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-2xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
             title="Download Excel: Sheet Depan Ringkasan + Sheet Lain per Tanggal"
           >
             {isExporting ? (
@@ -885,7 +885,7 @@ export default function Report() {
           <button
             onClick={() => exportPdf("ringkasan")}
             disabled={isExporting}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-2xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
             title={isSingleDay ? "Download PDF Laporan Harian" : "Download PDF Ringkasan Angka Rekapitulasi"}
           >
             <span className="material-symbols-outlined text-base">picture_as_pdf</span>
@@ -897,7 +897,7 @@ export default function Report() {
             <button
               onClick={() => exportPdf("gabungan")}
               disabled={isExporting}
-              className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-2xl shadow-sm hover:shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
               title="Download 1 File PDF Gabungan (Ringkasan + Semua Halaman Tanggal)"
             >
               <span className="material-symbols-outlined text-base">layers</span>

@@ -523,14 +523,14 @@ export default function Attendance() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-gray-100">
           {/* Role Tabs - Hanya tampil jika absensi guru diaktifkan */}
           {enableTeacherAttendance && (
-            <div className="inline-flex p-1 bg-gray-100 border border-gray-300 rounded-xl gap-1 w-full sm:w-auto">
+            <div className="inline-flex p-1 bg-gray-100 border-2 border-gray-900 rounded-xl gap-1 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setRoleFilter("all")}
-                className={`flex-1 sm:flex-initial py-1 px-3 rounded-lg text-xs font-black transition-all ${
+                className={`flex-1 sm:flex-initial py-1.5 px-3.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                   roleFilter === "all"
-                    ? "bg-primary-green text-gray-900 shadow-sm border border-gray-900"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-primary-green text-gray-900 shadow-xs border-2 border-gray-900"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
                 }`}
               >
                 Semua
@@ -538,10 +538,10 @@ export default function Attendance() {
               <button
                 type="button"
                 onClick={() => setRoleFilter("student")}
-                className={`flex-1 sm:flex-initial py-1 px-3 rounded-lg text-xs font-black transition-all ${
+                className={`flex-1 sm:flex-initial py-1.5 px-3.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                   roleFilter === "student"
-                    ? "bg-primary-green text-gray-900 shadow-sm border border-gray-900"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-primary-green text-gray-900 shadow-xs border-2 border-gray-900"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
                 }`}
               >
                 Siswa
@@ -549,10 +549,10 @@ export default function Attendance() {
               <button
                 type="button"
                 onClick={() => setRoleFilter("teacher")}
-                className={`flex-1 sm:flex-initial py-1 px-3 rounded-lg text-xs font-black transition-all ${
+                className={`flex-1 sm:flex-initial py-1.5 px-3.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                   roleFilter === "teacher"
-                    ? "bg-primary-green text-gray-900 shadow-sm border border-gray-900"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-primary-green text-gray-900 shadow-xs border-2 border-gray-900"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
                 }`}
               >
                 Guru
@@ -794,7 +794,7 @@ export default function Attendance() {
                                       <button
                                         type="button"
                                         onClick={() => handleEditAttendance({ ...item, initialStatus: "izin" })}
-                                        className="px-1.5 py-0.5 bg-purple-100 hover:bg-purple-200 text-purple-950 text-[10px] font-black rounded border border-gray-900 shadow-xs cursor-pointer"
+                                        className="px-2 py-1 bg-purple-100 hover:bg-purple-200 text-purple-950 text-xs font-bold rounded-lg border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
                                         title="Pintasan Izin"
                                       >
                                         Izin
@@ -802,7 +802,7 @@ export default function Attendance() {
                                       <button
                                         type="button"
                                         onClick={() => handleEditAttendance({ ...item, initialStatus: "sakit" })}
-                                        className="px-1.5 py-0.5 bg-blue-100 hover:bg-blue-200 text-blue-950 text-[10px] font-black rounded border border-gray-900 shadow-xs cursor-pointer"
+                                        className="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-950 text-xs font-bold rounded-lg border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
                                         title="Pintasan Sakit"
                                       >
                                         Sakit
@@ -810,7 +810,7 @@ export default function Attendance() {
                                       <button
                                         type="button"
                                         onClick={() => handleEditAttendance({ ...item, initialStatus: "alpha" })}
-                                        className="px-1.5 py-0.5 bg-red-100 hover:bg-red-200 text-red-950 text-[10px] font-black rounded border border-gray-900 shadow-xs cursor-pointer"
+                                        className="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-950 text-xs font-bold rounded-lg border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
                                         title="Pintasan Alpha"
                                       >
                                         Alpha
@@ -820,7 +820,7 @@ export default function Attendance() {
                                     <button
                                       type="button"
                                       onClick={() => handleEditAttendance(item)}
-                                      className="px-2 py-1 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs font-black rounded border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer"
+                                      className="px-2.5 py-1 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer"
                                       title="Tandai Hadir"
                                     >
                                       <span className="material-symbols-outlined text-xs">check</span>
@@ -831,10 +831,10 @@ export default function Attendance() {
                                 <button
                                   type="button"
                                   onClick={() => handleEditAttendance(item)}
-                                  className="p-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded border border-gray-900 transition-colors cursor-pointer"
+                                  className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-100 hover:bg-gray-200 text-gray-800 border-2 border-gray-900 rounded-lg flex items-center justify-center shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
                                   title="Edit Presensi"
                                 >
-                                  <span className="material-symbols-outlined text-sm">edit_note</span>
+                                  <span className="material-symbols-outlined text-sm sm:text-base">edit_note</span>
                                 </button>
                               </div>
                             )}

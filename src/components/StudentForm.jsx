@@ -91,14 +91,14 @@ export default function StudentForm({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl border border-gray-300 transition-colors cursor-pointer"
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs sm:text-sm rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
           >
             Batal
           </button>
           <button
             type="button"
             onClick={() => onSubmit(photoFile)}
-            className="px-5 py-2 bg-primary-green hover:bg-lime-400 text-gray-900 font-black text-xs sm:text-sm rounded-xl border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+            className="px-5 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black text-xs sm:text-sm rounded-xl border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
             disabled={isPending}
           >
             <span className="material-symbols-outlined text-base">

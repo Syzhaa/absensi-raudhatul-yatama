@@ -284,7 +284,7 @@ export default function ExcelImportModal({
             type="button"
             onClick={handleClose}
             disabled={isLoading}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl border-2 border-gray-300 transition-colors"
+            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs sm:text-sm rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
           >
             Batal
           </button>
@@ -292,7 +292,7 @@ export default function ExcelImportModal({
             type="button"
             onClick={handleUploadSubmit}
             disabled={isLoading || parsedData.length === 0}
-            className="px-5 py-2 bg-primary-green hover:bg-emerald-400 disabled:opacity-40 text-gray-900 font-black text-xs rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 flex items-center gap-1.5"
+            className="px-5 py-2 bg-primary-green hover:bg-emerald-400 disabled:opacity-40 text-gray-900 font-black text-xs sm:text-sm rounded-xl border-2 border-gray-900 shadow-neo transition-all active:translate-y-0.5 flex items-center gap-1.5 cursor-pointer"
           >
             {isLoading ? (
               <>

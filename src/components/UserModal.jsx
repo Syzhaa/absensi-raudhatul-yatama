@@ -227,14 +227,14 @@ const UserModal = ({ isOpen, onClose, user, onSubmit, isSubmitting }) => {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 bg-gray-100 border-2 border-gray-300 rounded-xl font-black text-xs text-gray-700 hover:bg-gray-200 transition-all cursor-pointer"
+              className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 border-2 border-gray-900 rounded-xl font-bold text-xs sm:text-sm text-gray-800 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-2.5 bg-primary-green text-gray-900 font-black text-xs rounded-xl border-2 border-gray-900 shadow-neo hover:-translate-y-0.5 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+              className="flex-1 py-2.5 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black text-xs sm:text-sm rounded-xl border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? (
                 <span className="w-3.5 h-3.5 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></span>

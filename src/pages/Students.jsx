@@ -420,7 +420,7 @@ export default function Students() {
             <>
               <button
                 onClick={handleBatchPrintQR}
-                className="py-2 px-3 bg-white text-gray-900 font-bold border-2 border-gray-900 rounded-xl hover:bg-gray-100 flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
+                className="py-2 px-3.5 bg-white hover:bg-gray-100 text-gray-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer"
                 title="Cetak Kartu Massal"
               >
                 <span className="material-symbols-outlined text-base">print</span>
@@ -428,17 +428,17 @@ export default function Students() {
               </button>
               <button
                 onClick={handlePromoteClass}
-                className="py-2 px-3 bg-amber-100 text-amber-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo hover:bg-amber-200 flex items-center gap-1.5 text-xs"
+                className="py-2 px-3.5 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer"
               >
                 <span className="material-symbols-outlined text-base">school</span>
                 <span>Naik ({selectedStudents.length})</span>
               </button>
               <button
                 onClick={handleBatchDelete}
-                className="py-2 px-3 bg-red-100 hover:bg-red-200 text-red-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo flex items-center gap-1.5 text-xs transition-all cursor-pointer"
+                className="py-2 px-3.5 bg-rose-100 hover:bg-rose-200 text-rose-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer"
                 title="Hapus Banyak Siswa"
               >
-                <span className="material-symbols-outlined text-base text-red-600">delete</span>
+                <span className="material-symbols-outlined text-base text-rose-600">delete</span>
                 <span>Hapus ({selectedStudents.length})</span>
               </button>
             </>
@@ -447,10 +447,10 @@ export default function Students() {
           {/* Import Excel Button */}
           <button
             onClick={() => setShowImportModal(true)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0 cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm flex-shrink-0 cursor-pointer"
             title="Import Banyak Siswa dari Excel/CSV"
           >
-            <span className="material-symbols-outlined text-base text-emerald-600">upload_file</span>
+            <span className="material-symbols-outlined text-base text-emerald-700">upload_file</span>
             <span>Import Excel</span>
           </button>
 
@@ -460,9 +460,9 @@ export default function Students() {
               resetForm();
               setShowForm(true);
             }}
-            className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0"
+            className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm flex-shrink-0 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-base">add</span>
+            <span className="material-symbols-outlined text-base font-bold">add</span>
             <span>Tambah Data</span>
           </button>
         </div>
@@ -615,27 +615,27 @@ export default function Students() {
                             </span>
                           </td>
                           <td className="py-2.5 px-4 text-center">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1.5">
                               <button
                                 onClick={() => openCardModal([student])}
-                                className="p-1 hover:bg-blue-50 text-blue-700 rounded border border-gray-300 transition-colors"
-                                title="Cetak Kartu"
+                                className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-50 hover:bg-blue-100 text-blue-900 border-2 border-gray-900 rounded-lg flex items-center justify-center shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
+                                title="Cetak Kartu Siswa"
                               >
-                                <span className="material-symbols-outlined text-sm">badge</span>
+                                <span className="material-symbols-outlined text-sm sm:text-base">badge</span>
                               </button>
                               <button
                                 onClick={() => handleEdit(student)}
-                                className="p-1 hover:bg-amber-50 text-amber-700 rounded border border-gray-300 transition-colors"
-                                title="Edit"
+                                className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-50 hover:bg-amber-100 text-amber-900 border-2 border-gray-900 rounded-lg flex items-center justify-center shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
+                                title="Ubah Biodata Siswa"
                               >
-                                <span className="material-symbols-outlined text-sm">edit</span>
+                                <span className="material-symbols-outlined text-sm sm:text-base">edit</span>
                               </button>
                               <button
                                 onClick={() => handleDelete(student)}
-                                className="p-1 hover:bg-red-50 text-red-700 rounded border border-gray-300 transition-colors"
-                                title="Hapus"
+                                className="w-7 h-7 sm:w-8 sm:h-8 bg-rose-50 hover:bg-rose-100 text-rose-700 border-2 border-gray-900 rounded-lg flex items-center justify-center shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
+                                title="Hapus Data Siswa"
                               >
-                                <span className="material-symbols-outlined text-sm">delete</span>
+                                <span className="material-symbols-outlined text-sm sm:text-base">delete</span>
                               </button>
                             </div>
                           </td>
@@ -663,7 +663,7 @@ export default function Students() {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="bg-white border-2 border-gray-900 rounded-lg px-2 py-1 text-xs md:text-sm font-bold shadow-sm focus:outline-none"
+              className="bg-white border-2 border-gray-900 rounded-xl px-2.5 py-1 text-xs md:text-sm font-bold shadow-xs focus:outline-none cursor-pointer"
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -675,15 +675,15 @@ export default function Students() {
             </span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 bg-white border-2 border-gray-900 rounded-lg text-xs md:text-sm font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-3.5 py-1.5 bg-white border-2 border-gray-900 rounded-xl text-xs md:text-sm font-bold shadow-xs hover:bg-gray-100 active:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               Sebelumnya
             </button>
-            <span className="text-xs md:text-sm font-bold text-gray-700 px-2">
+            <span className="text-xs md:text-sm font-black text-gray-800 px-2">
               Halaman {currentPage} dari {totalPages || 1}
             </span>
             <button
@@ -691,7 +691,7 @@ export default function Students() {
                 setCurrentPage((p) => Math.min(totalPages, p + 1))
               }
               disabled={currentPage === totalPages || totalPages === 0}
-              className="px-3 py-1 bg-white border-2 border-gray-900 rounded-lg text-xs md:text-sm font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              className="px-3.5 py-1.5 bg-white border-2 border-gray-900 rounded-xl text-xs md:text-sm font-bold shadow-xs hover:bg-gray-100 active:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               Selanjutnya
             </button>

@@ -256,14 +256,14 @@ export default function Users() {
             placeholder="Cari nama atau email akun..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl text-xs sm:text-sm font-medium focus:outline-none transition-all"
+            className="w-full pl-9 pr-3 py-2 bg-gray-50 border-2 border-gray-900 focus:border-gray-900 focus:bg-white rounded-xl text-xs sm:text-sm font-medium focus:outline-none transition-all shadow-xs"
           />
         </div>
 
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="bg-gray-50 border-2 border-gray-300 focus:border-gray-900 rounded-xl py-1.5 px-3 font-bold text-xs text-gray-800 focus:outline-none cursor-pointer"
+          className="bg-gray-50 border-2 border-gray-900 focus:border-gray-900 rounded-xl py-2 px-3 font-bold text-xs sm:text-sm text-gray-800 focus:outline-none cursor-pointer shadow-xs"
         >
           <option value="all">Semua Role</option>
           {(userRole === "super_admin" || userLembaga === "ma") && (
@@ -493,7 +493,7 @@ export default function Users() {
                               : "-"}
                           </td>
                           <td className="py-2.5 px-4 text-center">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex items-center justify-center gap-1.5">
                               {editable ? (
                                 <>
                                   <button
@@ -501,25 +501,25 @@ export default function Users() {
                                       setEditUser(user);
                                       setShowModal(true);
                                     }}
-                                    className="p-1 hover:bg-gray-200 rounded border border-gray-300 transition-colors cursor-pointer"
+                                    className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-50 hover:bg-amber-100 text-amber-900 border-2 border-gray-900 rounded-lg flex items-center justify-center shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
                                     title="Edit User"
                                   >
-                                    <span className="material-symbols-outlined text-sm">
+                                    <span className="material-symbols-outlined text-sm sm:text-base">
                                       edit
                                     </span>
                                   </button>
                                   <button
                                     onClick={() => handleDelete(user.id, user.name)}
-                                    className="p-1 hover:bg-red-50 text-red-600 rounded border border-gray-300 transition-colors cursor-pointer"
+                                    className="w-7 h-7 sm:w-8 sm:h-8 bg-rose-50 hover:bg-rose-100 text-rose-700 border-2 border-gray-900 rounded-lg flex items-center justify-center shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
                                     title="Hapus User"
                                   >
-                                    <span className="material-symbols-outlined text-sm">
+                                    <span className="material-symbols-outlined text-sm sm:text-base">
                                       delete
                                     </span>
                                   </button>
                                 </>
                               ) : (
-                                <span className="text-[10px] text-gray-400 italic">
+                                <span className="text-[10px] text-gray-400 font-bold italic">
                                   Terkunci
                                 </span>
                               )}

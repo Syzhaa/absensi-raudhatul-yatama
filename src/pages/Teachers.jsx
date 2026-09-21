@@ -381,7 +381,7 @@ export default function Teachers() {
             <>
               <button
                 onClick={handleBatchPrintCard}
-                className="py-2 px-3 bg-white text-gray-900 font-bold border-2 border-gray-900 rounded-xl hover:bg-gray-100 flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
+                className="py-2 px-3.5 bg-white hover:bg-gray-100 text-gray-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer"
                 title="Cetak Kartu Guru Massal"
               >
                 <span className="material-symbols-outlined text-base">print</span>
@@ -389,10 +389,10 @@ export default function Teachers() {
               </button>
               <button
                 onClick={handleBatchDelete}
-                className="py-2 px-3 bg-red-100 hover:bg-red-200 text-red-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo flex items-center gap-1.5 text-xs transition-all cursor-pointer"
+                className="py-2 px-3.5 bg-rose-100 hover:bg-rose-200 text-rose-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer"
                 title="Hapus Banyak Guru"
               >
-                <span className="material-symbols-outlined text-base text-red-600">delete</span>
+                <span className="material-symbols-outlined text-base text-rose-600">delete</span>
                 <span>Hapus ({selectedTeachers.length})</span>
               </button>
             </>
@@ -411,10 +411,10 @@ export default function Teachers() {
           {/* Import Excel Button */}
           <button
             onClick={() => setShowImportModal(true)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0 cursor-pointer"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0 cursor-pointer"
             title="Import Banyak Guru dari Excel/CSV"
           >
-            <span className="material-symbols-outlined text-base text-emerald-600">upload_file</span>
+            <span className="material-symbols-outlined text-base text-emerald-700">upload_file</span>
             <span>Import Excel</span>
           </button>
 
@@ -424,9 +424,9 @@ export default function Teachers() {
               resetForm();
               setShowForm(true);
             }}
-            className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0"
+            className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm flex-shrink-0 cursor-pointer"
           >
-            <span className="material-symbols-outlined text-base">add</span>
+            <span className="material-symbols-outlined text-base font-bold">add</span>
             <span>Tambah Data</span>
           </button>
         </div>
@@ -567,42 +567,42 @@ export default function Teachers() {
                               {!teacher.user_id ? (
                                 <button
                                   onClick={() => handleOpenCredentials(teacher)}
-                                  className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-400 rounded-lg font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                                  className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-2 border-gray-900 rounded-lg font-bold text-xs flex items-center gap-1 transition-all shadow-xs active:translate-y-0.5 cursor-pointer"
                                   title="Buat Akun & Password Login Guru"
                                 >
-                                  <span className="material-symbols-outlined text-sm text-emerald-600">key</span>
+                                  <span className="material-symbols-outlined text-sm text-emerald-700">key</span>
                                   <span>Buat Akun</span>
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => handleOpenCredentials(teacher)}
-                                  className="px-2 py-1 bg-cyan-50 hover:bg-cyan-100 text-cyan-800 border border-cyan-400 rounded-lg font-bold text-xs flex items-center gap-1 transition-colors cursor-pointer"
+                                  className="px-2.5 py-1 bg-cyan-50 hover:bg-cyan-100 text-cyan-950 border-2 border-gray-900 rounded-lg font-bold text-xs flex items-center gap-1 transition-all shadow-xs active:translate-y-0.5 cursor-pointer"
                                   title="Kelola Akun & Ubah Password"
                                 >
-                                  <span className="material-symbols-outlined text-sm text-cyan-600">manage_accounts</span>
+                                  <span className="material-symbols-outlined text-sm text-cyan-700">manage_accounts</span>
                                   <span>Kredensial</span>
                                 </button>
                               )}
                               <button
                                 onClick={() => openCardModal([teacher])}
-                                className="p-1 hover:bg-blue-50 text-blue-700 rounded border border-gray-300 transition-colors"
+                                className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-50 hover:bg-blue-100 text-blue-900 border-2 border-gray-900 rounded-lg flex items-center justify-center shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
                                 title="Cetak Kartu Guru"
                               >
-                                <span className="material-symbols-outlined text-sm">badge</span>
+                                <span className="material-symbols-outlined text-sm sm:text-base">badge</span>
                               </button>
                               <button
                                 onClick={() => handleEdit(teacher)}
-                                className="p-1 hover:bg-amber-50 text-amber-700 rounded border border-gray-300 transition-colors"
-                                title="Edit"
+                                className="w-7 h-7 sm:w-8 sm:h-8 bg-amber-50 hover:bg-amber-100 text-amber-900 border-2 border-gray-900 rounded-lg flex items-center justify-center shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
+                                title="Edit Data Guru"
                               >
-                                <span className="material-symbols-outlined text-sm">edit</span>
+                                <span className="material-symbols-outlined text-sm sm:text-base">edit</span>
                               </button>
                               <button
                                 onClick={() => handleDelete(teacher)}
-                                className="p-1 hover:bg-red-50 text-red-700 rounded border border-gray-300 transition-colors"
-                                title="Hapus"
+                                className="w-7 h-7 sm:w-8 sm:h-8 bg-rose-50 hover:bg-rose-100 text-rose-700 border-2 border-gray-900 rounded-lg flex items-center justify-center shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
+                                title="Hapus Data Guru"
                               >
-                                <span className="material-symbols-outlined text-sm">delete</span>
+                                <span className="material-symbols-outlined text-sm sm:text-base">delete</span>
                               </button>
                             </div>
                           </td>
@@ -630,7 +630,7 @@ export default function Teachers() {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="border-2 border-gray-400 rounded-lg px-2 py-1 font-bold text-xs md:text-sm text-gray-900 bg-transparent focus:outline-none focus:border-primary-green cursor-pointer"
+              className="bg-white border-2 border-gray-900 rounded-xl px-2.5 py-1 text-xs md:text-sm font-bold shadow-xs focus:outline-none cursor-pointer"
             >
               <option value={10}>10</option>
               <option value={15}>15</option>
@@ -642,27 +642,23 @@ export default function Teachers() {
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-1.5 md:p-2 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="px-3.5 py-1.5 bg-white border-2 border-gray-900 rounded-xl text-xs md:text-sm font-bold shadow-xs hover:bg-gray-100 active:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              <span className="material-symbols-outlined text-sm md:text-base">
-                chevron_left
-              </span>
+              Sebelumnya
             </button>
-            <span className="text-xs md:text-sm font-bold text-gray-700">
+            <span className="text-xs md:text-sm font-black text-gray-800 px-2">
               Halaman {currentPage} dari {totalPages || 1}
             </span>
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="p-1.5 md:p-2 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="px-3.5 py-1.5 bg-white border-2 border-gray-900 rounded-xl text-xs md:text-sm font-bold shadow-xs hover:bg-gray-100 active:translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              <span className="material-symbols-outlined text-sm md:text-base">
-                chevron_right
-              </span>
+              Selanjutnya
             </button>
           </div>
         </div>

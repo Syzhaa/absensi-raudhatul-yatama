@@ -379,7 +379,7 @@ export default function WhatsappTemplates() {
                   <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-gray-100">
                     <button
                       onClick={() => handlePreview(template)}
-                      className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-xs rounded-lg border border-blue-300 flex items-center gap-1 transition-colors"
+                      className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold text-xs rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 flex items-center gap-1 transition-all cursor-pointer"
                       title="Lihat Format Utuh"
                     >
                       <span className="material-symbols-outlined text-sm">visibility</span>
@@ -387,7 +387,7 @@ export default function WhatsappTemplates() {
                     </button>
                     <button
                       onClick={() => handleEdit(template)}
-                      className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs rounded-lg border border-amber-300 flex items-center gap-1 transition-colors"
+                      className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold text-xs rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 flex items-center gap-1 transition-all cursor-pointer"
                       title="Ubah Kalimat"
                     >
                       <span className="material-symbols-outlined text-sm">edit</span>
@@ -395,7 +395,7 @@ export default function WhatsappTemplates() {
                     </button>
                     <button
                       onClick={() => handleDelete(template)}
-                      className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg border border-red-300 flex items-center justify-center transition-colors"
+                      className="w-8 h-8 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 flex items-center justify-center transition-all cursor-pointer"
                       title="Hapus Template"
                     >
                       <span className="material-symbols-outlined text-sm">delete</span>
