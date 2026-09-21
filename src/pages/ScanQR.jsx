@@ -273,15 +273,15 @@ export default function ScanQR() {
       : null;
 
   // Toleransi BTS/Jaringan Seluler:
-  // Jika perangkat berada di lingkungan madrasah tetapi menggunakan triangulasi BTS (misal di dalam ruangan),
-  // akurasi HP membaca 100m-600m.
-  // Selama jarak fisik <= 650m dan lingkaran akurasi mencakup area madrasah, presensi SAH.
-  // Jika jarak > 650m (misal 2000m di rumah), toleransi BTS DITOLAK TOTAL (maksimal diskon hanya 30m).
+  // Di wilayah madrasah, menara BTS operator seluler berjarak ~1.3km di jalan raya A. Yani.
+  // Jika perangkat berada di madrasah namun membaca tower BTS (jarak <= 1350m dan akurasi >= 100m),
+  // sistem mengompensasi deviasi tersebut sehingga presensi SAH.
+  // Jika jarak > 1350m (misal 2000m di rumah), toleransi BTS DITOLAK TOTAL!
   const rawAccuracy = coords?.accuracy || 0;
-  const isCellularBtsDrift = currentDistance !== null && currentDistance <= 650 && rawAccuracy >= 100;
+  const isCellularBtsDrift = currentDistance !== null && currentDistance <= 1350 && rawAccuracy >= 100;
 
-  const accuracyDeduction = currentDistance !== null && currentDistance <= 650
-    ? (isCellularBtsDrift ? Math.min(rawAccuracy, 550) : Math.min(rawAccuracy, 50))
+  const accuracyDeduction = currentDistance !== null && currentDistance <= 1350
+    ? (isCellularBtsDrift ? Math.min(rawAccuracy, 1250) : Math.min(rawAccuracy, 50))
     : Math.min(rawAccuracy, 30);
 
   const effectiveDistance =
@@ -292,7 +292,7 @@ export default function ScanQR() {
   const isWithinRadius =
     !isLocationRequired ||
     coords?.isPcVerified ||
-    (effectiveDistance !== null && effectiveDistance <= radiusMax && currentDistance <= 650);
+    (effectiveDistance !== null && effectiveDistance <= radiusMax && currentDistance <= 1350);
 
   // Fetch recent logs
   const { data: recentLogs } = useQuery({
@@ -407,7 +407,7 @@ export default function ScanQR() {
           message: "Lokasi GPS belum terdeteksi. Silakan klik tombol 'Refresh GPS' di atas kamera.",
         };
       }
-      if (!coords?.isPcVerified && (effectiveDistance === null || effectiveDistance > radiusMax || currentDistance > 650)) {
+      if (!coords?.isPcVerified && (effectiveDistance === null || effectiveDistance > radiusMax || currentDistance > 1350)) {
         return {
           valid: false,
           message: `Di luar jangkauan sekolah (${Math.round(currentDistance || 0)}m). Presensi hanya sah di lingkungan madrasah (maks ${radiusMax}m).`,
@@ -634,7 +634,7 @@ export default function ScanQR() {
                               ? (isCellularBtsDrift
                                   ? `Terdeteksi di area madrasah via sinyal BTS (Jarak fisik: ${Math.round(currentDistance || 0)}m, Akurasi: ±${Math.round(rawAccuracy)}m)`
                                   : `Jarak ${Math.round(currentDistance || 0)}m dari titik pusat (${effectiveLembaga?.toUpperCase() || "MA"})`)
-                              : (currentDistance !== null && currentDistance > 650
+                              : (currentDistance !== null && currentDistance > 1350
                                   ? `Jarak ${Math.round(currentDistance)}m terlalu jauh dari sekolah (Maks 100m). Presensi ditolak.`
                                   : `Jarak ${Math.round(currentDistance || 0)}m melebihi batas toleransi radius ${radiusMax}m.`))}
                       </p>
