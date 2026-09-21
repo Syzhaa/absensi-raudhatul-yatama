@@ -185,11 +185,11 @@ export default function ScanQR() {
       setLocationError(null);
     };
 
-    // 1. Coba Satelit Berakurasi Tinggi (GPS Satelit HP) - timeout 10 detik
+    // 1. Coba Satelit Berakurasi Tinggi (GPS Satelit HP) - timeout 12 detik, fresh (tanpa cache lama)
     navigator.geolocation.getCurrentPosition(
       onPosSuccess,
       (err1) => {
-        // 2. Jika sinyal satelit lemah/timeout di dalam kelas, coba Jaringan/Cellular/Wi-Fi - timeout 12 detik
+        // 2. Jika sinyal satelit lemah di dalam kelas, coba Jaringan/Cellular/Wi-Fi
         navigator.geolocation.getCurrentPosition(
           onPosSuccess,
           (err2) => {
@@ -205,10 +205,10 @@ export default function ScanQR() {
               setLocationError("Sinyal GPS belum terkunci. Silakan klik 'Coba Lagi GPS'.");
             }
           },
-          { enableHighAccuracy: false, timeout: 12000, maximumAge: 180000 }
+          { enableHighAccuracy: false, timeout: 12000, maximumAge: 10000 }
         );
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     );
   };
 
@@ -247,7 +247,7 @@ export default function ScanQR() {
     if (!navigator.geolocation || isDesktop) return;
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        if (!coordsRef.current?.isPcVerified && !coordsRef.current?.isFallbackVerified) {
+        if (!coordsRef.current?.isPcVerified) {
           const c = {
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
@@ -260,7 +260,7 @@ export default function ScanQR() {
         }
       },
       () => {},
-      { enableHighAccuracy: false, maximumAge: 60000 }
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
     return () => {
       navigator.geolocation.clearWatch(watchId);
