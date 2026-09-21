@@ -107,6 +107,9 @@ export const attendanceService = {
     if (coords?.latitude && coords?.longitude) {
       payload.latitude = coords.latitude;
       payload.longitude = coords.longitude;
+      if (coords?.accuracy) {
+        payload.accuracy = coords.accuracy;
+      }
     }
 
     const response = await api.post("/attendance/scan", payload);

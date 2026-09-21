@@ -122,7 +122,6 @@ export default function ScanQR() {
       longitude: schoolLon,
       accuracy: 5,
       isPcVerified: true,
-      isFallbackVerified: true,
       lembaga: activeLembagaNorm,
       expiresAt: Date.now() + 3 * 3600 * 1000,
     };
@@ -137,19 +136,17 @@ export default function ScanQR() {
     setIsDesktopBlocked(false);
   };
 
-  const setSchoolLocationFallback = setPcSchoolLocation;
-
   const detectLocation = () => {
     const cachedForLembaga = getCachedLocationSession(effectiveLembaga);
-    // Jika PC / alternatif lokasi sudah aktif, langsung aktif!
-    if (coords?.isPcVerified || coords?.isFallbackVerified || cachedForLembaga?.isPcVerified || cachedForLembaga?.isFallbackVerified) {
+    // Jika PC sudah terverifikasi untuk lembaga aktif ini, langsung aktif!
+    if (coords?.isPcVerified || cachedForLembaga?.isPcVerified) {
       setIsLocating(false);
       setLocationError(null);
       setIsDesktopBlocked(false);
       return;
     }
 
-    if (isDesktop && !coords?.isPcVerified && !coords?.isFallbackVerified) {
+    if (isDesktop && !coords?.isPcVerified) {
       setIsDesktopBlocked(true);
       setIsLocating(false);
       return;
@@ -188,11 +185,11 @@ export default function ScanQR() {
             if (err.code === 1) {
               setLocationError("Izin lokasi ditolak. Silakan izinkan akses lokasi di browser/HP Anda.");
             } else if (err.code === 3) {
-              setLocationError("Sinyal satelit GPS lambat terkunci (terhalang ruangan). Coba lagi atau gunakan alternatif lokasi sekolah.");
+              setLocationError("Pencarian satelit GPS timeout (sinyal terhalang ruangan). Silakan klik 'Coba Lagi GPS'.");
             } else if (err.code === 2) {
-              setLocationError("Sinyal satelit GPS tidak terdeteksi di dalam ruangan. Silakan gunakan alternatif lokasi sekolah.");
+              setLocationError("Sinyal GPS tidak terdeteksi di dalam ruangan. Silakan geser ke dekat jendela/luar.");
             } else {
-              setLocationError("Sinyal GPS belum terkunci. Coba lagi atau gunakan alternatif lokasi sekolah.");
+              setLocationError("Sinyal GPS belum terkunci. Silakan klik 'Coba Lagi GPS'.");
             }
           },
           { enableHighAccuracy: false, timeout: 12000, maximumAge: 180000 }
@@ -250,16 +247,27 @@ export default function ScanQR() {
       ? getDistance(coords.latitude, coords.longitude, schoolLat, schoolLon)
       : null;
 
+  // Toleransi BTS/Jaringan Seluler:
+  // Jika perangkat berada di lingkungan madrasah tetapi menggunakan triangulasi BTS (misal di dalam ruangan),
+  // akurasi HP membaca 100m-600m.
+  // Selama jarak fisik <= 650m dan lingkaran akurasi mencakup area madrasah, presensi SAH.
+  // Jika jarak > 650m (misal 2000m di rumah), toleransi BTS DITOLAK TOTAL (maksimal diskon hanya 30m).
+  const rawAccuracy = coords?.accuracy || 0;
+  const isCellularBtsDrift = currentDistance !== null && currentDistance <= 650 && rawAccuracy >= 100;
+
+  const accuracyDeduction = currentDistance !== null && currentDistance <= 650
+    ? (isCellularBtsDrift ? Math.min(rawAccuracy, 550) : Math.min(rawAccuracy, 50))
+    : Math.min(rawAccuracy, 30);
+
   const effectiveDistance =
     currentDistance !== null
-      ? Math.max(0, currentDistance - Math.min(coords?.accuracy || 0, 50))
+      ? Math.max(0, currentDistance - accuracyDeduction)
       : null;
 
   const isWithinRadius =
     !isLocationRequired ||
     coords?.isPcVerified ||
-    coords?.isFallbackVerified ||
-    (effectiveDistance !== null && effectiveDistance <= radiusMax);
+    (effectiveDistance !== null && effectiveDistance <= radiusMax && currentDistance <= 650);
 
   // Fetch recent logs
   const { data: recentLogs } = useQuery({
@@ -374,10 +382,10 @@ export default function ScanQR() {
           message: "Lokasi GPS belum terdeteksi. Silakan klik tombol 'Refresh GPS' di atas kamera.",
         };
       }
-      if (!coords?.isPcVerified && !coords?.isFallbackVerified && effectiveDistance !== null && effectiveDistance > radiusMax) {
+      if (!coords?.isPcVerified && (effectiveDistance === null || effectiveDistance > radiusMax || currentDistance > 650)) {
         return {
           valid: false,
-          message: `Di luar jangkauan sekolah (${Math.round(currentDistance)}m). Presensi hanya sah di lingkungan sekolah (maks ${radiusMax}m).`,
+          message: `Di luar jangkauan sekolah (${Math.round(currentDistance || 0)}m). Presensi hanya sah di lingkungan madrasah (maks ${radiusMax}m).`,
         };
       }
     }
@@ -546,7 +554,7 @@ export default function ScanQR() {
                   <div className="flex items-center gap-2.5 min-w-0 pr-2">
                     <div
                       className={`w-9 h-9 rounded-xl border-2 border-gray-900 flex items-center justify-center flex-shrink-0 shadow-sm ${
-                        coords?.isPcVerified || coords?.isFallbackVerified
+                        coords?.isPcVerified
                           ? "bg-primary-green text-gray-900"
                           : isLocating
                           ? "bg-amber-200 text-amber-900"
@@ -558,12 +566,12 @@ export default function ScanQR() {
                       }`}
                     >
                       <span className="material-symbols-outlined text-xl">
-                        {coords?.isPcVerified || coords?.isFallbackVerified
+                        {coords?.isPcVerified
                           ? "verified_user"
                           : isLocating
                           ? "radar"
                           : isWithinRadius
-                          ? "pin_drop"
+                          ? (isCellularBtsDrift ? "cell_tower" : "pin_drop")
                           : "location_off"}
                       </span>
                     </div>
@@ -572,44 +580,44 @@ export default function ScanQR() {
                         <span className="font-black text-xs sm:text-sm text-gray-900">
                           {coords?.isPcVerified
                             ? "Lokasi Sah: PC Terverifikasi"
-                            : coords?.isFallbackVerified
-                            ? "Lokasi Sah: Alternatif Sekolah"
                             : isLocating
-                            ? "Mendeteksi Lokasi Satelit GPS..."
+                            ? "Mendeteksi Lokasi GPS..."
                             : locationError
-                            ? "Sinyal GPS Diperlukan"
+                            ? "Izin / Sensor Lokasi GPS Diperlukan"
                             : isWithinRadius
-                            ? "Lokasi Sah: Di Lingkungan Sekolah"
+                            ? (isCellularBtsDrift ? "Lokasi Sah: Toleransi BTS Madrasah" : "Lokasi Sah: Di Lingkungan Sekolah")
                             : "Di Luar Jangkauan Sekolah"}
                         </span>
                         {coords && (
                           <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded border ${
                             isWithinRadius ? "bg-emerald-100 border-emerald-400 text-emerald-900" : "bg-red-100 border-red-400 text-red-900"
                           }`}>
-                            {coords.isFallbackVerified
-                              ? "Alternatif Sekolah (Sah)"
-                              : coords.isPcVerified
+                            {coords.isPcVerified
                               ? `PC Terverifikasi (s.d. ${format(new Date(coords.expiresAt || Date.now() + 3 * 3600 * 1000), "HH:mm")})`
+                              : isCellularBtsDrift
+                              ? `BTS Terkompensasi (Jarak: ${Math.round(currentDistance || 0)}m, Akurasi: ±${Math.round(rawAccuracy)}m)`
                               : `${currentDistance !== null ? `${Math.round(currentDistance)}m` : ""} / Maks ${radiusMax}m`}
                           </span>
                         )}
                       </div>
                       <p className="text-[11px] text-gray-600 font-medium truncate mt-0.5">
-                        {coords?.isFallbackVerified
-                          ? `Mode alternatif lokasi sekolah aktif (${effectiveLembaga?.toUpperCase() || "MA"})`
-                          : coords?.isPcVerified
+                        {coords?.isPcVerified
                           ? `Akses pemindaian presensi disetujui dari stasiun PC madrasah (${effectiveLembaga?.toUpperCase() || "MA"})`
                           : isLocating
                           ? "Menghubungkan sensor satelit GPS / jaringan..."
                           : locationError || (isWithinRadius
-                              ? `Jarak ${currentDistance !== null ? Math.round(currentDistance) : 0}m dari titik pusat (${effectiveLembaga?.toUpperCase() || "MA"})`
-                              : `Jarak ${Math.round(currentDistance || 0)}m melebihi batas toleransi radius ${radiusMax}m.`)}
+                              ? (isCellularBtsDrift
+                                  ? `Terdeteksi di area madrasah via sinyal BTS (Jarak fisik: ${Math.round(currentDistance || 0)}m, Akurasi: ±${Math.round(rawAccuracy)}m)`
+                                  : `Jarak ${Math.round(currentDistance || 0)}m dari titik pusat (${effectiveLembaga?.toUpperCase() || "MA"})`)
+                              : (currentDistance !== null && currentDistance > 650
+                                  ? `Jarak ${Math.round(currentDistance)}m terlalu jauh dari sekolah (Maks 100m). Presensi ditolak.`
+                                  : `Jarak ${Math.round(currentDistance || 0)}m melebihi batas toleransi radius ${radiusMax}m.`))}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {coords?.isPcVerified || coords?.isFallbackVerified ? (
+                    {coords?.isPcVerified || isWithinRadius ? (
                       <div className="px-2.5 py-1.5 bg-emerald-100 border-2 border-emerald-600 text-emerald-950 font-black text-xs rounded-xl flex items-center gap-1 shadow-xs">
                         <span className="material-symbols-outlined text-base text-emerald-700">verified</span>
                         <span>Siap Scan</span>
@@ -642,40 +650,21 @@ export default function ScanQR() {
                   </div>
                 </div>
 
-                {/* Alternatif Box saat GPS Terbaca di Luar Radius atau Error Sinyal */}
-                {(locationError || (!isWithinRadius && !coords?.isPcVerified && !coords?.isFallbackVerified)) && (
-                  <div className="mt-2.5 p-3.5 bg-amber-50 border-2 border-gray-900 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm text-xs animate-slide-in">
-                    <div className="flex items-start gap-2.5 text-amber-950 font-bold min-w-0">
-                      <span className="material-symbols-outlined text-amber-600 text-xl flex-shrink-0 mt-0.5">cell_tower</span>
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className="leading-snug">
-                          {locationError || `Sensor GPS HP mendeteksi jarak ${Math.round(currentDistance || 0)}m dari titik pusat (${effectiveLembaga?.toUpperCase() || "MA"}).`}
-                        </span>
-                        <span className="text-[11px] text-amber-800 font-normal">
-                          Perangkat mendeteksi sinyal jaringan BTS seluler / atap ruangan. Jika Anda sudah berada di sekolah, aktifkan lokasi sekolah di bawah.
-                        </span>
-                      </div>
+                {locationError && (
+                  <div className="mt-2.5 p-3 bg-amber-50 border-2 border-gray-900 rounded-2xl flex items-center justify-between gap-2.5 shadow-sm text-xs animate-slide-in">
+                    <div className="flex items-center gap-2 text-amber-950 font-bold min-w-0">
+                      <span className="material-symbols-outlined text-amber-600 text-lg flex-shrink-0">location_disabled</span>
+                      <span className="leading-snug">{locationError}</span>
                     </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={detectLocation}
-                        disabled={isLocating}
-                        className="flex-1 sm:flex-none px-3 py-2 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-gray-900 shadow-xs cursor-pointer disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
-                      >
-                        <span className="material-symbols-outlined text-base">refresh</span>
-                        <span>Coba Satelit</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={setSchoolLocationFallback}
-                        className="flex-1 sm:flex-none px-3.5 py-2 bg-primary-green hover:bg-emerald-400 border-2 border-gray-900 rounded-xl font-black text-gray-900 shadow-xs cursor-pointer transition-colors flex items-center justify-center gap-1"
-                        title="Gunakan titik koordinat resmi madrasah"
-                      >
-                        <span className="material-symbols-outlined text-base">domain</span>
-                        <span>Aktifkan Lokasi Sekolah</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={detectLocation}
+                      disabled={isLocating}
+                      className="px-3 py-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-gray-900 shadow-xs cursor-pointer disabled:opacity-50 transition-colors flex items-center justify-center gap-1 flex-shrink-0"
+                    >
+                      <span className="material-symbols-outlined text-base">refresh</span>
+                      <span>Coba Lagi GPS</span>
+                    </button>
                   </div>
                 )}
               </>
