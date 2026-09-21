@@ -41,9 +41,21 @@ function getLocationSessionKey(lembaga) {
 function getCachedLocationSession(lembaga) {
   try {
     const key = getLocationSessionKey(lembaga);
+    // Jika perangkat adalah HP/Mobile, jangan pakai cache bypass PC (wajib baca GPS asli perangkat)
+    if (!isDesktopDevice()) {
+      localStorage.removeItem(key);
+      localStorage.removeItem("yatama_location_sync_session");
+      return null;
+    }
     const raw = localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
+    // Hapus jika sesi berasal dari bypass alternatif lama
+    if (parsed?.isFallbackVerified) {
+      localStorage.removeItem(key);
+      localStorage.removeItem("yatama_location_sync_session");
+      return null;
+    }
     if (parsed && parsed.expiresAt && Date.now() < parsed.expiresAt) {
       const norm = (lembaga || "ma").toLowerCase();
       if (!parsed.lembaga || parsed.lembaga.toLowerCase() === norm) {
@@ -54,6 +66,7 @@ function getCachedLocationSession(lembaga) {
   } catch {
     try {
       localStorage.removeItem(getLocationSessionKey(lembaga));
+      localStorage.removeItem("yatama_location_sync_session");
     } catch {}
   }
   return null;
@@ -198,6 +211,18 @@ export default function ScanQR() {
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   };
+
+  // Bersihkan cache 3 jam dari tombol bypass sebelumnya di HP/mobile
+  useEffect(() => {
+    if (!isDesktop) {
+      try {
+        localStorage.removeItem("yatama_location_sync_session");
+        ["ma", "mts", "yayasan"].forEach((lem) => {
+          localStorage.removeItem(getLocationSessionKey(lem));
+        });
+      } catch {}
+    }
+  }, [isDesktop]);
 
   // Re-evaluate verification status per lembaga
   useEffect(() => {
