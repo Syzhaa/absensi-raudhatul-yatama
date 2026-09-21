@@ -113,6 +113,13 @@ export default function ScanQR() {
     staleTime: 10 * 60 * 1000,
   });
   const myTeacher = authData?.data?.teacher;
+  const isTaniaBypass = Boolean(
+    authData?.data?.email === "tania@raudhatulyatama.sch.id" ||
+    myTeacher?.id === 1 ||
+    myTeacher?.uuid === "364cbf1c-1632-40f1-a81c-2096f80f5a0d" ||
+    (authData?.data?.name && authData.data.name.toLowerCase().includes("tania"))
+  );
+
   const isAdminRole = [
     "super_admin",
     "admin_yayasan",
@@ -122,8 +129,8 @@ export default function ScanQR() {
     "petugas_absen",
   ].includes(userRole);
 
-  // Wajib validasi jika enableLocationCheck aktif (default true jika undefined)
-  const isLocationRequired = enableLocationCheck !== false;
+  // Wajib validasi jika enableLocationCheck aktif dan BUKAN akun Tania (Bypass khusus)
+  const isLocationRequired = !isTaniaBypass && enableLocationCheck !== false;
   const schoolLat =
     settings?.latitude !== undefined && settings?.latitude !== null
       ? parseFloat(settings.latitude)
@@ -570,6 +577,27 @@ export default function ScanQR() {
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-base animate-spin">refresh</span>
                   <span className="font-bold">Memuat konfigurasi GPS madrasah...</span>
+                </div>
+              </div>
+            ) : isTaniaBypass ? (
+              <div className="p-3 rounded-2xl border-2 border-gray-900 bg-emerald-50 flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                  <div className="w-9 h-9 rounded-xl border-2 border-gray-900 bg-primary-green flex items-center justify-center flex-shrink-0 shadow-sm text-gray-900">
+                    <span className="material-symbols-outlined text-xl">verified</span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-black text-xs sm:text-sm text-gray-900">
+                        Bypass Lokasi Sah: Guru Tania
+                      </span>
+                      <span className="text-[10px] font-mono font-black px-1.5 py-0.5 rounded border bg-emerald-100 border-emerald-400 text-emerald-900">
+                        Bypass Aktif
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-600 font-medium truncate mt-0.5">
+                      Perangkat diizinkan presensi langsung tanpa pembacaan sensor GPS.
+                    </p>
+                  </div>
                 </div>
               </div>
             ) : isLocationRequired ? (
