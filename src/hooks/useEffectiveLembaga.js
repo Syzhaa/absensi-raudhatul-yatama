@@ -24,8 +24,11 @@ export function useEffectiveLembaga() {
 
   const isSuperAdmin = userData?.data?.role === "super_admin";
 
-  // Super Admin uses selector, others use their own lembaga
-  const effectiveLembaga = isSuperAdmin ? superAdminLembaga : userLembaga;
+  // Super Admin uses selector, others use their own lembaga from profile / store
+  const rawLembaga = isSuperAdmin 
+    ? (superAdminLembaga || "ma") 
+    : (userData?.data?.lembaga || userLembaga || "ma");
+  const effectiveLembaga = (rawLembaga || "ma").toLowerCase();
 
   return {
     effectiveLembaga,
