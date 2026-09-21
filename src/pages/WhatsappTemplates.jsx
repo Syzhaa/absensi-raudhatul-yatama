@@ -418,16 +418,16 @@ export default function WhatsappTemplates() {
             <button
               onClick={() => setPage(page - 1)}
               disabled={page === 1}
-              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border-2 border-gray-900 rounded-lg text-xs font-black disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="px-3.5 py-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl text-xs sm:text-sm font-bold shadow-xs active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
-              Prev
+              Sebelumnya
             </button>
             <button
               onClick={() => setPage(page + 1)}
               disabled={page === pagination.last_page}
-              className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border-2 border-gray-900 rounded-lg text-xs font-black disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              className="px-3.5 py-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl text-xs sm:text-sm font-bold shadow-xs active:translate-y-0.5 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
-              Next
+              Selanjutnya
             </button>
           </div>
         </div>
@@ -436,10 +436,10 @@ export default function WhatsappTemplates() {
       {/* Mobile Floating Add Button */}
       <button
         onClick={handleCreate}
-        className="sm:hidden fixed bottom-24 right-4 w-12 h-12 bg-primary-green text-gray-900 rounded-full border-2 border-gray-900 shadow-neo flex items-center justify-center z-40 active:translate-y-0.5 transition-all"
+        className="sm:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-neo flex items-center justify-center z-40 active:translate-y-1 transition-all cursor-pointer"
         title="Tambah Template"
       >
-        <span className="material-symbols-outlined text-2xl font-black">add</span>
+        <span className="material-symbols-outlined text-3xl font-black">add</span>
       </button>
 
       {/* Form Modal */}

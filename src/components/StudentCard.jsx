@@ -137,7 +137,7 @@ export default function StudentCard({
               onClick={() =>
                 setActiveDropdown(dropdownOpen ? null : student.id)
               }
-              className="p-1.5 bg-gray-100 text-gray-700 border-2 border-gray-900 rounded-lg shadow-sm"
+              className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border-2 border-gray-900 rounded-lg shadow-xs active:translate-y-0.5 transition-all cursor-pointer flex items-center justify-center"
             >
               <span className="material-symbols-outlined text-lg">
                 more_vert
@@ -145,7 +145,7 @@ export default function StudentCard({
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 top-full mt-1 w-40 bg-white border-2 border-gray-900 rounded-xl shadow-neo z-10 overflow-hidden">
+              <div className="absolute right-0 top-full mt-1 w-44 bg-white border-2 border-gray-900 rounded-xl shadow-neo z-10 overflow-hidden">
                 <button
                   onClick={() => {
                     if (onShowCard) {
@@ -153,9 +153,9 @@ export default function StudentCard({
                     }
                     closeDropdown();
                   }}
-                  className={`${menuItemClass} hover:bg-gray-100 text-blue-700 border-b border-gray-100`}
+                  className={`${menuItemClass} hover:bg-blue-50 text-blue-900 border-b border-gray-100 cursor-pointer`}
                 >
-                  <span className="material-symbols-outlined text-lg">
+                  <span className="material-symbols-outlined text-lg text-blue-700">
                     badge
                   </span>
                   Lihat Kartu
@@ -165,9 +165,9 @@ export default function StudentCard({
                     onEdit(student);
                     closeDropdown();
                   }}
-                  className={`${menuItemClass} hover:bg-gray-100 text-amber-700`}
+                  className={`${menuItemClass} hover:bg-amber-50 text-amber-900 border-b border-gray-100 cursor-pointer`}
                 >
-                  <span className="material-symbols-outlined text-lg">
+                  <span className="material-symbols-outlined text-lg text-amber-700">
                     edit
                   </span>
                   Edit
@@ -178,9 +178,9 @@ export default function StudentCard({
                     closeDropdown();
                   }}
                   disabled={isDeletePending}
-                  className={`${menuItemClass} text-red-700 hover:bg-red-50 disabled:opacity-50`}
+                  className={`${menuItemClass} text-rose-700 hover:bg-rose-50 disabled:opacity-50 cursor-pointer`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">
+                  <span className="material-symbols-outlined text-[18px] text-rose-600">
                     delete
                   </span>
                   Hapus

@@ -152,7 +152,7 @@ export default function TeacherCard({
               onClick={() =>
                 setActiveDropdown(dropdownOpen ? null : teacher.id)
               }
-              className="p-1.5 bg-gray-100 text-gray-700 border-2 border-gray-900 rounded-lg shadow-sm"
+              className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border-2 border-gray-900 rounded-lg shadow-xs active:translate-y-0.5 transition-all cursor-pointer flex items-center justify-center"
             >
               <span className="material-symbols-outlined text-lg">
                 more_vert
@@ -160,7 +160,7 @@ export default function TeacherCard({
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 top-full mt-1 w-44 bg-white border-2 border-gray-900 rounded-xl shadow-neo z-10 overflow-hidden">
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white border-2 border-gray-900 rounded-xl shadow-neo z-10 overflow-hidden">
                 {!teacher.user_id ? (
                   <button
                     onClick={() => {
@@ -168,9 +168,9 @@ export default function TeacherCard({
                       closeDropdown();
                     }}
                     disabled={isActivatePending}
-                    className={`${menuItemClass} text-emerald-700 hover:bg-emerald-50 border-b border-gray-100`}
+                    className={`${menuItemClass} text-emerald-900 hover:bg-emerald-50 border-b border-gray-100 disabled:opacity-50 cursor-pointer`}
                   >
-                    <span className="material-symbols-outlined text-[18px]">
+                    <span className="material-symbols-outlined text-[18px] text-emerald-700">
                       key
                     </span>
                     Buat Akun Login
@@ -181,9 +181,9 @@ export default function TeacherCard({
                       onOpenCredentials(teacher);
                       closeDropdown();
                     }}
-                    className={`${menuItemClass} text-cyan-700 hover:bg-cyan-50 border-b border-gray-100`}
+                    className={`${menuItemClass} text-cyan-950 hover:bg-cyan-50 border-b border-gray-100 cursor-pointer`}
                   >
-                    <span className="material-symbols-outlined text-[18px]">
+                    <span className="material-symbols-outlined text-[18px] text-cyan-700">
                       manage_accounts
                     </span>
                     Kelola Kredensial
@@ -196,9 +196,9 @@ export default function TeacherCard({
                     }
                     closeDropdown();
                   }}
-                  className={`${menuItemClass} text-blue-700 hover:bg-blue-50 border-b border-gray-100`}
+                  className={`${menuItemClass} text-blue-900 hover:bg-blue-50 border-b border-gray-100 cursor-pointer`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">
+                  <span className="material-symbols-outlined text-[18px] text-blue-700">
                     badge
                   </span>
                   Cetak Kartu
@@ -208,9 +208,9 @@ export default function TeacherCard({
                     onEdit(teacher);
                     closeDropdown();
                   }}
-                  className={`${menuItemClass} text-amber-700 hover:bg-amber-50 border-b border-gray-100`}
+                  className={`${menuItemClass} text-amber-900 hover:bg-amber-50 border-b border-gray-100 cursor-pointer`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">
+                  <span className="material-symbols-outlined text-[18px] text-amber-700">
                     edit
                   </span>
                   Edit
@@ -221,9 +221,9 @@ export default function TeacherCard({
                     closeDropdown();
                   }}
                   disabled={isDeletePending}
-                  className={`${menuItemClass} text-red-700 hover:bg-red-50`}
+                  className={`${menuItemClass} text-rose-700 hover:bg-rose-50 disabled:opacity-50 cursor-pointer`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">
+                  <span className="material-symbols-outlined text-[18px] text-rose-600">
                     delete
                   </span>
                   Hapus

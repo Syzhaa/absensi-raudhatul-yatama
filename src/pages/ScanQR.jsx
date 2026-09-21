@@ -817,7 +817,7 @@ export default function ScanQR() {
               {scanning ? (
                 <button
                   onClick={stopScanning}
-                  className="w-full bg-[#e5e7eb] hover:bg-gray-300 text-gray-900 font-black py-3 px-6 border-2 border-gray-900 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:translate-y-0.5 cursor-pointer"
+                  className="w-full bg-[#e5e7eb] hover:bg-gray-300 text-gray-900 font-black py-3 px-6 border-2 border-gray-900 rounded-xl md:rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:translate-y-0.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-xl">
                     visibility_off
@@ -827,7 +827,7 @@ export default function ScanQR() {
               ) : (
                 <button
                   onClick={startScanning}
-                  className="w-full bg-primary-green hover:bg-lime-400 text-gray-900 font-black py-3 px-6 border-2 border-gray-900 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:translate-y-0.5 cursor-pointer"
+                  className="w-full bg-primary-green hover:bg-emerald-400 text-gray-900 font-black py-3 px-6 border-2 border-gray-900 rounded-xl md:rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:translate-y-0.5 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-xl">
                     videocam

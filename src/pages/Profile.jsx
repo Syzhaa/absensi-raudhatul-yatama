@@ -111,7 +111,7 @@ export default function Profile() {
             type="email" 
             value={formData.email}
             onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            className="w-full px-3 py-2 bg-white border-2 border-gray-300 rounded-lg focus:border-primary-green focus:outline-none text-sm font-bold"
+            className="w-full px-3 py-2 bg-white border-2 border-gray-900 rounded-xl focus:outline-none text-sm font-bold shadow-xs"
             required
           />
         </div>
@@ -122,7 +122,7 @@ export default function Profile() {
             value={formData.current_password}
             onChange={(e) => setFormData(prev => ({ ...prev, current_password: e.target.value }))}
             placeholder="Diperlukan jika ingin ubah password"
-            className="w-full px-3 py-2 bg-white border-2 border-gray-300 rounded-lg focus:border-primary-green focus:outline-none text-sm"
+            className="w-full px-3 py-2 bg-white border-2 border-gray-900 rounded-xl focus:outline-none text-sm shadow-xs"
           />
         </div>
         <div>
@@ -132,7 +132,7 @@ export default function Profile() {
             value={formData.password}
             onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
             placeholder="Biarkan kosong jika tidak ingin diubah"
-            className="w-full px-3 py-2 bg-white border-2 border-gray-300 rounded-lg focus:border-primary-green focus:outline-none text-sm"
+            className="w-full px-3 py-2 bg-white border-2 border-gray-900 rounded-xl focus:outline-none text-sm shadow-xs"
             minLength={6}
           />
         </div>
@@ -140,7 +140,7 @@ export default function Profile() {
           type="button" 
           onClick={handleSubmit}
           disabled={updateMutation.isPending}
-          className="w-full py-2.5 bg-primary-green text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-sm hover:shadow-neo transition-all disabled:opacity-50 text-sm"
+          className="w-full py-2.5 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all disabled:opacity-50 text-sm cursor-pointer"
         >
           {updateMutation.isPending ? 'Menyimpan...' : 'Simpan Perubahan'}
         </button>

@@ -542,11 +542,11 @@ export default function Holidays() {
             />
           </div>
 
-          <div className="flex gap-2 pt-2 sm:pt-3">
+          <div className="flex gap-2.5 pt-2 sm:pt-3">
             <button
               type="button"
               onClick={closeModal}
-              className="flex-1 py-2 sm:py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl border-2 border-gray-200 hover:bg-gray-200"
+              className="flex-1 py-2 sm:py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all cursor-pointer text-xs sm:text-sm"
             >
               Batal
             </button>
@@ -554,7 +554,7 @@ export default function Holidays() {
               <button
                 type="button"
                 onClick={() => handleDelete(editingHoliday.id)}
-                className="flex-1 py-2 sm:py-2.5 bg-red-100 text-red-700 font-bold rounded-xl border-2 border-red-200 hover:bg-red-200"
+                className="flex-1 py-2 sm:py-2.5 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all cursor-pointer text-xs sm:text-sm"
               >
                 Hapus
               </button>
@@ -562,7 +562,7 @@ export default function Holidays() {
             <button
               type="submit"
               disabled={createMutation.isPending || updateMutation.isPending}
-              className="flex-1 py-2 sm:py-2.5 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black rounded-xl border-2 border-gray-900 shadow-neo hover:translate-y-0.5 transition-all flex items-center justify-center gap-2 text-sm"
+              className="flex-1 py-2 sm:py-2.5 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black rounded-xl border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer disabled:opacity-50"
             >
               {createMutation.isPending || updateMutation.isPending ? "Menyimpan..." : "Simpan"}
             </button>
