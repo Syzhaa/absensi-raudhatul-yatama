@@ -3,54 +3,63 @@ import { createPortal } from "react-dom";
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
 
-// Preset Ukuran ID Card Lengkap (CR80, Seri A: A1-A3, Seri B: B1-B4)
+// Preset Ukuran ID Card Lengkap Sesuai Standar Plastik/Mika Maxipro & CR80
 export const CARD_SIZES = [
   {
     id: "cr80",
     name: "Standar CR80 (54 × 85.6 mm)",
     code: "CR80",
-    group: "Standar",
+    group: "Standar PVC",
     dims: "54 × 85.6 mm",
     desc: "Standar KTP, ATM, Kartu Pelajar PVC",
+    outerDims: "-",
+    innerDims: "54 × 85.6 mm",
     widthMm: 54,
     heightMm: 85.6,
     widthPx: 216,
     heightPx: 342,
     isLandscape: false,
   },
+  // Seri B (Portrait / Tegak)
   {
-    id: "a1",
-    name: "Holder Mika A1 (54 × 85 mm)",
-    code: "A1",
-    group: "Seri A (Mika Tegak)",
-    dims: "54 × 85 mm",
-    desc: "Standar Mika A1 Tegak (Ukuran Pas KTP)",
-    widthMm: 54,
+    id: "b1",
+    name: "Holder B1 Portrait (55 × 85 mm)",
+    code: "B1",
+    group: "Seri B (Portrait / Tegak)",
+    dims: "55 × 85 mm",
+    desc: "Mika Tegak B1 (Luar 102×65 mm, Dalam 85×55 mm)",
+    outerDims: "102 × 65 mm",
+    innerDims: "85 × 55 mm",
+    widthMm: 55,
     heightMm: 85,
-    widthPx: 216,
+    widthPx: 220,
     heightPx: 340,
     isLandscape: false,
   },
   {
-    id: "a2",
-    name: "Holder Mika A2 (70 × 100 mm)",
-    code: "A2",
-    group: "Seri A (Mika Tegak)",
-    dims: "70 × 100 mm",
-    desc: "Standar Mika A2 Tegak (Ukuran Sedang)",
-    widthMm: 70,
-    heightMm: 100,
-    widthPx: 280,
-    heightPx: 400,
+    id: "b2",
+    name: "Holder B2 Portrait (65 × 105 mm)",
+    code: "B2",
+    group: "Seri B (Portrait / Tegak)",
+    dims: "65 × 105 mm",
+    desc: "Mika Tegak B2 (Luar 126×79 mm, Dalam 105×65 mm)",
+    outerDims: "126 × 79 mm",
+    innerDims: "105 × 65 mm",
+    widthMm: 65,
+    heightMm: 105,
+    widthPx: 260,
+    heightPx: 420,
     isLandscape: false,
   },
   {
-    id: "a3",
-    name: "Holder Mika A3 (80 × 105 mm)",
-    code: "A3",
-    group: "Seri A (Mika Tegak)",
+    id: "b3",
+    name: "Holder B3 Portrait (80 × 105 mm)",
+    code: "B3",
+    group: "Seri B (Portrait / Tegak)",
     dims: "80 × 105 mm",
-    desc: "Standar Mika A3 Tegak (Ukuran Besar)",
+    desc: "Mika Tegak B3 (Luar 126×95 mm, Dalam 105×80 mm)",
+    outerDims: "126 × 95 mm",
+    innerDims: "105 × 80 mm",
     widthMm: 80,
     heightMm: 105,
     widthPx: 320,
@@ -58,56 +67,65 @@ export const CARD_SIZES = [
     isLandscape: false,
   },
   {
-    id: "b1",
-    name: "Holder Mika B1 (85 × 54 mm)",
-    code: "B1",
-    group: "Seri B (Mika ID Card)",
-    dims: "85 × 54 mm",
-    desc: "Standar Mika B1 Landscape / Mendatar",
-    widthMm: 85,
-    heightMm: 54,
-    widthPx: 340,
-    heightPx: 216,
+    id: "b4",
+    name: "Holder B4 Portrait (90 × 130 mm)",
+    code: "B4",
+    group: "Seri B (Portrait / Tegak)",
+    dims: "90 × 130 mm",
+    desc: "Mika Tegak B4 (Luar 155×106 mm, Dalam 130×90 mm)",
+    outerDims: "155 × 106 mm",
+    innerDims: "130 × 90 mm",
+    widthMm: 90,
+    heightMm: 130,
+    widthPx: 360,
+    heightPx: 520,
+    isLandscape: false,
+  },
+  // Seri A (Landscape / Mendatar)
+  {
+    id: "a1",
+    name: "Holder A1 Landscape (90 × 55 mm)",
+    code: "A1",
+    group: "Seri A (Landscape / Mendatar)",
+    dims: "90 × 55 mm",
+    desc: "Mika Mendatar A1 (Luar 68×99 mm, Dalam 55×90 mm)",
+    outerDims: "68 × 99 mm",
+    innerDims: "55 × 90 mm",
+    widthMm: 90,
+    heightMm: 55,
+    widthPx: 360,
+    heightPx: 220,
     isLandscape: true,
   },
   {
-    id: "b2",
-    name: "Holder Mika B2 (70 × 105 mm)",
-    code: "B2",
-    group: "Seri B (Mika ID Card)",
-    dims: "70 × 105 mm",
-    desc: "Standar Mika B2 Tegak (Casing Tali Gantung)",
-    widthMm: 70,
-    heightMm: 105,
-    widthPx: 280,
-    heightPx: 420,
-    isLandscape: false,
-  },
-  {
-    id: "b3",
-    name: "Holder Mika B3 (85 × 110 mm)",
-    code: "B3",
-    group: "Seri B (Mika ID Card)",
-    dims: "85 × 110 mm",
-    desc: "Standar Mika B3 Panitia / Peserta",
-    widthMm: 85,
-    heightMm: 110,
-    widthPx: 340,
-    heightPx: 440,
-    isLandscape: false,
-  },
-  {
-    id: "b4",
-    name: "Holder Mika B4 (95 × 135 mm)",
-    code: "B4",
-    group: "Seri B (Mika ID Card)",
-    dims: "95 × 135 mm",
-    desc: "Standar Mika B4 Ekstra Besar",
+    id: "a2",
+    name: "Holder A2 Landscape (95 × 65 mm)",
+    code: "A2",
+    group: "Seri A (Landscape / Mendatar)",
+    dims: "95 × 65 mm",
+    desc: "Mika Mendatar A2 (Luar 82×106 mm, Dalam 65×95 mm)",
+    outerDims: "82 × 106 mm",
+    innerDims: "65 × 95 mm",
     widthMm: 95,
-    heightMm: 135,
+    heightMm: 65,
     widthPx: 380,
-    heightPx: 540,
-    isLandscape: false,
+    heightPx: 260,
+    isLandscape: true,
+  },
+  {
+    id: "a3",
+    name: "Holder A3 Landscape (100 × 80 mm)",
+    code: "A3",
+    group: "Seri A (Landscape / Mendatar)",
+    dims: "100 × 80 mm",
+    desc: "Mika Mendatar A3 (Luar 92×115 mm, Dalam 80×100 mm)",
+    outerDims: "92 × 115 mm",
+    innerDims: "80 × 100 mm",
+    widthMm: 100,
+    heightMm: 80,
+    widthPx: 400,
+    heightPx: 320,
+    isLandscape: true,
   },
 ];
 
@@ -162,7 +180,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   // Skala ukuran font & elemen di dalam kartu
   const cardScale = useMemo(() => {
     if (currentSize.isLandscape) {
-      return Math.min(1.15, currentSize.heightMm / 54);
+      return Math.max(1.0, Math.min(1.35, currentSize.heightMm / 55));
     }
     return Math.max(1.0, Math.min(1.4, currentSize.widthMm / 54));
   }, [currentSize]);
@@ -177,28 +195,6 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     const safeW_L = 277;
     const safeH_L = 190;
 
-    if (currentSize.isLandscape) {
-      // Format B1 Landscape (85 x 54 mm)
-      if (isPairs) {
-        return {
-          orientation: "portrait",
-          cols: 1,
-          rows: 4,
-          capacity: 4,
-          label: "A4 Portrait: 4 Pasang (8 Kartu / Lembar)",
-        };
-      } else {
-        return {
-          orientation: "portrait",
-          cols: 2,
-          rows: 4,
-          capacity: 8,
-          label: "A4 Portrait: 8 Kartu (2 Kolom × 4 Baris)",
-        };
-      }
-    }
-
-    // Format Vertikal (CR80, A1, A2, A3, B2, B3, B4)
     const w = currentSize.widthMm;
     const h = currentSize.heightMm;
 
@@ -233,7 +229,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         };
       }
     } else {
-      // Mode Satuan (Hanya Depan / Hanya Belakang)
+      // Mode Grid Satuan (Hanya Depan / Hanya Belakang)
       const colsP = Math.floor((safeW_P + gapMm) / (w + gapMm));
       const rowsP = Math.floor((safeH_P + gapMm) / (h + gapMm));
       const capP = colsP * rowsP;
@@ -998,21 +994,21 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               value={cardSizeId}
               onChange={(e) => setCardSizeId(e.target.value)}
               className="w-full sm:w-auto px-2.5 py-1.5 bg-gray-50 hover:bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-bold text-gray-800 focus:outline-none cursor-pointer transition-colors shadow-xs"
-              title="Pilih ukuran kartu ID Card"
+              title="Pilih ukuran kartu ID Card sesuai standar mika / PVC"
             >
               <optgroup label="Standar PVC / KTP">
                 <option value="cr80">CR80 (54 × 85.6 mm)</option>
               </optgroup>
-              <optgroup label="Seri A (Mika Tegak)">
-                <option value="a1">A1 (54 × 85 mm)</option>
-                <option value="a2">A2 (70 × 100 mm)</option>
-                <option value="a3">A3 (80 × 105 mm)</option>
+              <optgroup label="Seri B (Portrait / Tegak)">
+                <option value="b1">B1 (55 × 85 mm) • Luar 102×65mm</option>
+                <option value="b2">B2 (65 × 105 mm) • Luar 126×79mm</option>
+                <option value="b3">B3 (80 × 105 mm) • Luar 126×95mm</option>
+                <option value="b4">B4 (90 × 130 mm) • Luar 155×106mm</option>
               </optgroup>
-              <optgroup label="Seri B (Mika ID Card)">
-                <option value="b1">B1 Landscape (85 × 54 mm)</option>
-                <option value="b2">B2 (70 × 105 mm)</option>
-                <option value="b3">B3 (85 × 110 mm)</option>
-                <option value="b4">B4 (95 × 135 mm)</option>
+              <optgroup label="Seri A (Landscape / Mendatar)">
+                <option value="a1">A1 (90 × 55 mm) • Luar 68×99mm</option>
+                <option value="a2">A2 (95 × 65 mm) • Luar 82×106mm</option>
+                <option value="a3">A3 (100 × 80 mm) • Luar 92×115mm</option>
               </optgroup>
             </select>
           </div>
