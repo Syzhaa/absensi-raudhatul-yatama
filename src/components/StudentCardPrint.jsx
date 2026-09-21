@@ -269,13 +269,76 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     return pages;
   }, [students, viewMode, a4LayoutConfig]);
 
-  // Responsive zoom
+  // Hitung zoom optimal agar seluruh lembar pas di layar (Fit to screen) tanpa terpotong
+  const getFitZoom = (wWidth = typeof window !== "undefined" ? window.innerWidth : 1024) => {
+    const isLandscapeSheet = a4LayoutConfig.orientation === "landscape";
+    const sheetW = viewMode === "a4" ? (isLandscapeSheet ? 1188 : 840) : (currentSize.widthPx * 2 + 60);
+    const padding = wWidth < 640 ? 16 : 48;
+    const avail = Math.max(260, wWidth - padding);
+    const fit = avail / sheetW;
+    return Math.min(wWidth < 768 ? 1.0 : 0.95, Math.max(0.2, Math.round(fit * 100) / 100));
+  };
+
   const [zoom, setZoom] = useState(() => {
     if (typeof window !== "undefined") {
-      return window.innerWidth >= 1280 ? 0.85 : window.innerWidth >= 1024 ? 0.75 : 0.65;
+      if (window.innerWidth < 768) {
+        const avail = Math.max(260, window.innerWidth - 16);
+        return Math.min(1.0, Math.max(0.2, Math.round((avail / 1188) * 100) / 100));
+      }
+      return window.innerWidth >= 1280 ? 0.85 : 0.75;
     }
     return 0.8;
   });
+
+  // Saat mode atau orientasi berubah di layar mobile, otomatis sesuaikan zoom fit
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setZoom(getFitZoom(window.innerWidth));
+    }
+  }, [cardSizeId, viewMode, a4LayoutConfig.orientation]);
+
+  const handleFitToScreen = () => {
+    setZoom(getFitZoom(typeof window !== "undefined" ? window.innerWidth : 1024));
+  };
+
+  const handleZoomIn = () => {
+    setZoom((z) => Math.min(1.6, Math.round((z + 0.1) * 100) / 100));
+  };
+
+  const handleZoomOut = () => {
+    setZoom((z) => Math.max(0.2, Math.round((z - 0.1) * 100) / 100));
+  };
+
+  // Dukungan Pinch-to-zoom dengan 2 jari pada layar sentuh mobile
+  const touchStartDistRef = useRef(null);
+  const initialZoomRef = useRef(zoom);
+
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      touchStartDistRef.current = dist;
+      initialZoomRef.current = zoom;
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2 && touchStartDistRef.current) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const factor = dist / touchStartDistRef.current;
+      const newZoom = Math.min(1.6, Math.max(0.2, Math.round(initialZoomRef.current * factor * 100) / 100));
+      setZoom(newZoom);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    touchStartDistRef.current = null;
+  };
 
   // Shortcut Esc
   useEffect(() => {
@@ -958,13 +1021,13 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       ref={containerRef}
       className="fixed inset-0 top-0 left-0 right-0 bottom-0 m-0 p-0 bg-slate-900/90 backdrop-blur-sm flex flex-col z-[9999] overflow-hidden"
     >
-      {/* Top Action Header (Minimalis & Rapi Desktop/Mobile) */}
-      <div className="bg-white border-b-2 border-gray-900 shadow-sm px-3 sm:px-5 py-2.5 sm:py-3 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2.5 z-20 shrink-0">
+      {/* Top Action Header (Minimalis & Rapi Desktop & Mobile) */}
+      <div className="bg-white border-b-2 border-gray-900 shadow-sm px-3 sm:px-5 py-2 sm:py-2.5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2 z-20 shrink-0">
         {/* Left: Brand & Status Ringkas */}
         <div className="flex items-center justify-between min-w-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 border border-emerald-400 text-emerald-800 flex items-center justify-center shrink-0 shadow-xs">
-              <span className="material-symbols-outlined text-lg font-bold">badge</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-emerald-100 border border-emerald-400 text-emerald-800 flex items-center justify-center shrink-0 shadow-xs">
+              <span className="material-symbols-outlined text-base font-bold">badge</span>
             </div>
             <div className="min-w-0">
               <h2 className="text-xs sm:text-sm font-black text-gray-900 leading-tight truncate">
@@ -979,139 +1042,152 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           {/* Tombol Tutup Mobile */}
           <button
             onClick={onClose}
-            className="md:hidden p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 cursor-pointer"
+            className="md:hidden p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 cursor-pointer shrink-0"
             title="Tutup (Esc)"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
         </div>
 
-        {/* Right: Minimalist Controls dengan Dropdown */}
-        <div className="flex items-center gap-2 justify-between md:justify-end flex-wrap sm:flex-nowrap">
-          {/* Dropdown 1: Ukuran ID Card */}
-          <div className="relative flex-1 sm:flex-initial">
-            <select
-              value={cardSizeId}
-              onChange={(e) => setCardSizeId(e.target.value)}
-              className="w-full sm:w-auto px-2.5 py-1.5 bg-gray-50 hover:bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-bold text-gray-800 focus:outline-none cursor-pointer transition-colors shadow-xs"
-              title="Pilih ukuran kartu ID Card sesuai standar mika / PVC"
-            >
-              <optgroup label="Standar PVC / KTP">
-                <option value="cr80">CR80 (54 × 85.6 mm)</option>
-              </optgroup>
-              <optgroup label="Seri B (Portrait / Tegak)">
-                <option value="b1">B1 (55 × 85 mm) • Luar 102×65mm</option>
-                <option value="b2">B2 (65 × 105 mm) • Luar 126×79mm</option>
-                <option value="b3">B3 (80 × 105 mm) • Luar 126×95mm</option>
-                <option value="b4">B4 (90 × 130 mm) • Luar 155×106mm</option>
-              </optgroup>
-              <optgroup label="Seri A (Landscape / Mendatar)">
-                <option value="a1">A1 (90 × 55 mm) • Luar 68×99mm</option>
-                <option value="a2">A2 (95 × 65 mm) • Luar 82×106mm</option>
-                <option value="a3">A3 (100 × 80 mm) • Luar 92×115mm</option>
-              </optgroup>
-            </select>
+        {/* Right: Controls & Actions */}
+        <div className="flex flex-col sm:flex-row md:items-center gap-2 justify-end">
+          {/* Row Dropdowns: 2 Kolom di Mobile, Flex di Desktop */}
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 w-full sm:w-auto">
+            {/* Dropdown 1: Ukuran ID Card */}
+            <div className="relative min-w-0">
+              <select
+                value={cardSizeId}
+                onChange={(e) => setCardSizeId(e.target.value)}
+                className="w-full sm:w-auto px-2 py-1.5 bg-gray-50 hover:bg-white border border-gray-300 focus:border-gray-900 rounded-lg text-xs font-bold text-gray-800 focus:outline-none cursor-pointer transition-colors shadow-xs truncate"
+                title="Pilih ukuran kartu ID Card sesuai standar mika / PVC"
+              >
+                <optgroup label="Standar PVC / KTP">
+                  <option value="cr80">CR80 (54 × 85.6 mm)</option>
+                </optgroup>
+                <optgroup label="Seri B (Portrait / Tegak)">
+                  <option value="b1">B1 (55 × 85 mm)</option>
+                  <option value="b2">B2 (65 × 105 mm)</option>
+                  <option value="b3">B3 (80 × 105 mm)</option>
+                  <option value="b4">B4 (90 × 130 mm)</option>
+                </optgroup>
+                <optgroup label="Seri A (Landscape / Mendatar)">
+                  <option value="a1">A1 (90 × 55 mm)</option>
+                  <option value="a2">A2 (95 × 65 mm)</option>
+                  <option value="a3">A3 (100 × 80 mm)</option>
+                </optgroup>
+              </select>
+            </div>
+
+            {/* Dropdown 2: Format Kertas & Layout */}
+            <div className="relative min-w-0">
+              <select
+                value={combinedLayoutValue}
+                onChange={(e) => handleCombinedLayoutChange(e.target.value)}
+                className="w-full sm:w-auto px-2 py-1.5 bg-gray-50 hover:bg-white border border-gray-300 focus:border-gray-900 rounded-lg text-xs font-bold text-gray-800 focus:outline-none cursor-pointer transition-colors shadow-xs truncate"
+                title="Pilih format cetak & susunan kartu"
+              >
+                <optgroup label="Cetak Kertas A4">
+                  <option value="a4_pairs_gap">A4: Berpasangan (Celah)</option>
+                  <option value="a4_pairs_fold">A4: Berpasangan (Rapat)</option>
+                  <option value="a4_front">A4: Depan Saja (Grid)</option>
+                  <option value="a4_back">A4: Belakang Saja (QR)</option>
+                </optgroup>
+                <optgroup label="Cetak Kartu Satuan">
+                  <option value="single">Kartu Satuan (Lepas)</option>
+                </optgroup>
+              </select>
+            </div>
           </div>
 
-          {/* Dropdown 2: Format Kertas & Layout (Menggabungkan Mode Cetak + Sisi + Gap) */}
-          <div className="relative flex-1 sm:flex-initial">
-            <select
-              value={combinedLayoutValue}
-              onChange={(e) => handleCombinedLayoutChange(e.target.value)}
-              className="w-full sm:w-auto px-2.5 py-1.5 bg-gray-50 hover:bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-bold text-gray-800 focus:outline-none cursor-pointer transition-colors shadow-xs"
-              title="Pilih format cetak & susunan kartu"
-            >
-              <optgroup label="Cetak Kertas A4 (Grid Berjajar)">
-                <option value="a4_pairs_gap">A4: Depan & Belakang (Ada Celah)</option>
-                <option value="a4_pairs_fold">A4: Depan & Belakang (Rapat / Lipat)</option>
-                <option value="a4_front">A4: Hanya Sisi Depan (Grid)</option>
-                <option value="a4_back">A4: Hanya Sisi Belakang (QR Grid)</option>
-              </optgroup>
-              <optgroup label="Cetak Kartu Satuan">
-                <option value="single">Kartu Satuan (Printer PVC / Lepas)</option>
-              </optgroup>
-            </select>
-          </div>
+          {/* Row Buttons & Zoom: Selalu Rapi Sebaris di Mobile & Desktop */}
+          <div className="flex items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto">
+            {/* Zoom Controls: Tampak di Mobile & Desktop */}
+            <div className="flex items-center bg-gray-100 border border-gray-300 rounded-lg px-1 py-0.5 gap-0.5 text-xs shrink-0">
+              <button
+                onClick={handleZoomOut}
+                className="w-6 h-6 flex items-center justify-center hover:bg-gray-200 rounded font-bold cursor-pointer text-gray-700 active:bg-gray-300"
+                title="Perkecil (-10%)"
+              >
+                -
+              </button>
+              <span className="font-mono text-[11px] font-bold px-1 min-w-[34px] text-center text-gray-800">
+                {Math.round(zoom * 100)}%
+              </span>
+              <button
+                onClick={handleZoomIn}
+                className="w-6 h-6 flex items-center justify-center hover:bg-gray-200 rounded font-bold cursor-pointer text-gray-700 active:bg-gray-300"
+                title="Perbesar (+10%)"
+              >
+                +
+              </button>
+              <button
+                onClick={handleFitToScreen}
+                className="px-1.5 py-0.5 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 rounded font-bold text-[10px] cursor-pointer shadow-2xs ml-0.5"
+                title="Sesuaikan otomatis ke layar (Fit)"
+              >
+                Fit
+              </button>
+            </div>
 
-          {/* Toggle Garis Potong */}
-          {viewMode === "a4" && (
-            <button
-              type="button"
-              onClick={() => setShowCutMarks((v) => !v)}
-              className={`px-2 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0 ${
-                showCutMarks
-                  ? "bg-amber-50 border-amber-400 text-amber-900"
-                  : "bg-gray-50 border-gray-300 text-gray-500"
-              }`}
-              title="Garis panduan potong gunting / cutter"
-            >
-              <span className="material-symbols-outlined text-sm">content_cut</span>
-              <span className="hidden lg:inline">{showCutMarks ? "Garis Potong" : "Tanpa Garis"}</span>
-            </button>
-          )}
+            {/* Toggle Garis Potong */}
+            {viewMode === "a4" && (
+              <button
+                type="button"
+                onClick={() => setShowCutMarks((v) => !v)}
+                className={`p-1.5 sm:px-2 sm:py-1 rounded-lg border text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shrink-0 ${
+                  showCutMarks
+                    ? "bg-amber-50 border-amber-400 text-amber-900"
+                    : "bg-gray-50 border-gray-300 text-gray-400"
+                }`}
+                title="Garis panduan potong gunting / cutter"
+              >
+                <span className="material-symbols-outlined text-sm">content_cut</span>
+                <span className="hidden xl:inline">{showCutMarks ? "Garis" : "Polos"}</span>
+              </button>
+            )}
 
-          {/* Zoom Controls Ringkas */}
-          <div className="hidden xl:flex items-center bg-gray-100 border border-gray-300 rounded-xl px-1.5 py-1 gap-1 text-xs shrink-0">
-            <button
-              onClick={() => setZoom((z) => Math.max(0.4, Math.round((z - 0.1) * 10) / 10))}
-              className="w-5 h-5 flex items-center justify-center hover:bg-gray-200 rounded font-bold cursor-pointer"
-              title="Perkecil"
-            >
-              -
-            </button>
-            <span className="font-mono text-[11px] font-bold px-1 min-w-[32px] text-center">
-              {Math.round(zoom * 100)}%
-            </span>
-            <button
-              onClick={() => setZoom((z) => Math.min(1.5, Math.round((z + 0.1) * 10) / 10))}
-              className="w-5 h-5 flex items-center justify-center hover:bg-gray-200 rounded font-bold cursor-pointer"
-              title="Perbesar"
-            >
-              +
-            </button>
-          </div>
+            {/* Action Buttons: PDF, ZIP, Cetak */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={handleDownloadPDF}
+                disabled={isDownloading}
+                className="py-1 px-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg border border-rose-800 shadow-xs active:translate-y-0.5 transition-all flex items-center gap-0.5 cursor-pointer disabled:opacity-50"
+                title="Unduh PDF"
+              >
+                <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+                <span>PDF</span>
+              </button>
 
-          {/* Action Buttons: PDF, ZIP, Cetak */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              onClick={handleDownloadPDF}
-              disabled={isDownloading}
-              className="py-1.5 px-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl border border-rose-800 shadow-xs active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
-              title={viewMode === "a4" ? "Unduh file PDF ukuran kertas A4" : "Unduh PDF ukuran kartu"}
-            >
-              <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
-              <span>PDF</span>
-            </button>
+              <button
+                onClick={handleDownloadPNG}
+                disabled={isDownloading}
+                className="py-1 px-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg border border-blue-800 shadow-xs active:translate-y-0.5 transition-all flex items-center gap-0.5 cursor-pointer disabled:opacity-50"
+                title="Unduh Gambar ZIP / PNG"
+              >
+                <span className="material-symbols-outlined text-sm">image</span>
+                <span>{students.length > 1 ? "ZIP" : "PNG"}</span>
+              </button>
 
-            <button
-              onClick={handleDownloadPNG}
-              disabled={isDownloading}
-              className="py-1.5 px-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl border border-blue-800 shadow-xs active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
-              title="Unduh file gambar PNG / ZIP"
-            >
-              <span className="material-symbols-outlined text-sm">image</span>
-              <span>{students.length > 1 ? "ZIP" : "PNG"}</span>
-            </button>
+              {/* Primary Print Button */}
+              <button
+                onClick={handlePrint}
+                disabled={isDownloading}
+                className="py-1 px-2.5 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs font-black rounded-lg border border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                title="Buka dialog cetak printer"
+              >
+                <span className="material-symbols-outlined text-sm">print</span>
+                <span>Cetak</span>
+              </button>
 
-            {/* Primary Print Button */}
-            <button
-              onClick={handlePrint}
-              disabled={isDownloading}
-              className="py-1.5 px-3.5 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs font-black rounded-xl border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-              title="Buka dialog cetak printer"
-            >
-              <span className="material-symbols-outlined text-base">print</span>
-              <span>Cetak</span>
-            </button>
-
-            {/* Desktop Close Button */}
-            <button
-              onClick={onClose}
-              className="hidden md:flex p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors border border-gray-300 cursor-pointer items-center justify-center ml-1"
-              title="Tutup (Esc)"
-            >
-              <span className="material-symbols-outlined text-lg">close</span>
-            </button>
+              {/* Desktop Close Button */}
+              <button
+                onClick={onClose}
+                className="hidden md:flex p-1 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300 cursor-pointer items-center justify-center ml-1"
+                title="Tutup (Esc)"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1149,8 +1225,17 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         </div>
       )}
 
-      {/* Main Preview Container */}
-      <div className="flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6 md:p-8 bg-slate-900 flex flex-col items-center justify-start min-h-0">
+      {/* Main Preview Container dengan Dukungan Touch Gesture & Pan */}
+      <div
+        className="preview-viewport-container flex-1 overflow-x-auto overflow-y-auto p-2 sm:p-4 md:p-8 bg-slate-900 min-h-0 w-full"
+        style={{
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-x pan-y pinch-zoom",
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <style id="id-card-styles">{`
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
@@ -1492,99 +1577,104 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           }
         `}</style>
 
-        <div
-          ref={cardRef}
-          className="flex flex-col items-center justify-start w-full transition-all pb-16"
-          style={{
-            zoom: zoom,
-          }}
-        >
-          {viewMode === "a4" ? (
-            // ==================== MODE A4 (BERJAJAR RAPI DI LEMBAR A4) ====================
-            a4Pages.map((pageStudents, pageIdx) => {
-              const isLandscape = a4LayoutConfig.orientation === "landscape";
-              return (
-                <div key={pageIdx} className="a4-sheet-wrapper mb-10 flex flex-col items-center">
-                  {/* Badge Header Lembar A4 */}
-                  <div className="a4-page-badge mb-2 flex items-center justify-between w-full max-w-[1188px] text-xs font-bold text-slate-300 px-2">
-                    <span className="flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-sm text-emerald-400">description</span>
-                      <span>Lembar A4 #{pageIdx + 1} dari {a4Pages.length}</span>
-                    </span>
-                    <span className="bg-slate-800 border border-slate-700 px-2.5 py-0.5 rounded-full text-[11px] font-mono text-emerald-300">
-                      {pageStudents.length} Siswa ({currentSize.code} • {a4SideMode === "pairs" ? (pairGapMode === "gap" ? "Pasang (Ada Celah)" : "Pasang (Rapat)") : a4SideMode === "front" ? "Depan" : "Belakang"})
-                    </span>
-                  </div>
+        <div className="min-w-fit w-full flex flex-col items-center justify-start pb-20">
+          <div
+            ref={cardRef}
+            className="preview-content-stage flex flex-col items-center justify-start transition-all"
+            style={{
+              zoom: zoom,
+            }}
+          >
+            {viewMode === "a4" ? (
+              // ==================== MODE A4 (BERJAJAR RAPI DI LEMBAR A4) ====================
+              a4Pages.map((pageStudents, pageIdx) => {
+                const isLandscape = a4LayoutConfig.orientation === "landscape";
+                return (
+                  <div key={pageIdx} className="a4-sheet-wrapper mb-10 flex flex-col items-center">
+                    {/* Badge Header Lembar A4 */}
+                    <div
+                      className="a4-page-badge mb-2 flex items-center justify-between text-xs font-bold text-slate-300 px-2"
+                      style={{ width: isLandscape ? "1188px" : "840px" }}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-sm text-emerald-400">description</span>
+                        <span>Lembar A4 #{pageIdx + 1} dari {a4Pages.length}</span>
+                      </span>
+                      <span className="bg-slate-800 border border-slate-700 px-2.5 py-0.5 rounded-full text-[11px] font-mono text-emerald-300">
+                        {pageStudents.length} Siswa ({currentSize.code} • {a4SideMode === "pairs" ? (pairGapMode === "gap" ? "Pasang (Ada Celah)" : "Pasang (Rapat)") : a4SideMode === "front" ? "Depan" : "Belakang"})
+                      </span>
+                    </div>
 
-                  {/* Lembar Fisik A4 */}
-                  <div
-                    className={`a4-sheet ${isLandscape ? "a4-landscape" : "a4-portrait"}`}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: `repeat(${a4LayoutConfig.cols}, 1fr)`,
-                      gridTemplateRows: `repeat(${a4LayoutConfig.rows}, 1fr)`,
-                      gap: "16px",
-                      padding: isLandscape ? "28px 40px" : "36px 30px",
-                      justifyItems: "center",
-                      alignItems: "center",
-                      boxSizing: "border-box",
-                    }}
-                  >
-                    {pageStudents.map((person) => {
-                      if (a4SideMode === "pairs") {
-                        // Pasang Sisi Depan + Sisi Belakang
-                        return (
-                          <div
-                            key={person.id}
-                            className={`id-card-pair-wrapper ${pairGapMode === "gap" ? "pair-has-gap" : "pair-no-gap"} ${showCutMarks ? "cut-guide-pair" : ""}`}
-                          >
-                            {renderFrontCard(person)}
-                            {pairGapMode === "gap" && showCutMarks && <div className="pair-gap-divider"></div>}
-                            {renderBackCard(person)}
-                          </div>
-                        );
-                      } else if (a4SideMode === "front") {
-                        // Sisi Depan Saja
-                        return (
-                          <div
-                            key={person.id}
-                            className={`id-card-wrapper ${showCutMarks ? "cut-guide-single" : ""}`}
-                          >
-                            {renderFrontCard(person)}
-                          </div>
-                        );
-                      } else {
-                        // Sisi Belakang Saja (QR Presensi)
-                        return (
-                          <div
-                            key={person.id}
-                            className={`id-card-wrapper ${showCutMarks ? "cut-guide-single" : ""}`}
-                          >
-                            {renderBackCard(person)}
-                          </div>
-                        );
-                      }
-                    })}
+                    {/* Lembar Fisik A4 */}
+                    <div
+                      className={`a4-sheet ${isLandscape ? "a4-landscape" : "a4-portrait"}`}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: `repeat(${a4LayoutConfig.cols}, 1fr)`,
+                        gridTemplateRows: `repeat(${a4LayoutConfig.rows}, 1fr)`,
+                        gap: "16px",
+                        padding: isLandscape ? "28px 40px" : "36px 30px",
+                        justifyItems: "center",
+                        alignItems: "center",
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      {pageStudents.map((person) => {
+                        if (a4SideMode === "pairs") {
+                          // Pasang Sisi Depan + Sisi Belakang
+                          return (
+                            <div
+                              key={person.id}
+                              className={`id-card-pair-wrapper ${pairGapMode === "gap" ? "pair-has-gap" : "pair-no-gap"} ${showCutMarks ? "cut-guide-pair" : ""}`}
+                            >
+                              {renderFrontCard(person)}
+                              {pairGapMode === "gap" && showCutMarks && <div className="pair-gap-divider"></div>}
+                              {renderBackCard(person)}
+                            </div>
+                          );
+                        } else if (a4SideMode === "front") {
+                          // Sisi Depan Saja
+                          return (
+                            <div
+                              key={person.id}
+                              className={`id-card-wrapper ${showCutMarks ? "cut-guide-single" : ""}`}
+                            >
+                              {renderFrontCard(person)}
+                            </div>
+                          );
+                        } else {
+                          // Sisi Belakang Saja (QR Presensi)
+                          return (
+                            <div
+                              key={person.id}
+                              className={`id-card-wrapper ${showCutMarks ? "cut-guide-single" : ""}`}
+                            >
+                              {renderBackCard(person)}
+                            </div>
+                          );
+                        }
+                      })}
+                    </div>
                   </div>
-                </div>
-              );
-            })
-          ) : (
-            // ==================== MODE KARTU SATUAN (SINGLE / LEPAS) ====================
-            <div className="flex flex-wrap justify-center items-start gap-6 sm:gap-8 p-4 w-full max-w-full">
-              {students.map((person) => (
-                <div
-                  key={person.id}
-                  data-id={person.id}
-                  data-uuid={person.uuid}
-                  className="student-card-print id-card-pair-wrapper pair-has-gap"
-                >
-                  {renderFrontCard(person)}
-                  {renderBackCard(person)}
-                </div>
-              ))}
-            </div>
-          )}
+                );
+              })
+            ) : (
+              // ==================== MODE KARTU SATUAN (SINGLE / LEPAS) ====================
+              <div className="flex flex-wrap justify-center items-start gap-6 sm:gap-8 p-4 w-full max-w-full">
+                {students.map((person) => (
+                  <div
+                    key={person.id}
+                    data-id={person.id}
+                    data-uuid={person.uuid}
+                    className="student-card-print id-card-pair-wrapper pair-has-gap"
+                  >
+                    {renderFrontCard(person)}
+                    {renderBackCard(person)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
