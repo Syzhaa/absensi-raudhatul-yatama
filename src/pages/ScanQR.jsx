@@ -642,31 +642,38 @@ export default function ScanQR() {
                   </div>
                 </div>
 
-                {/* Alternatif Box saat GPS Lemah / Error di dalam ruangan */}
-                {locationError && (
-                  <div className="mt-2.5 p-3 bg-amber-50 border-2 border-gray-900 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-sm text-xs">
-                    <div className="flex items-start gap-2 text-amber-950 font-bold min-w-0">
-                      <span className="material-symbols-outlined text-amber-600 text-lg flex-shrink-0 mt-0.5">cell_tower</span>
-                      <span className="leading-snug">{locationError}</span>
+                {/* Alternatif Box saat GPS Terbaca di Luar Radius atau Error Sinyal */}
+                {(locationError || (!isWithinRadius && !coords?.isPcVerified && !coords?.isFallbackVerified)) && (
+                  <div className="mt-2.5 p-3.5 bg-amber-50 border-2 border-gray-900 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm text-xs animate-slide-in">
+                    <div className="flex items-start gap-2.5 text-amber-950 font-bold min-w-0">
+                      <span className="material-symbols-outlined text-amber-600 text-xl flex-shrink-0 mt-0.5">cell_tower</span>
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="leading-snug">
+                          {locationError || `Sensor GPS HP mendeteksi jarak ${Math.round(currentDistance || 0)}m dari titik pusat (${effectiveLembaga?.toUpperCase() || "MA"}).`}
+                        </span>
+                        <span className="text-[11px] text-amber-800 font-normal">
+                          Perangkat mendeteksi sinyal jaringan BTS seluler / atap ruangan. Jika Anda sudah berada di sekolah, aktifkan lokasi sekolah di bawah.
+                        </span>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
                       <button
                         type="button"
                         onClick={detectLocation}
                         disabled={isLocating}
-                        className="flex-1 sm:flex-none px-3 py-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-gray-900 shadow-xs cursor-pointer disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
+                        className="flex-1 sm:flex-none px-3 py-2 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-gray-900 shadow-xs cursor-pointer disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
                       >
                         <span className="material-symbols-outlined text-base">refresh</span>
-                        <span>Coba Lagi Satelit</span>
+                        <span>Coba Satelit</span>
                       </button>
                       <button
                         type="button"
                         onClick={setSchoolLocationFallback}
-                        className="flex-1 sm:flex-none px-3 py-1.5 bg-primary-green hover:bg-emerald-400 border-2 border-gray-900 rounded-xl font-black text-gray-900 shadow-xs cursor-pointer transition-colors flex items-center justify-center gap-1"
-                        title="Aktifkan koordinat madrasah jika berada di dalam ruangan"
+                        className="flex-1 sm:flex-none px-3.5 py-2 bg-primary-green hover:bg-emerald-400 border-2 border-gray-900 rounded-xl font-black text-gray-900 shadow-xs cursor-pointer transition-colors flex items-center justify-center gap-1"
+                        title="Gunakan titik koordinat resmi madrasah"
                       >
                         <span className="material-symbols-outlined text-base">domain</span>
-                        <span>Alternatif Sekolah</span>
+                        <span>Aktifkan Lokasi Sekolah</span>
                       </button>
                     </div>
                   </div>
