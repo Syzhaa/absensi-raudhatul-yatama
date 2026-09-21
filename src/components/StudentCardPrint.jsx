@@ -1,7 +1,83 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
+
+// Preset Ukuran ID Card
+export const CARD_SIZE_PRESETS = {
+  cr80: {
+    id: "cr80",
+    name: "Standar CR80 (54 × 85.6 mm)",
+    shortName: "CR80 (54x85.6mm)",
+    desc: "Standar ISO KTP / ATM / Kartu Pelajar PVC",
+    widthMm: 54,
+    heightMm: 85.6,
+    widthPx: 216,
+    heightPx: 342,
+  },
+  b2: {
+    id: "b2",
+    name: "Holder Mika B2 (54 × 90 mm)",
+    shortName: "Holder B2 (54x90mm)",
+    desc: "Lebih tinggi, pas untuk casing mika tali B2",
+    widthMm: 54,
+    heightMm: 90,
+    widthPx: 216,
+    heightPx: 360,
+  },
+  medium: {
+    id: "medium",
+    name: "Ukuran Sedang (60 × 90 mm)",
+    shortName: "Sedang (60x90mm)",
+    desc: "Lebih lebar, tulisan nama & NISN lebih besar",
+    widthMm: 60,
+    heightMm: 90,
+    widthPx: 240,
+    heightPx: 360,
+  },
+};
+
+// Preset Susunan di Kertas A4
+export const A4_LAYOUT_PRESETS = {
+  landscape_pairs: {
+    id: "landscape_pairs",
+    name: "A4 Landscape: 4 Pasang (8 Kartu / Hal)",
+    desc: "Depan & Belakang berdampingan, mudah dilipat",
+    orientation: "landscape",
+    cardsPerStudent: 2,
+    studentsPerPage: 4,
+    cardsPerPage: 8,
+  },
+  portrait_pairs: {
+    id: "portrait_pairs",
+    name: "A4 Portrait: 3 Pasang (6 Kartu / Hal)",
+    desc: "Depan & Belakang berdampingan vertikal",
+    orientation: "portrait",
+    cardsPerStudent: 2,
+    studentsPerPage: 3,
+    cardsPerPage: 6,
+  },
+  grid_front: {
+    id: "grid_front",
+    name: "A4 Portrait: 9 Kartu (Depan Saja)",
+    desc: "Grid 3 × 3 sisi depan untuk 9 siswa",
+    orientation: "portrait",
+    cardsPerStudent: 1,
+    studentsPerPage: 9,
+    cardsPerPage: 9,
+    side: "front",
+  },
+  grid_back: {
+    id: "grid_back",
+    name: "A4 Portrait: 9 Kartu (Belakang Saja)",
+    desc: "Grid 3 × 3 sisi belakang QR untuk 9 siswa",
+    orientation: "portrait",
+    cardsPerStudent: 1,
+    studentsPerPage: 9,
+    cardsPerPage: 9,
+    side: "back",
+  },
+};
 
 export default function StudentCardPrint({ students = [], onClose, type = "student" }) {
   const cardRef = useRef(null);
@@ -10,42 +86,24 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   const [logoUrl, setLogoUrl] = useState("/logo.png");
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState("");
+
+  // Pengaturan Cetak & Kertas
+  const [paperType, setPaperType] = useState("a4"); // "a4" | "cr80"
+  const [cardSizeKey, setCardSizeKey] = useState("cr80"); // "cr80" | "b2" | "medium"
+  const [a4LayoutKey, setA4LayoutKey] = useState("landscape_pairs"); // "landscape_pairs" | "portrait_pairs" | "grid_front" | "grid_back"
+  const [showCutMarks, setShowCutMarks] = useState(true);
+
+  const currentCardSize = CARD_SIZE_PRESETS[cardSizeKey] || CARD_SIZE_PRESETS.cr80;
+  const currentA4Layout = A4_LAYOUT_PRESETS[a4LayoutKey] || A4_LAYOUT_PRESETS.landscape_pairs;
+
   const [zoom, setZoom] = useState(() => {
     if (typeof window !== "undefined") {
-      return window.innerWidth >= 1024 ? 1.05 : (window.innerWidth >= 640 ? 1.0 : 0.9);
+      return window.innerWidth >= 1280 ? 0.9 : window.innerWidth >= 1024 ? 0.8 : 0.7;
     }
-    return 1.0;
+    return 0.85;
   });
-  const [noGap, setNoGap] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      if (containerRef.current?.requestFullscreen) {
-        containerRef.current.requestFullscreen();
-      } else if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
-      }
-      setIsFullscreen(true);
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
-      setIsFullscreen(false);
-    }
-  };
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, []);
-
-  // Keyboard shortcut: Esc to close
+  // Esc key shortcut
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -58,13 +116,15 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     };
   }, [onClose]);
 
-  const handleFitScreen = () => {
-    if (typeof window === "undefined") return;
-    const availH = window.innerHeight - 120;
-    const fitScale = Math.min(1.85, Math.max(0.75, availH / 360));
-    setZoom(Math.round(fitScale * 20) / 20);
-  };
+  // Lock body scroll
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
 
+  // Fetch logo madrasah
   useEffect(() => {
     let isMounted = true;
     const fetchApiLogo = async () => {
@@ -87,14 +147,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     };
   }, []);
 
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, []);
-
-  // Generate QR code for each person
+  // Generate QR Code untuk setiap orang
   useEffect(() => {
     if (!students || students.length === 0) return;
 
@@ -133,6 +186,18 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     );
   };
 
+  // Chunking data siswa per lembar A4
+  const a4Pages = useMemo(() => {
+    if (paperType !== "a4") return [];
+    const perPage = currentA4Layout.studentsPerPage || 4;
+    const pages = [];
+    for (let i = 0; i < students.length; i += perPage) {
+      pages.push(students.slice(i, i + perPage));
+    }
+    return pages;
+  }, [students, paperType, currentA4Layout]);
+
+  // Handler: Download PNG / ZIP
   const handleDownloadPNG = async () => {
     setIsDownloading(true);
     setDownloadProgress("Menyiapkan aset gambar kartu...");
@@ -165,16 +230,16 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
 
         for (let i = 0; i < wrappers.length; i++) {
           const student = students[i];
-          setDownloadProgress(`Merender kartu ${i + 1}/${wrappers.length}: ${student.nama}...`);
+          setDownloadProgress(`Merender kartu ${i + 1}/${wrappers.length}: ${student?.nama || "Siswa"}...`);
           const dataUrl = await captureWrapper(wrappers[i]);
           const imgData = dataUrl.split("base64,")[1];
-          const safeName = (student.nama || `siswa-${i + 1}`).replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-");
-          zip.file(`kartu-${safeName}-${student.nisn || student.id}.png`, imgData, { base64: true });
+          const safeName = (student?.nama || `siswa-${i + 1}`).replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-");
+          zip.file(`kartu-${safeName}-${student?.nisn || student?.id || i}.png`, imgData, { base64: true });
         }
 
         setDownloadProgress(`Mengompresi ${wrappers.length} kartu ke file ZIP...`);
         const content = await zip.generateAsync({ type: "blob" });
-        saveAs(content, `kartu_identitas_${students.length}_siswa.zip`);
+        saveAs(content, `kartu_identitas_${students.length}_${type}.zip`);
       }
     } catch (error) {
       console.error("Gagal mendownload PNG/ZIP:", error);
@@ -185,58 +250,94 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     }
   };
 
+  // Handler: Download PDF (A4 Sheet atau CR80 Card)
   const handleDownloadPDF = async () => {
     setIsDownloading(true);
-    setDownloadProgress("Menyiapkan file PDF ukuran kartu (CR80: 54x85.6mm)...");
     try {
       const { default: jsPDF } = await import("jspdf");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: [54, 85.6],
-      });
 
-      const wrappers = cardRef.current.querySelectorAll(".id-card-wrapper");
-      if (wrappers.length === 0) return;
+      if (paperType === "a4") {
+        const isLandscape = currentA4Layout.orientation === "landscape";
+        setDownloadProgress("Menyiapkan dokumen PDF Lembar A4...");
+        const pdf = new jsPDF({
+          orientation: isLandscape ? "landscape" : "portrait",
+          unit: "mm",
+          format: "a4",
+        });
 
-      let pageCount = 0;
-      for (let i = 0; i < wrappers.length; i++) {
-        const student = students[i];
-        setDownloadProgress(`Memproses PDF ${i + 1}/${wrappers.length}: ${student.nama}...`);
+        const sheets = cardRef.current.querySelectorAll(".a4-sheet");
+        if (sheets.length === 0) return;
 
-        const cards = wrappers[i].querySelectorAll(".id-card");
-        if (cards.length >= 2) {
-          // 1. Kartu Depan
-          await waitForImages(cards[0]);
-          const frontDataUrl = await toPng(cards[0], {
-            pixelRatio: 2.5,
+        for (let i = 0; i < sheets.length; i++) {
+          setDownloadProgress(`Memproses Lembar A4 ${i + 1}/${sheets.length}...`);
+          await waitForImages(sheets[i]);
+          const sheetDataUrl = await toPng(sheets[i], {
+            pixelRatio: 2.0,
             backgroundColor: "#ffffff",
             skipFonts: false,
             cacheBust: false,
           });
-          if (pageCount > 0) pdf.addPage([54, 85.6], "portrait");
-          pdf.addImage(frontDataUrl, "PNG", 0, 0, 54, 85.6);
-          pageCount++;
 
-          // 2. Kartu Belakang
-          await waitForImages(cards[1]);
-          const backDataUrl = await toPng(cards[1], {
-            pixelRatio: 2.5,
-            backgroundColor: "#ffffff",
-            skipFonts: false,
-            cacheBust: false,
-          });
-          pdf.addPage([54, 85.6], "portrait");
-          pdf.addImage(backDataUrl, "PNG", 0, 0, 54, 85.6);
-          pageCount++;
+          if (i > 0) {
+            pdf.addPage("a4", isLandscape ? "landscape" : "portrait");
+          }
+          const pageW = isLandscape ? 297 : 210;
+          const pageH = isLandscape ? 210 : 297;
+          pdf.addImage(sheetDataUrl, "PNG", 0, 0, pageW, pageH);
         }
-      }
 
-      setDownloadProgress("Menyimpan dokumen PDF...");
-      const filename = wrappers.length === 1
-        ? `kartu-${(students[0]?.nama || "siswa").replace(/\s+/g, "-")}-cr80.pdf`
-        : `kartu_siswa_cr80_${students.length}_data.pdf`;
-      pdf.save(filename);
+        setDownloadProgress("Menyimpan dokumen PDF A4...");
+        const filename = `kartu_${type}_a4_${students.length}_data.pdf`;
+        pdf.save(filename);
+      } else {
+        // Mode Kartu Satuan CR80
+        setDownloadProgress("Menyiapkan file PDF ukuran kartu (CR80: 54x85.6mm)...");
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: [currentCardSize.widthMm, currentCardSize.heightMm],
+        });
+
+        const wrappers = cardRef.current.querySelectorAll(".id-card-wrapper");
+        if (wrappers.length === 0) return;
+
+        let pageCount = 0;
+        for (let i = 0; i < wrappers.length; i++) {
+          const student = students[i];
+          setDownloadProgress(`Memproses PDF ${i + 1}/${wrappers.length}: ${student?.nama || "Siswa"}...`);
+
+          const cards = wrappers[i].querySelectorAll(".id-card");
+          if (cards.length >= 2) {
+            // Sisi Depan
+            await waitForImages(cards[0]);
+            const frontDataUrl = await toPng(cards[0], {
+              pixelRatio: 2.5,
+              backgroundColor: "#ffffff",
+              skipFonts: false,
+              cacheBust: false,
+            });
+            if (pageCount > 0) pdf.addPage([currentCardSize.widthMm, currentCardSize.heightMm], "portrait");
+            pdf.addImage(frontDataUrl, "PNG", 0, 0, currentCardSize.widthMm, currentCardSize.heightMm);
+            pageCount++;
+
+            // Sisi Belakang
+            await waitForImages(cards[1]);
+            const backDataUrl = await toPng(cards[1], {
+              pixelRatio: 2.5,
+              backgroundColor: "#ffffff",
+              skipFonts: false,
+              cacheBust: false,
+            });
+            pdf.addPage([currentCardSize.widthMm, currentCardSize.heightMm], "portrait");
+            pdf.addImage(backDataUrl, "PNG", 0, 0, currentCardSize.widthMm, currentCardSize.heightMm);
+            pageCount++;
+          }
+        }
+
+        setDownloadProgress("Menyimpan dokumen PDF...");
+        const filename = `kartu_${type}_cr80_${students.length}_data.pdf`;
+        pdf.save(filename);
+      }
     } catch (error) {
       console.error("Gagal membuat PDF kartu:", error);
       alert("Gagal membuat PDF kartu. Silakan coba lagi.");
@@ -246,22 +347,46 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     }
   };
 
+  // Handler: Dialog Cetak Printer
   const handlePrint = () => {
     const printWindow = window.open("", "_blank");
     const cardHTML = cardRef.current.innerHTML;
     const styles = document.getElementById("id-card-styles").innerHTML;
+    const isA4 = paperType === "a4";
+    const isLandscape = isA4 && currentA4Layout.orientation === "landscape";
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Cetak Kartu - ${students.length} Data</title>
+          <title>Cetak Kartu - ${students.length} Data (${isA4 ? "Kertas A4" : "Kartu Satuan"})</title>
           <style>
             ${styles}
+            @media print {
+              @page {
+                size: ${isA4 ? (isLandscape ? "A4 landscape" : "A4 portrait") : `${currentCardSize.widthMm}mm ${currentCardSize.heightMm}mm`};
+                margin: 0;
+              }
+              body {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+              }
+              .a4-page-badge {
+                display: none !important;
+              }
+              .a4-sheet {
+                box-shadow: none !important;
+                border: none !important;
+                margin: 0 !important;
+                page-break-after: always !important;
+                break-after: page !important;
+              }
+            }
           </style>
         </head>
         <body>
-          <div class="print-container">
+          <div class="${isA4 ? "print-a4-container" : "print-container"}">
             ${cardHTML}
           </div>
         </body>
@@ -316,47 +441,294 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
   };
 
+  // Render Sisi Depan Kartu
+  const renderFrontCard = (person) => {
+    const isTeacher = type === "teacher" || person.nip !== undefined;
+    const cleanKelas = person.kelas
+      ? String(person.kelas).replace(/^kelas\s*/i, "").trim() || "-"
+      : "-";
+
+    const toTitleCase = (str) => {
+      if (!str) return "";
+      return str
+        .toLowerCase()
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+    };
+
+    const ttl = [toTitleCase(person.tempat_lahir), formatDate(person.tanggal_lahir)]
+      .filter(Boolean)
+      .join(", ");
+
+    const cleanAlamat = (person.alamat || "-")
+      .replace(/\.([a-zA-Z])/g, ". $1")
+      .replace(/,([a-zA-Z])/g, ", $1")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return (
+      <div
+        className="id-card"
+        style={{
+          width: `${currentCardSize.widthPx}px`,
+          height: `${currentCardSize.heightPx}px`,
+        }}
+      >
+        {/* 1. Header Zone */}
+        <div className="card-header-nct">
+          <div className="logo-emblem">
+            <img
+              src={logoUrl}
+              alt="Logo"
+              crossOrigin="anonymous"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.removeAttribute("crossOrigin");
+                e.target.src = "/logo.png";
+              }}
+            />
+          </div>
+          <div className="title-box">
+            <div className="title-institution">{getLembagaName(person.lembaga)}</div>
+            <div className="title-main">RAUDHATUL YATAMA</div>
+            <div className="title-location">KABUPATEN BANJAR</div>
+          </div>
+        </div>
+
+        {/* 2. Middle Zone */}
+        <div className="card-middle-nct">
+          <div className="vertical-ribbon">
+            <div className="vertical-text">
+              {isTeacher ? "TEACHER IDENTITY CARD" : "STUDENT IDENTITY CARD"}
+            </div>
+          </div>
+          <div className="photo-container-nct">
+            <div className="photo-box-nct">
+              {person.foto ? (
+                <img
+                  src={getPhotoUrl(person.foto)}
+                  alt={person.nama}
+                  crossOrigin="anonymous"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.removeAttribute("crossOrigin");
+                    e.target.src = getFallbackAvatar();
+                  }}
+                />
+              ) : (
+                <img src={getFallbackAvatar()} alt={person.nama} />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Bottom Zone: Data Diri */}
+        <div className="card-info-nct">
+          <div className="info-dashed-row">
+            <span className="label-typewriter">NAMA</span>
+            <span className="value-text value-name">{person.nama || "-"}</span>
+          </div>
+
+          {isTeacher ? (
+            <>
+              <div className="info-dashed-row">
+                <span className="label-typewriter">NPK / NIP</span>
+                <span className="value-text font-mono font-bold">{person.nip || "-"}</span>
+              </div>
+              <div className="info-dashed-row">
+                <span className="label-typewriter">MAPEL</span>
+                <span className="value-text font-semibold">{person.mata_pelajaran || "Umum"}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="info-dashed-row">
+                <span className="label-typewriter">NISN</span>
+                <span className="value-text font-mono font-bold">{person.nisn || person.nis || "-"}</span>
+              </div>
+              <div className="info-dashed-row">
+                <span className="label-typewriter">KELAS</span>
+                <span className="value-text value-class">{cleanKelas}</span>
+              </div>
+              <div className="info-dashed-row">
+                <span className="label-typewriter">TTL</span>
+                <span className="value-text">{ttl || "-"}</span>
+              </div>
+              <div className="info-dashed-row">
+                <span className="label-typewriter">ALAMAT</span>
+                <span className="value-text value-address">{cleanAlamat}</span>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Render Sisi Belakang Kartu
+  const renderBackCard = (person) => {
+    const isTeacher = type === "teacher" || person.nip !== undefined;
+    return (
+      <div
+        className="id-card"
+        style={{
+          width: `${currentCardSize.widthPx}px`,
+          height: `${currentCardSize.heightPx}px`,
+        }}
+      >
+        <div className="back-header-nct">
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%" }}>
+            <div>KARTU PRESENSI DIGITAL</div>
+            <div style={{ fontSize: "8px", fontWeight: 800, letterSpacing: "1.2px", opacity: 0.95, marginTop: "1px" }}>
+              {isTeacher ? "DEWAN GURU" : "SANTRI"}
+            </div>
+          </div>
+        </div>
+
+        <div className="back-body-nct">
+          <div className="back-qr-box">
+            {qrCodes[person.id] ? (
+              <img src={qrCodes[person.id]} alt="QR Presensi" />
+            ) : (
+              <div className="text-[10px] text-gray-400 font-mono">Membuat QR...</div>
+            )}
+          </div>
+          <div className="back-qr-label">SCAN UNTUK PRESENSI</div>
+        </div>
+
+        <div className="back-rules-nct">
+          <div className="rules-header">KETENTUAN KARTU</div>
+          <div className="rules-list">
+            <div className="rules-item">
+              <span className="rules-num">1.</span>
+              <span>Kartu identitas resmi Raudhatul Yatama.</span>
+            </div>
+            <div className="rules-item">
+              <span className="rules-num">2.</span>
+              <span>Wajib dibawa untuk presensi kehadiran digital.</span>
+            </div>
+            <div className="rules-item">
+              <span className="rules-num">3.</span>
+              <span>Jika kartu hilang, segera lapor ke bagian administrasi.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const modalContent = (
     <div
       ref={containerRef}
       className="fixed inset-0 top-0 left-0 right-0 bottom-0 m-0 p-0 bg-slate-900/90 backdrop-blur-sm flex flex-col z-[9999] overflow-hidden"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        margin: 0,
-        padding: 0,
-        zIndex: 9999,
-      }}
     >
       {/* Top Action Header */}
-      <div className="bg-white border-b-2 border-gray-900 shadow-sm p-2.5 sm:p-3.5 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2.5 z-10 shrink-0 m-0">
+      <div className="bg-white border-b-2 border-gray-900 shadow-sm p-2.5 sm:p-3.5 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 z-10 shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm sm:text-base font-black text-gray-900 leading-tight">
-              Preview Kartu {type === "teacher" ? "Guru & Pendidik" : "Pelajar & Santri"}
+            <h2 className="text-sm sm:text-base font-black text-gray-900 leading-tight flex items-center gap-2">
+              <span className="material-symbols-outlined text-emerald-600 text-lg sm:text-xl">badge</span>
+              <span>Cetak Kartu {type === "teacher" ? "Dewan Guru" : "Santri & Pelajar"}</span>
             </h2>
             <p className="text-[11px] text-gray-500 font-medium">
-              {students.length} Kartu siap cetak atau unduh format PNG
+              {students.length} Data • {paperType === "a4" ? `Kertas A4 (${a4Pages.length} Lembar)` : "Kartu Satuan CR80"}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="md:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+            className="lg:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
             title="Tutup"
           >
             <span className="material-symbols-outlined text-xl">close</span>
           </button>
         </div>
 
-        {/* Action Toolbar */}
-        <div className="flex items-center gap-2 justify-end flex-wrap">
+        {/* Toolbar Pengaturan Kertas & Ukuran Kartu */}
+        <div className="flex items-center gap-2 justify-start lg:justify-end flex-wrap">
+          {/* 1. Pemilih Kertas: A4 vs CR80 */}
+          <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-300 text-xs font-bold">
+            <button
+              onClick={() => setPaperType("a4")}
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                paperType === "a4"
+                  ? "bg-emerald-600 text-white shadow-sm font-black"
+                  : "text-gray-700 hover:text-gray-900"
+              }`}
+              title="Cetak bersusun rapi di lembar kertas A4"
+            >
+              <span className="material-symbols-outlined text-sm">article</span>
+              <span>Kertas A4</span>
+            </button>
+            <button
+              onClick={() => setPaperType("cr80")}
+              className={`px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer ${
+                paperType === "cr80"
+                  ? "bg-emerald-600 text-white shadow-sm font-black"
+                  : "text-gray-700 hover:text-gray-900"
+              }`}
+              title="Cetak ukuran kartu satuan untuk printer PVC"
+            >
+              <span className="material-symbols-outlined text-sm">credit_card</span>
+              <span>Kartu Satuan</span>
+            </button>
+          </div>
+
+          {/* 2. Pemilih Ukuran ID Card */}
+          <div className="flex items-center gap-1">
+            <select
+              value={cardSizeKey}
+              onChange={(e) => setCardSizeKey(e.target.value)}
+              className="px-2.5 py-1.5 bg-white border-2 border-gray-300 rounded-xl text-xs font-bold text-gray-800 focus:border-gray-900 focus:outline-none cursor-pointer"
+              title="Pilih standar ukuran kartu"
+            >
+              {Object.values(CARD_SIZE_PRESETS).map((sz) => (
+                <option key={sz.id} value={sz.id}>
+                  {sz.shortName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. Pemilih Susunan A4 (hanya muncul saat mode A4) */}
+          {paperType === "a4" && (
+            <div className="flex items-center gap-1">
+              <select
+                value={a4LayoutKey}
+                onChange={(e) => setA4LayoutKey(e.target.value)}
+                className="px-2.5 py-1.5 bg-white border-2 border-gray-300 rounded-xl text-xs font-bold text-gray-800 focus:border-gray-900 focus:outline-none cursor-pointer"
+                title="Pilih susunan kartu di kertas A4"
+              >
+                {Object.values(A4_LAYOUT_PRESETS).map((lay) => (
+                  <option key={lay.id} value={lay.id}>
+                    {lay.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* 4. Sakelar Garis Potong (Cut Marks) */}
+          {paperType === "a4" && (
+            <button
+              type="button"
+              onClick={() => setShowCutMarks((prev) => !prev)}
+              className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors ${
+                showCutMarks
+                  ? "bg-amber-50 border-amber-400 text-amber-900"
+                  : "bg-gray-50 border-gray-300 text-gray-500"
+              }`}
+              title="Tampilkan garis putus-putus panduan memotong kartu"
+            >
+              <span className="material-symbols-outlined text-sm">content_cut</span>
+              <span>{showCutMarks ? "Garis Potong: ON" : "Garis Potong: OFF"}</span>
+            </button>
+          )}
+
           {/* Zoom Controls */}
           <div className="hidden sm:flex items-center bg-gray-100 border border-gray-300 rounded-xl px-2 py-1 gap-1 text-xs">
             <button
-              onClick={() => setZoom((z) => Math.max(0.6, Math.round((z - 0.1) * 10) / 10))}
+              onClick={() => setZoom((z) => Math.max(0.4, Math.round((z - 0.1) * 10) / 10))}
               className="p-1 hover:bg-gray-200 rounded text-gray-700 font-bold cursor-pointer"
               title="Perkecil"
             >
@@ -366,60 +738,60 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               {Math.round(zoom * 100)}%
             </span>
             <button
-              onClick={() => setZoom((z) => Math.min(1.8, Math.round((z + 0.1) * 10) / 10))}
+              onClick={() => setZoom((z) => Math.min(1.5, Math.round((z + 0.1) * 10) / 10))}
               className="p-1 hover:bg-gray-200 rounded text-gray-700 font-bold cursor-pointer"
               title="Perbesar"
             >
               +
             </button>
             <button
-              onClick={() => setZoom(1.0)}
+              onClick={() => setZoom(paperType === "a4" ? 0.85 : 1.0)}
               className="ml-1 text-[10px] text-blue-600 hover:underline cursor-pointer font-bold"
-              title="Reset Zoom ke 100%"
+              title="Reset Zoom"
             >
-              100%
+              Reset
             </button>
           </div>
 
-          {/* Download PNG / ZIP */}
+          {/* Tombol Unduh PNG/ZIP */}
           <button
             onClick={handleDownloadPNG}
             disabled={isDownloading}
-            className="py-2 px-3 sm:px-3.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-            title={students.length > 1 ? "Unduh seluruh kartu dalam file ZIP" : "Unduh kartu format PNG"}
+            className="py-1.5 sm:py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Unduh format gambar PNG (satuan atau arsip ZIP)"
           >
             <span className="material-symbols-outlined text-base">
               {isDownloading ? "hourglass_empty" : "folder_zip"}
             </span>
-            <span>{students.length > 1 ? "Unduh ZIP (PNG)" : "Unduh PNG"}</span>
+            <span>{students.length > 1 ? "Unduh ZIP" : "Unduh PNG"}</span>
           </button>
 
-          {/* Download PDF (Ukuran Kartu CR80) */}
+          {/* Tombol Unduh PDF */}
           <button
             onClick={handleDownloadPDF}
             disabled={isDownloading}
-            className="py-2 px-3 sm:px-3.5 bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-            title="Unduh file PDF dengan ukuran standar kartu ID (CR80: 54x85.6mm)"
+            className="py-1.5 sm:py-2 px-3 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title={paperType === "a4" ? "Unduh dokumen PDF ukuran kertas A4 siap print" : "Unduh PDF ukuran kartu ID CR80"}
           >
             <span className="material-symbols-outlined text-base">picture_as_pdf</span>
-            <span>Unduh PDF (Kartu)</span>
+            <span>{paperType === "a4" ? "Unduh PDF (A4)" : "Unduh PDF (CR80)"}</span>
           </button>
 
-          {/* Print Card */}
+          {/* Tombol Cetak Langsung */}
           <button
             onClick={handlePrint}
             disabled={isDownloading}
-            className="py-2 px-3.5 sm:px-4 bg-primary-green hover:bg-lime-400 text-gray-900 text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-            title="Buka dialog cetak printer ukuran kartu"
+            className="py-1.5 sm:py-2 px-3.5 bg-primary-green hover:bg-lime-400 text-gray-900 text-xs font-black rounded-xl border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Buka dialog cetak printer"
           >
             <span className="material-symbols-outlined text-base">print</span>
-            <span>Cetak Kartu</span>
+            <span>{paperType === "a4" ? "Cetak Kertas A4" : "Cetak Kartu"}</span>
           </button>
 
-          {/* Close */}
+          {/* Tombol Tutup */}
           <button
             onClick={onClose}
-            className="py-2 px-3 font-bold text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition-colors text-xs border border-gray-300 cursor-pointer flex items-center justify-center gap-1"
+            className="py-1.5 sm:py-2 px-3 font-bold text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-xl transition-colors text-xs border border-gray-300 cursor-pointer flex items-center justify-center gap-1"
             title="Tutup Pratinjau (Esc)"
           >
             <span className="material-symbols-outlined text-base">close</span>
@@ -432,12 +804,12 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       {isDownloading && (
         <div className="bg-amber-100 border-b-2 border-amber-400 px-4 py-2 flex items-center justify-center gap-2 text-xs font-black text-amber-900 animate-pulse">
           <span className="material-symbols-outlined text-sm animate-spin">sync</span>
-          <span>{downloadProgress || "Sedang memproses unduhan kartu..."}</span>
+          <span>{downloadProgress || "Sedang memproses unduhan..."}</span>
         </div>
       )}
 
-      {/* Main Preview Container - Use justify-start with scroll padding so top header is never clipped */}
-      <div className="flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6 md:p-8 bg-slate-200/90 flex flex-col items-center justify-start min-h-0">
+      {/* Main Preview Container */}
+      <div className="flex-1 overflow-y-auto overflow-x-auto p-4 sm:p-6 md:p-8 bg-slate-800/90 flex flex-col items-center justify-start min-h-0">
         <style id="id-card-styles">{`
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
@@ -457,34 +829,111 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             flex-direction: row;
             align-items: center;
             justify-content: center;
-            gap: 20px;
-            margin-bottom: 24px;
+            gap: 16px;
+            margin-bottom: 20px;
             page-break-inside: avoid;
             flex-shrink: 0;
-            transition: gap 0.2s ease;
+            position: relative;
           }
-          .id-card-wrapper.no-gap {
+          .id-card-wrapper.paired-fold {
             gap: 0px !important;
+            border-radius: 8px;
+            overflow: hidden;
           }
-          .id-card-wrapper.no-gap .id-card:first-child {
+          .id-card-wrapper.paired-fold .id-card:first-child {
             border-top-right-radius: 0px !important;
             border-bottom-right-radius: 0px !important;
             border-right: 1.5px dashed #475569 !important;
           }
-          .id-card-wrapper.no-gap .id-card:last-child {
+          .id-card-wrapper.paired-fold .id-card:last-child {
             border-top-left-radius: 0px !important;
             border-bottom-left-radius: 0px !important;
             border-left: none !important;
           }
 
-          /* CR80 Card Dimensions (Standard ID Card) */
-          .id-card {
-            width: 216px;
-            height: 342px;
+          /* Tampilan Lembar Kertas A4 */
+          .a4-sheet {
             background: #ffffff;
-            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            position: relative;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          /* A4 Landscape: 297mm x 210mm (Ratio 1.414) */
+          .a4-landscape {
+            width: 1188px;
+            height: 840px;
+            min-width: 1188px;
+            min-height: 840px;
+          }
+
+          /* A4 Portrait: 210mm x 297mm */
+          .a4-portrait {
+            width: 840px;
+            height: 1188px;
+            min-width: 840px;
+            min-height: 1188px;
+          }
+
+          /* Grid Container Dalam A4 */
+          .a4-grid-landscape-pairs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 20px;
+            padding: 30px 40px;
+            width: 100%;
+            height: 100%;
+            justify-items: center;
+            align-items: center;
+            box-sizing: border-box;
+          }
+
+          .a4-grid-portrait-pairs {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            gap: 16px;
+            padding: 30px 20px;
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+          }
+
+          .a4-grid-9 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 16px;
+            padding: 30px 30px;
+            width: 100%;
+            height: 100%;
+            justify-items: center;
+            align-items: center;
+            box-sizing: border-box;
+          }
+
+          /* Garis Potong (Cut Guide Marks) */
+          .cut-guide-box {
+            position: relative;
+            padding: 4px;
+            border: 1px dashed #94a3b8;
+            border-radius: 8px;
+            background: #fafafa;
+          }
+
+          /* ID Card Container */
+          .id-card {
+            background: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
             border: 1.5px solid #cbd5e1;
             position: relative;
             display: flex;
@@ -492,9 +941,10 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             justify-content: space-between;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            box-sizing: border-box;
           }
 
-          /* HEADER ZONE: Dark Green Bar with School Logo */
+          /* Header Zone */
           .card-header-nct {
             background: #064e3b;
             color: #ffffff;
@@ -550,9 +1000,9 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             line-height: 1.1;
           }
 
-          /* MIDDLE ZONE: Vertical Typography on Left + Portrait Photo on Right */
+          /* Middle Zone: Foto & Pita Vertikal */
           .card-middle-nct {
-            padding: 10px 12px 6px 12px;
+            padding: 8px 12px 4px 12px;
             display: flex;
             align-items: stretch;
             justify-content: space-between;
@@ -604,7 +1054,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             display: block;
           }
 
-          /* BOTTOM ZONE: Personal Info with Dashed Line Separators */
+          /* Bottom Zone: Data Diri */
           .card-info-nct {
             padding: 0 14px 8px 14px;
             display: flex;
@@ -663,7 +1113,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             letter-spacing: 0.1px;
           }
 
-          /* BACK SIDE: Matching Dark Green Accent + Big Crisp QR */
+          /* Back Side */
           .back-header-nct {
             background: #064e3b;
             color: #ffffff;
@@ -688,11 +1138,11 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 10px;
+            padding: 8px;
           }
           .back-qr-box {
-            width: 118px;
-            height: 118px;
+            width: 114px;
+            height: 114px;
             background: #ffffff;
             border: 2px solid #064e3b;
             border-radius: 10px;
@@ -708,7 +1158,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             display: block;
           }
           .back-qr-label {
-            margin-top: 6px;
+            margin-top: 5px;
             font-family: 'Courier New', Courier, monospace;
             font-size: 7px;
             font-weight: 800;
@@ -750,238 +1200,95 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             color: #064e3b;
             flex-shrink: 0;
           }
-
-          /* PRINT MEDIA OPTIMIZATION: CR80 EXACT CARD SIZE (54mm x 85.6mm) */
-          @media print {
-            @page {
-              size: 54mm 85.6mm;
-              margin: 0;
-            }
-            html, body {
-              background: #ffffff !important;
-              padding: 0 !important;
-              margin: 0 !important;
-              width: 54mm !important;
-            }
-            .print-container {
-              display: block !important;
-              padding: 0 !important;
-              margin: 0 !important;
-              width: 54mm !important;
-            }
-            .id-card-wrapper {
-              display: block !important;
-              gap: 0 !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-            }
-            .id-card {
-              width: 54mm !important;
-              height: 85.6mm !important;
-              page-break-after: always !important;
-              break-after: page !important;
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-              box-shadow: none !important;
-              border: 1px solid #cbd5e1 !important;
-              border-radius: 3.5mm !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              overflow: hidden !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-          }
         `}</style>
 
         <div
           ref={cardRef}
-          className="flex flex-wrap justify-center items-start gap-6 sm:gap-8 p-4 pt-6 pb-24 w-full max-w-full"
+          className="flex flex-col items-center justify-start w-full transition-all pb-16"
           style={{
             zoom: zoom,
           }}
         >
-          {students.map((person) => {
-            const isTeacher = type === "teacher" || person.nip !== undefined;
-
-            // Format Kelas: Directly show "X", "XI", "XII", "VII", etc. without "Kelas" prefix
-            const cleanKelas = person.kelas
-              ? String(person.kelas)
-                  .replace(/^kelas\s*/i, "")
-                  .trim() || "-"
-              : "-";
-
-            // Format TTL: Place of birth in Title Case + formatted date
-            const toTitleCase = (str) => {
-              if (!str) return "";
-              return str
-                .toLowerCase()
-                .split(" ")
-                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                .join(" ");
-            };
-
-            const ttl = [toTitleCase(person.tempat_lahir), formatDate(person.tanggal_lahir)]
-              .filter(Boolean)
-              .join(", ");
-
-            // Clean address string from duplicate whitespaces/newlines and fix missing spaces after dots/commas
-            const cleanAlamat = (person.alamat || "-")
-              .replace(/\.([a-zA-Z])/g, ". $1")
-              .replace(/,([a-zA-Z])/g, ", $1")
-              .replace(/\s+/g, " ")
-              .trim();
-
-            return (
-              <div
-                key={person.id}
-                data-id={person.id}
-                data-uuid={person.uuid}
-                className={`student-card-print id-card-wrapper ${noGap ? "no-gap" : ""}`}
-              >
-                {/* FRONT SIDE (DESAIN PREPPY ACADEMY STYLE) */}
-                <div className="id-card">
-                  {/* 1. Header Zone: Dark Green Bar with Clean School Logo */}
-                  <div className="card-header-nct">
-                    <div className="logo-emblem">
-                      <img
-                        src={logoUrl}
-                        alt="Logo"
-                        crossOrigin="anonymous"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.removeAttribute("crossOrigin");
-                          e.target.src = "/logo.png";
-                        }}
-                      />
-                    </div>
-                    <div className="title-box">
-                      <div className="title-institution">{getLembagaName(person.lembaga)}</div>
-                      <div className="title-main">RAUDHATUL YATAMA</div>
-                      <div className="title-location">KABUPATEN BANJAR</div>
-                    </div>
+          {paperType === "a4" ? (
+            // ==================== MODE A4: SUSUNAN RAPI PER LEMBAR A4 ====================
+            a4Pages.map((pageStudents, pageIdx) => {
+              const isLandscape = currentA4Layout.orientation === "landscape";
+              return (
+                <div key={pageIdx} className="a4-sheet-wrapper mb-10 flex flex-col items-center">
+                  {/* Badge Header Lembar A4 */}
+                  <div className="a4-page-badge mb-2 flex items-center justify-between w-full max-w-[1188px] text-xs font-bold text-slate-300 px-2">
+                    <span className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm text-emerald-400">description</span>
+                      <span>Lembar A4 #{pageIdx + 1} dari {a4Pages.length}</span>
+                    </span>
+                    <span className="bg-slate-700/80 px-2.5 py-0.5 rounded-full text-[11px] font-mono">
+                      {pageStudents.length} Siswa ({currentA4Layout.name})
+                    </span>
                   </div>
 
-                  {/* 2. Middle Zone: Vertical Text Ribbon & Portrait Photo */}
-                  <div className="card-middle-nct">
-                    <div className="vertical-ribbon">
-                      <div className="vertical-text">
-                        {isTeacher ? "TEACHER IDENTITY CARD" : "STUDENT IDENTITY CARD"}
+                  {/* Kertas A4 Fisik */}
+                  <div
+                    className={`a4-sheet ${isLandscape ? "a4-landscape" : "a4-portrait"}`}
+                  >
+                    {currentA4Layout.id === "landscape_pairs" ? (
+                      // Layout 1: A4 Landscape - 4 Pasang Berdampingan (8 Kartu)
+                      <div className="a4-grid-landscape-pairs">
+                        {pageStudents.map((person) => (
+                          <div
+                            key={person.id}
+                            className={`id-card-wrapper paired-fold ${showCutMarks ? "cut-guide-box" : ""}`}
+                          >
+                            {renderFrontCard(person)}
+                            {renderBackCard(person)}
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                    <div className="photo-container-nct">
-                      <div className="photo-box-nct">
-                        {person.foto ? (
-                          <img
-                            src={getPhotoUrl(person.foto)}
-                            alt={person.nama}
-                            crossOrigin="anonymous"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.removeAttribute("crossOrigin");
-                              e.target.src = getFallbackAvatar();
-                            }}
-                          />
-                        ) : (
-                          <img src={getFallbackAvatar()} alt={person.nama} />
-                        )}
+                    ) : currentA4Layout.id === "portrait_pairs" ? (
+                      // Layout 2: A4 Portrait - 3 Pasang Berdampingan (6 Kartu)
+                      <div className="a4-grid-portrait-pairs">
+                        {pageStudents.map((person) => (
+                          <div
+                            key={person.id}
+                            className={`id-card-wrapper paired-fold ${showCutMarks ? "cut-guide-box" : ""}`}
+                          >
+                            {renderFrontCard(person)}
+                            {renderBackCard(person)}
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  </div>
-
-                  {/* 3. Bottom Zone: Fields with Dashed Separators */}
-                  <div className="card-info-nct">
-                    {/* Row 1: Nama */}
-                    <div className="info-dashed-row">
-                      <span className="label-typewriter">NAMA</span>
-                      <span className="value-text value-name">{person.nama || "-"}</span>
-                    </div>
-
-                    {isTeacher ? (
-                      <>
-                        {/* Row 2 Guru: NPK / NIP */}
-                        <div className="info-dashed-row">
-                          <span className="label-typewriter">NPK / NIP</span>
-                          <span className="value-text font-mono font-bold">{person.nip || "-"}</span>
-                        </div>
-                        {/* Row 3 Guru: Mapel */}
-                        <div className="info-dashed-row">
-                          <span className="label-typewriter">MAPEL</span>
-                          <span className="value-text font-semibold">{person.mata_pelajaran || "Umum"}</span>
-                        </div>
-                      </>
                     ) : (
-                      <>
-                        {/* Row 2 Siswa: NISN */}
-                        <div className="info-dashed-row">
-                          <span className="label-typewriter">NISN</span>
-                          <span className="value-text font-mono font-bold">{person.nisn || person.nis || "-"}</span>
-                        </div>
-                        {/* Row 3 Siswa: Kelas (Langsung X, XI, XII tanpa kata 'Kelas') */}
-                        <div className="info-dashed-row">
-                          <span className="label-typewriter">KELAS</span>
-                          <span className="value-text value-class">{cleanKelas}</span>
-                        </div>
-                        {/* Row 3 Siswa: TTL */}
-                        <div className="info-dashed-row">
-                          <span className="label-typewriter">TTL</span>
-                          <span className="value-text">{ttl || "-"}</span>
-                        </div>
-                        {/* Row 4 Siswa: Alamat */}
-                        <div className="info-dashed-row">
-                          <span className="label-typewriter">ALAMAT</span>
-                          <span className="value-text value-address">{cleanAlamat}</span>
-                        </div>
-                      </>
+                      // Layout 3 & 4: A4 Portrait Grid 3x3 (9 Kartu Depan Saja / Belakang Saja)
+                      <div className="a4-grid-9">
+                        {pageStudents.map((person) => (
+                          <div
+                            key={person.id}
+                            className={`id-card-wrapper ${showCutMarks ? "cut-guide-box" : ""}`}
+                          >
+                            {currentA4Layout.side === "back" ? renderBackCard(person) : renderFrontCard(person)}
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
-
-                {/* BACK SIDE (SISI BELAKANG: QR PRESENSI DIGITAL) */}
-                <div className="id-card">
-                  <div className="back-header-nct">
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%" }}>
-                      <div>KARTU PRESENSI DIGITAL</div>
-                      <div style={{ fontSize: "8px", fontWeight: 800, letterSpacing: "1.2px", opacity: 0.95, marginTop: "1px" }}>
-                        {isTeacher ? "DEWAN GURU" : "SANTRI"}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="back-body-nct">
-                    <div className="back-qr-box">
-                      {qrCodes[person.id] ? (
-                        <img src={qrCodes[person.id]} alt="QR Presensi" />
-                      ) : (
-                        <div className="text-[10px] text-gray-400 font-mono">Membuat QR...</div>
-                      )}
-                    </div>
-                    <div className="back-qr-label">SCAN UNTUK PRESENSI</div>
-                  </div>
-
-                  <div className="back-rules-nct">
-                    <div className="rules-header">KETENTUAN KARTU</div>
-                    <div className="rules-list">
-                      <div className="rules-item">
-                        <span className="rules-num">1.</span>
-                        <span>Kartu identitas resmi Raudhatul Yatama.</span>
-                      </div>
-                      <div className="rules-item">
-                        <span className="rules-num">2.</span>
-                        <span>Wajib dibawa untuk presensi kehadiran digital.</span>
-                      </div>
-                      <div className="rules-item">
-                        <span className="rules-num">3.</span>
-                        <span>Jika kartu hilang, segera lapor ke bagian administrasi.</span>
-                      </div>
-                    </div>
-                  </div>
+              );
+            })
+          ) : (
+            // ==================== MODE SATUAN: CR80 INDIVIDUAL ====================
+            <div className="flex flex-wrap justify-center items-start gap-6 sm:gap-8 p-4 w-full max-w-full">
+              {students.map((person) => (
+                <div
+                  key={person.id}
+                  data-id={person.id}
+                  data-uuid={person.uuid}
+                  className="student-card-print id-card-wrapper"
+                >
+                  {renderFrontCard(person)}
+                  {renderBackCard(person)}
                 </div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
