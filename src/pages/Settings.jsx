@@ -314,13 +314,13 @@ export default function Settings() {
         </div>
 
         {/* Tab Selector Desktop & Mobile */}
-        <div className="flex items-center bg-gray-100 p-1 border-2 border-gray-900 rounded-xl gap-1 w-full sm:w-auto">
+        <div className="flex items-center bg-gray-100 p-1 border-2 border-gray-900 rounded-xl gap-1 w-full sm:w-auto overflow-x-auto max-w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <button
             type="button"
             onClick={() => handleTabChange("jam")}
-            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
+            className={`flex-shrink-0 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
               activeTab === "jam"
-                ? "bg-primary-green text-gray-900 border border-gray-900 shadow-sm"
+                ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-xs"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
@@ -330,9 +330,9 @@ export default function Settings() {
           <button
             type="button"
             onClick={() => handleTabChange("format")}
-            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
+            className={`flex-shrink-0 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
               activeTab === "format"
-                ? "bg-primary-green text-gray-900 border border-gray-900 shadow-sm"
+                ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-xs"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
@@ -342,9 +342,9 @@ export default function Settings() {
           <button
             type="button"
             onClick={() => handleTabChange("lokasi")}
-            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
+            className={`flex-shrink-0 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
               activeTab === "lokasi"
-                ? "bg-primary-green text-gray-900 border border-gray-900 shadow-sm"
+                ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-xs"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
@@ -354,9 +354,9 @@ export default function Settings() {
           <button
             type="button"
             onClick={() => handleTabChange("system")}
-            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
+            className={`flex-shrink-0 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
               activeTab === "system"
-                ? "bg-primary-green text-gray-900 border border-gray-900 shadow-sm"
+                ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-xs"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
@@ -366,9 +366,9 @@ export default function Settings() {
           <button
             type="button"
             onClick={() => handleTabChange("roles")}
-            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 ${
+            className={`flex-shrink-0 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-1 whitespace-nowrap cursor-pointer ${
               activeTab === "roles"
-                ? "bg-primary-green text-gray-900 border border-gray-900 shadow-sm"
+                ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-xs"
                 : "text-gray-600 hover:text-gray-900"
             }`}
           >
