@@ -87,8 +87,8 @@ export default function LocationPickerMap({
   const [userLocation, setUserLocation] = useState(null);
   const [testDistance, setTestDistance] = useState(null);
 
-  const latNum = parseFloat(latitude) || -3.37651;
-  const lonNum = parseFloat(longitude) || 114.64682;
+  const latNum = parseFloat(latitude) || -3.3747649;
+  const lonNum = parseFloat(longitude) || 114.646542;
   const radiusNum = parseInt(radius, 10) || 100;
 
   // Inisialisasi Map

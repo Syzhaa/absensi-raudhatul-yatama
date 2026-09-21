@@ -106,14 +106,14 @@ export default function ScanQR() {
   const schoolLat =
     settings?.latitude !== undefined && settings?.latitude !== null
       ? parseFloat(settings.latitude)
-      : -3.37651;
+      : -3.3747649;
   const schoolLon =
     settings?.longitude !== undefined && settings?.longitude !== null
       ? parseFloat(settings.longitude)
-      : 114.64682;
+      : 114.646542;
   const radiusMax = settings?.radius_meters
     ? parseInt(settings.radius_meters, 10)
-    : 100;
+    : 150;
 
   const setPcSchoolLocation = () => {
     const activeLembagaNorm = (effectiveLembaga || "ma").toLowerCase();
@@ -212,10 +212,15 @@ export default function ScanQR() {
       ? getDistance(coords.latitude, coords.longitude, schoolLat, schoolLon)
       : null;
 
+  const effectiveDistance =
+    currentDistance !== null
+      ? Math.max(0, currentDistance - Math.min(coords?.accuracy || 0, 50))
+      : null;
+
   const isWithinRadius =
     !isLocationRequired ||
     coords?.isPcVerified ||
-    (currentDistance !== null && currentDistance <= radiusMax);
+    (effectiveDistance !== null && effectiveDistance <= radiusMax);
 
   // Fetch recent logs
   const { data: recentLogs } = useQuery({
@@ -330,7 +335,7 @@ export default function ScanQR() {
           message: "Lokasi GPS belum terdeteksi. Silakan klik tombol 'Refresh GPS' di atas kamera.",
         };
       }
-      if (!coords?.isPcVerified && currentDistance !== null && currentDistance > radiusMax) {
+      if (!coords?.isPcVerified && effectiveDistance !== null && effectiveDistance > radiusMax) {
         return {
           valid: false,
           message: `Di luar jangkauan sekolah (${Math.round(currentDistance)}m). Presensi hanya sah di lingkungan sekolah (maks ${radiusMax}m).`,
