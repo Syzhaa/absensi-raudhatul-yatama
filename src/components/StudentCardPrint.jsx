@@ -122,7 +122,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   // State Pengaturan Cetak
   const [viewMode, setViewMode] = useState("a4"); // "a4" | "single"
   const [cardSizeId, setCardSizeId] = useState("cr80"); // "cr80", "a1", "a2", "a3", "b1", "b2", "b3", "b4"
-  const [a4SideMode, setA4SideMode] = useState("pairs"); // "pairs" (depan-belakang lipat), "front" (depan saja), "back" (belakang saja)
+  const [a4SideMode, setA4SideMode] = useState("pairs"); // "pairs" | "front" | "back"
+  const [pairGapMode, setPairGapMode] = useState("gap"); // "gap" (ada celah pemisah) | "fold" (rapat/lipat)
   const [showCutMarks, setShowCutMarks] = useState(true);
 
   const currentSize = useMemo(() => {
@@ -132,23 +133,30 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   // Skala ukuran font & elemen di dalam kartu
   const cardScale = useMemo(() => {
     if (currentSize.isLandscape) {
-      return Math.min(1.2, currentSize.heightMm / 54);
+      return Math.min(1.15, currentSize.heightMm / 54);
     }
-    return Math.max(1.0, Math.min(1.45, currentSize.widthMm / 54));
+    return Math.max(1.0, Math.min(1.4, currentSize.widthMm / 54));
   }, [currentSize]);
 
-  // Hitung otomatis susunan grid A4 terbaik (Landscape vs Portrait, Kolom × Baris)
+  // Perhitungan layout grid A4 presisi: Memperhitungkan margin aman (10mm) dan jarak gap (4mm)
+  // Menjamin TIDAK ADA kartu yang terpotong di tepi kanan maupun bawah!
   const a4LayoutConfig = useMemo(() => {
-    // Area cetak A4 (210 × 297 mm) dengan margin aman 10mm:
-    // Portrait: 190 mm width, 277 mm height
-    // Landscape: 277 mm width, 190 mm height
     const isPairs = a4SideMode === "pairs";
+    const gapMm = 4; // gap antar elemen dalam mm
+    const marginMm = 10; // margin aman tepi A4 dalam mm
+
+    // Area cetak aman:
+    // A4 Portrait: 210 x 297 mm -> aman: (210 - 20) x (297 - 20) = 190 x 277 mm
+    // A4 Landscape: 297 x 210 mm -> aman: (297 - 20) x (210 - 20) = 277 x 190 mm
+    const safeW_P = 190;
+    const safeH_P = 277;
+    const safeW_L = 277;
+    const safeH_L = 190;
 
     if (currentSize.isLandscape) {
-      // B1 Landscape (85 × 54 mm)
+      // Format B1 Landscape (85 x 54 mm)
       if (isPairs) {
-        // Sepasang diletakkan berdampingan: 170 mm lebar × 54 mm tinggi
-        // A4 Portrait muat 1 kolom × 4 baris = 4 pasang
+        // Pasangan: 2 kartu mendatar berdampingan (85 + gap + 85 = ~174 mm)
         return {
           orientation: "portrait",
           cols: 1,
@@ -157,7 +165,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           label: "A4 Portrait: 4 Pasang (8 Kartu / Lembar)",
         };
       } else {
-        // Satuan: 85 mm lebar × 54 mm tinggi -> A4 Portrait muat 2 kolom × 4 baris = 8 kartu
+        // Satuan: 85 x 54 mm -> Di Portrait: 2 kolom (174mm) x 4 baris (228mm) = 8 kartu
         return {
           orientation: "portrait",
           cols: 2,
@@ -168,22 +176,24 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       }
     }
 
-    // Untuk kartu vertikal (CR80, A1, A2, A3, B2, B3, B4):
+    // Format Vertikal (CR80, A1, A2, A3, B2, B3, B4)
     const w = currentSize.widthMm;
     const h = currentSize.heightMm;
 
     if (isPairs) {
-      const pairW = w * 2;
+      // 1 Pasang = Kartu Depan + Celah + Kartu Belakang
+      const innerGapMm = pairGapMode === "gap" ? 3 : 0;
+      const pairW = (w * 2) + innerGapMm;
       const pairH = h;
 
-      // Cek kapasitas di Landscape (277 × 190)
-      const colsL = Math.floor(277 / pairW);
-      const rowsL = Math.floor(190 / pairH);
+      // Hitung muatan di Landscape
+      const colsL = Math.floor((safeW_L + gapMm) / (pairW + gapMm));
+      const rowsL = Math.floor((safeH_L + gapMm) / (pairH + gapMm));
       const capL = colsL * rowsL;
 
-      // Cek kapasitas di Portrait (190 × 277)
-      const colsP = Math.floor(190 / pairW);
-      const rowsP = Math.floor(277 / pairH);
+      // Hitung muatan di Portrait
+      const colsP = Math.floor((safeW_P + gapMm) / (pairW + gapMm));
+      const rowsP = Math.floor((safeH_P + gapMm) / (pairH + gapMm));
       const capP = colsP * rowsP;
 
       if (capL >= capP && capL > 0) {
@@ -204,15 +214,20 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         };
       }
     } else {
-      // Satuan (Depan Saja / Belakang Saja)
-      const colsP = Math.floor(190 / w);
-      const rowsP = Math.floor(277 / h);
+      // Mode Satuan (Hanya Depan / Hanya Belakang)
+      // Rumus ketat dengan gap agar tidak pernah overflow!
+      const colsP = Math.floor((safeW_P + gapMm) / (w + gapMm));
+      const rowsP = Math.floor((safeH_P + gapMm) / (h + gapMm));
       const capP = colsP * rowsP;
 
-      const colsL = Math.floor(277 / w);
-      const rowsL = Math.floor(190 / h);
+      const colsL = Math.floor((safeW_L + gapMm) / (w + gapMm));
+      const rowsL = Math.floor((safeH_L + gapMm) / (h + gapMm));
       const capL = colsL * rowsL;
 
+      // Untuk CR80 dan A1 (54mm):
+      // colsP = floor(194 / 58) = 3; rowsP = floor(281 / 89.6) = 3 -> 3x3 = 9 kartu (Portrait)
+      // colsL = floor(281 / 58) = 4; rowsL = floor(194 / 89.6) = 2 -> 4x2 = 8 kartu (Landscape)
+      // Portrait 9 kartu lebih banyak dan pas tengah tanpa terpotong!
       if (capP >= capL && capP > 0) {
         return {
           orientation: "portrait",
@@ -231,7 +246,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         };
       }
     }
-  }, [currentSize, a4SideMode]);
+  }, [currentSize, a4SideMode, pairGapMode]);
 
   // Pembagian data siswa per lembar kertas A4
   const a4Pages = useMemo(() => {
@@ -244,7 +259,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     return pages;
   }, [students, viewMode, a4LayoutConfig]);
 
-  // Responsive default zoom
+  // Responsive zoom
   const [zoom, setZoom] = useState(() => {
     if (typeof window !== "undefined") {
       return window.innerWidth >= 1280 ? 0.85 : window.innerWidth >= 1024 ? 0.75 : 0.65;
@@ -589,7 +604,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     return `data:image/svg+xml,${encodeURIComponent(svg)}`;
   };
 
-  // Render Kartu Sisi Depan (Mendukung Format Portrait & Format Landscape B1)
+  // Render Kartu Sisi Depan
   const renderFrontCard = (person) => {
     const isTeacher = type === "teacher" || person.nip !== undefined;
     const cleanKelas = person.kelas
@@ -616,7 +631,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       .trim();
 
     if (currentSize.isLandscape) {
-      // Layout Khusus Format B1 Landscape (85 × 54 mm)
+      // Layout Format B1 Landscape (85 × 54 mm)
       return (
         <div
           className="id-card id-card-horizontal"
@@ -626,8 +641,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           }}
         >
           {/* Header Bar Mendatar */}
-          <div className="card-header-nct" style={{ minHeight: "40px", padding: "6px 10px" }}>
-            <div className="logo-emblem" style={{ width: "30px", height: "30px" }}>
+          <div className="card-header-nct" style={{ minHeight: "38px", padding: "4px 8px" }}>
+            <div className="logo-emblem" style={{ width: "28px", height: "28px" }}>
               <img
                 src={logoUrl}
                 alt="Logo"
@@ -640,17 +655,17 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               />
             </div>
             <div className="title-box">
-              <div className="title-institution">{getLembagaName(person.lembaga)}</div>
-              <div className="title-main" style={{ fontSize: "9.5px" }}>RAUDHATUL YATAMA</div>
+              <div className="title-institution" style={{ fontSize: "7.5px" }}>{getLembagaName(person.lembaga)}</div>
+              <div className="title-main" style={{ fontSize: "9px" }}>RAUDHATUL YATAMA</div>
             </div>
-            <span className="text-[8px] font-mono font-black text-emerald-300 uppercase tracking-widest bg-emerald-950/80 px-1.5 py-0.5 rounded border border-emerald-500/50">
+            <span className="text-[7.5px] font-mono font-black text-emerald-300 uppercase tracking-wider bg-emerald-950/80 px-1 py-0.5 rounded border border-emerald-500/50">
               {isTeacher ? "GURU" : "SANTRI"}
             </span>
           </div>
 
-          {/* Body Mendatar: Foto di Kiri, Data di Kanan */}
-          <div className="flex items-center gap-3 p-2.5 flex-1 min-h-0 bg-white">
-            <div className="photo-box-nct shrink-0" style={{ width: "76px", height: "98px", borderRadius: "6px" }}>
+          {/* Body Mendatar */}
+          <div className="flex items-center gap-2.5 p-2 flex-1 min-h-0 bg-white overflow-hidden">
+            <div className="photo-box-nct shrink-0" style={{ width: "72px", height: "92px", borderRadius: "6px" }}>
               {person.foto ? (
                 <img
                   src={getPhotoUrl(person.foto)}
@@ -667,22 +682,22 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               )}
             </div>
 
-            <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+            <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
               <div className="info-dashed-row">
-                <span className="label-typewriter">NAMA</span>
-                <span className="value-text value-name truncate">{person.nama || "-"}</span>
+                <span className="label-typewriter" style={{ fontSize: "6.5px" }}>NAMA</span>
+                <span className="value-text value-name truncate" style={{ fontSize: "7.5px" }}>{person.nama || "-"}</span>
               </div>
               <div className="info-dashed-row">
-                <span className="label-typewriter">{isTeacher ? "NPK/NIP" : "NISN"}</span>
-                <span className="value-text font-mono font-bold">{isTeacher ? person.nip : (person.nisn || person.nis || "-")}</span>
+                <span className="label-typewriter" style={{ fontSize: "6.5px" }}>{isTeacher ? "NPK/NIP" : "NISN"}</span>
+                <span className="value-text font-mono font-bold" style={{ fontSize: "7px" }}>{isTeacher ? person.nip : (person.nisn || person.nis || "-")}</span>
               </div>
               <div className="info-dashed-row">
-                <span className="label-typewriter">{isTeacher ? "MAPEL" : "KELAS"}</span>
-                <span className="value-text value-class">{isTeacher ? (person.mata_pelajaran || "Umum") : cleanKelas}</span>
+                <span className="label-typewriter" style={{ fontSize: "6.5px" }}>{isTeacher ? "MAPEL" : "KELAS"}</span>
+                <span className="value-text value-class" style={{ fontSize: "7px" }}>{isTeacher ? (person.mata_pelajaran || "Umum") : cleanKelas}</span>
               </div>
               <div className="info-dashed-row">
-                <span className="label-typewriter">ALAMAT</span>
-                <span className="value-text value-address truncate">{cleanAlamat}</span>
+                <span className="label-typewriter" style={{ fontSize: "6.5px" }}>ALAMAT</span>
+                <span className="value-text value-address truncate" style={{ fontSize: "6.2px" }}>{cleanAlamat}</span>
               </div>
             </div>
           </div>
@@ -691,8 +706,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     }
 
     // Layout Standar Format Portrait (CR80, A1, A2, A3, B2, B3, B4)
-    const photoWidth = Math.round(100 * cardScale);
-    const photoHeight = Math.round(122 * cardScale);
+    const photoWidth = Math.round(96 * cardScale);
+    const photoHeight = Math.round(118 * cardScale);
 
     return (
       <div
@@ -700,11 +715,12 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         style={{
           width: `${currentSize.widthPx}px`,
           height: `${currentSize.heightPx}px`,
+          maxHeight: `${currentSize.heightPx}px`,
         }}
       >
         {/* 1. Header Zone */}
-        <div className="card-header-nct" style={{ minHeight: `${Math.round(52 * cardScale)}px`, padding: `${Math.round(8 * cardScale)}px ${Math.round(10 * cardScale)}px` }}>
-          <div className="logo-emblem" style={{ width: `${Math.round(36 * cardScale)}px`, height: `${Math.round(36 * cardScale)}px` }}>
+        <div className="card-header-nct" style={{ minHeight: `${Math.round(48 * cardScale)}px`, padding: `${Math.round(6 * cardScale)}px ${Math.round(9 * cardScale)}px` }}>
+          <div className="logo-emblem" style={{ width: `${Math.round(34 * cardScale)}px`, height: `${Math.round(34 * cardScale)}px` }}>
             <img
               src={logoUrl}
               alt="Logo"
@@ -717,22 +733,22 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             />
           </div>
           <div className="title-box">
-            <div className="title-institution" style={{ fontSize: `${8 * cardScale}px` }}>
+            <div className="title-institution" style={{ fontSize: `${7.8 * cardScale}px` }}>
               {getLembagaName(person.lembaga)}
             </div>
-            <div className="title-main" style={{ fontSize: `${10.5 * cardScale}px` }}>
+            <div className="title-main" style={{ fontSize: `${10 * cardScale}px` }}>
               RAUDHATUL YATAMA
             </div>
-            <div className="title-location" style={{ fontSize: `${6.5 * cardScale}px` }}>
+            <div className="title-location" style={{ fontSize: `${6.2 * cardScale}px` }}>
               KABUPATEN BANJAR
             </div>
           </div>
         </div>
 
         {/* 2. Middle Zone */}
-        <div className="card-middle-nct" style={{ padding: `${Math.round(8 * cardScale)}px ${Math.round(12 * cardScale)}px` }}>
-          <div className="vertical-ribbon" style={{ width: `${Math.round(22 * cardScale)}px` }}>
-            <div className="vertical-text" style={{ fontSize: `${7.5 * cardScale}px` }}>
+        <div className="card-middle-nct" style={{ padding: `${Math.round(6 * cardScale)}px ${Math.round(10 * cardScale)}px` }}>
+          <div className="vertical-ribbon" style={{ width: `${Math.round(20 * cardScale)}px` }}>
+            <div className="vertical-text" style={{ fontSize: `${7.2 * cardScale}px` }}>
               {isTeacher ? "TEACHER IDENTITY CARD" : "STUDENT IDENTITY CARD"}
             </div>
           </div>
@@ -757,10 +773,10 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         </div>
 
         {/* 3. Bottom Zone: Data Diri */}
-        <div className="card-info-nct" style={{ padding: `0 ${Math.round(14 * cardScale)}px ${Math.round(8 * cardScale)}px` }}>
+        <div className="card-info-nct" style={{ padding: `0 ${Math.round(12 * cardScale)}px ${Math.round(7 * cardScale)}px` }}>
           <div className="info-dashed-row">
             <span className="label-typewriter" style={{ fontSize: `${6.8 * cardScale}px` }}>NAMA</span>
-            <span className="value-text value-name" style={{ fontSize: `${7.8 * cardScale}px` }}>{person.nama || "-"}</span>
+            <span className="value-text value-name" style={{ fontSize: `${7.6 * cardScale}px` }}>{person.nama || "-"}</span>
           </div>
 
           {isTeacher ? (
@@ -802,7 +818,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   // Render Kartu Sisi Belakang (QR Presensi Digital)
   const renderBackCard = (person) => {
     const isTeacher = type === "teacher" || person.nip !== undefined;
-    const qrSize = currentSize.isLandscape ? 90 : Math.round(114 * cardScale);
+    const qrSize = currentSize.isLandscape ? 86 : Math.round(110 * cardScale);
 
     if (currentSize.isLandscape) {
       // Sisi Belakang B1 Landscape
@@ -814,26 +830,26 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             height: `${currentSize.heightPx}px`,
           }}
         >
-          <div className="back-header-nct" style={{ minHeight: "36px", padding: "6px 10px", fontSize: "8.5px" }}>
+          <div className="back-header-nct" style={{ minHeight: "34px", padding: "4px 8px", fontSize: "8px" }}>
             KARTU PRESENSI DIGITAL • {isTeacher ? "DEWAN GURU" : "SANTRI"}
           </div>
-          <div className="flex items-center gap-3 p-2.5 flex-1 min-h-0 bg-white">
+          <div className="flex items-center gap-2.5 p-2 flex-1 min-h-0 bg-white">
             <div className="flex flex-col items-center shrink-0">
-              <div className="back-qr-box" style={{ width: `${qrSize}px`, height: `${qrSize}px`, padding: "4px" }}>
+              <div className="back-qr-box" style={{ width: `${qrSize}px`, height: `${qrSize}px`, padding: "3px" }}>
                 {qrCodes[person.id] ? (
                   <img src={qrCodes[person.id]} alt="QR Presensi" />
                 ) : (
-                  <div className="text-[9px] text-gray-400 font-mono">Membuat QR...</div>
+                  <div className="text-[8px] text-gray-400 font-mono">Membuat QR...</div>
                 )}
               </div>
-              <div className="back-qr-label" style={{ fontSize: "6px", marginTop: "3px" }}>SCAN PRESENSI</div>
+              <div className="back-qr-label" style={{ fontSize: "6px", marginTop: "2px" }}>SCAN PRESENSI</div>
             </div>
 
-            <div className="flex-1 text-[7px] text-slate-700 space-y-1">
+            <div className="flex-1 text-[6.8px] text-slate-700 space-y-0.5">
               <div className="font-bold text-emerald-950 uppercase border-b border-emerald-200 pb-0.5">Ketentuan Kartu:</div>
               <div>1. Kartu resmi Yayasan Raudhatul Yatama.</div>
-              <div>2. Wajib dibawa saat presensi digital sekolah.</div>
-              <div>3. Jika hilang segera lapor ke admin sekolah.</div>
+              <div>2. Wajib dibawa untuk presensi kehadiran digital.</div>
+              <div>3. Jika hilang lapor ke bagian administrasi.</div>
             </div>
           </div>
         </div>
@@ -847,18 +863,19 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         style={{
           width: `${currentSize.widthPx}px`,
           height: `${currentSize.heightPx}px`,
+          maxHeight: `${currentSize.heightPx}px`,
         }}
       >
-        <div className="back-header-nct" style={{ minHeight: `${Math.round(42 * cardScale)}px`, fontSize: `${9 * cardScale}px` }}>
+        <div className="back-header-nct" style={{ minHeight: `${Math.round(40 * cardScale)}px`, fontSize: `${8.8 * cardScale}px` }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%" }}>
             <div>KARTU PRESENSI DIGITAL</div>
-            <div style={{ fontSize: `${8 * cardScale}px`, fontWeight: 800, letterSpacing: "1.2px", opacity: 0.95, marginTop: "1px" }}>
+            <div style={{ fontSize: `${7.8 * cardScale}px`, fontWeight: 800, letterSpacing: "1.2px", opacity: 0.95, marginTop: "1px" }}>
               {isTeacher ? "DEWAN GURU" : "SANTRI"}
             </div>
           </div>
         </div>
 
-        <div className="back-body-nct" style={{ padding: `${Math.round(8 * cardScale)}px` }}>
+        <div className="back-body-nct" style={{ padding: `${Math.round(6 * cardScale)}px` }}>
           <div className="back-qr-box" style={{ width: `${qrSize}px`, height: `${qrSize}px` }}>
             {qrCodes[person.id] ? (
               <img src={qrCodes[person.id]} alt="QR Presensi" />
@@ -866,11 +883,11 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               <div className="text-[10px] text-gray-400 font-mono">Membuat QR...</div>
             )}
           </div>
-          <div className="back-qr-label" style={{ fontSize: `${7 * cardScale}px` }}>SCAN UNTUK PRESENSI</div>
+          <div className="back-qr-label" style={{ fontSize: `${6.8 * cardScale}px` }}>SCAN UNTUK PRESENSI</div>
         </div>
 
-        <div className="back-rules-nct" style={{ padding: `${Math.round(8 * cardScale)}px ${Math.round(12 * cardScale)}px`, fontSize: `${6.5 * cardScale}px` }}>
-          <div className="rules-header" style={{ fontSize: `${7 * cardScale}px` }}>KETENTUAN KARTU</div>
+        <div className="back-rules-nct" style={{ padding: `${Math.round(6 * cardScale)}px ${Math.round(10 * cardScale)}px`, fontSize: `${6.4 * cardScale}px` }}>
+          <div className="rules-header" style={{ fontSize: `${6.8 * cardScale}px` }}>KETENTUAN KARTU</div>
           <div className="rules-list">
             <div className="rules-item">
               <span className="rules-num">1.</span>
@@ -946,7 +963,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             </button>
           </div>
 
-          {/* 2. Pemilih Lengkap Ukuran ID Card (A1-A3, B1-B4, CR80) */}
+          {/* 2. Pemilih Ukuran ID Card (A1-A3, B1-B4, CR80) */}
           <div className="flex items-center gap-1">
             <select
               value={cardSizeId}
@@ -971,7 +988,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             </select>
           </div>
 
-          {/* 3. Pilihan Sisi di A4: Berpasangan (Lipat) vs Depan Saja vs Belakang Saja */}
+          {/* 3. Pilihan Sisi di A4 */}
           {viewMode === "a4" && (
             <div className="flex items-center gap-1">
               <select
@@ -980,14 +997,44 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                 className="px-2.5 py-1.5 bg-white border-2 border-gray-300 focus:border-gray-900 rounded-xl text-xs font-bold text-gray-800 focus:outline-none cursor-pointer"
                 title="Pilih sisi yang dicetak di lembar A4"
               >
-                <option value="pairs">Depan & Belakang Berdampingan (Siap Lipat)</option>
+                <option value="pairs">Depan & Belakang Berdampingan</option>
                 <option value="front">Hanya Sisi Depan (Grid)</option>
                 <option value="back">Hanya Sisi Belakang (QR Grid)</option>
               </select>
             </div>
           )}
 
-          {/* 4. Sakelar Garis Potong (Cut Guide Marks) */}
+          {/* 4. Opsi Celah / Gap Antar Kartu Pasangan (Gak Nyatu) */}
+          {viewMode === "a4" && a4SideMode === "pairs" && (
+            <div className="flex items-center bg-gray-100 p-0.5 rounded-xl border border-gray-300 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setPairGapMode("gap")}
+                className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                  pairGapMode === "gap"
+                    ? "bg-emerald-600 text-white shadow-xs font-black"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+                title="Beri celah pemisah antar kartu depan dan belakang (tidak menempel)"
+              >
+                Ada Celah (Gap)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPairGapMode("fold")}
+                className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                  pairGapMode === "fold"
+                    ? "bg-emerald-600 text-white shadow-xs font-black"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+                title="Rapatkan kedua kartu untuk dilipat di tengah"
+              >
+                Rapat (Lipat)
+              </button>
+            </div>
+          )}
+
+          {/* 5. Sakelar Garis Potong (Cut Guide Marks) */}
           {viewMode === "a4" && (
             <button
               type="button"
@@ -1082,15 +1129,23 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       {/* Bar Info Ringkasan Ukuran & Lembar A4 */}
       {viewMode === "a4" && (
         <div className="bg-slate-800 text-slate-200 px-4 py-1.5 border-b border-slate-700 flex items-center justify-between text-xs font-semibold shrink-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
               <span className="material-symbols-outlined text-sm">straighten</span>
               <span>Ukuran: {currentSize.name} ({currentSize.dims})</span>
             </span>
             <span>&bull;</span>
             <span className="text-slate-300">{a4LayoutConfig.label}</span>
+            {a4SideMode === "pairs" && (
+              <>
+                <span>&bull;</span>
+                <span className="text-amber-300 text-[11px] font-mono">
+                  {pairGapMode === "gap" ? "Model: Ada Celah (Terpisah)" : "Model: Rapat (Siap Lipat)"}
+                </span>
+              </>
+            )}
           </div>
-          <div className="text-[11px] font-mono text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">
+          <div className="text-[11px] font-mono text-emerald-300 bg-emerald-950/60 px-2.5 py-0.5 rounded border border-emerald-500/30">
             Total: {a4Pages.length} Lembar A4 ({students.length} Siswa)
           </div>
         </div>
@@ -1120,34 +1175,62 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             justify-content: center;
             max-width: 100%;
           }
-          .id-card-wrapper {
+
+          /* Wrapper Kartu Pasangan */
+          .id-card-pair-wrapper {
             display: flex;
             flex-direction: row;
             align-items: center;
             justify-content: center;
-            gap: 16px;
-            margin-bottom: 20px;
-            page-break-inside: avoid;
-            flex-shrink: 0;
             position: relative;
+            box-sizing: border-box;
           }
-          .id-card-wrapper.paired-fold {
+
+          .pair-has-gap {
+            gap: 12px !important;
+          }
+
+          .pair-no-gap {
             gap: 0px !important;
             border-radius: 8px;
             overflow: hidden;
           }
-          .id-card-wrapper.paired-fold .id-card:first-child {
+          .pair-no-gap .id-card:first-child {
             border-top-right-radius: 0px !important;
             border-bottom-right-radius: 0px !important;
             border-right: 1.5px dashed #475569 !important;
           }
-          .id-card-wrapper.paired-fold .id-card:last-child {
+          .pair-no-gap .id-card:last-child {
             border-top-left-radius: 0px !important;
             border-bottom-left-radius: 0px !important;
             border-left: none !important;
           }
 
-          /* Tampilan Lembar Kertas A4 */
+          /* Pembatas Celah Antar Kartu */
+          .pair-gap-divider {
+            width: 1px;
+            height: 80%;
+            border-right: 1px dashed #94a3b8;
+          }
+
+          /* Kotak Garis Potong (Cut Guide Frame) */
+          .cut-guide-pair {
+            position: relative;
+            padding: 5px;
+            border: 1.2px dashed #94a3b8;
+            border-radius: 12px;
+            background: #f8fafc;
+          }
+
+          .cut-guide-single {
+            position: relative;
+            padding: 4px;
+            border: 1.2px dashed #94a3b8;
+            border-radius: 10px;
+            background: #f8fafc;
+          }
+
+          /* Lembar Kertas A4 */
           .a4-sheet {
             background: #ffffff;
             box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
@@ -1174,15 +1257,6 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             min-height: 1188px;
           }
 
-          /* Garis Potong (Cut Guide Marks) */
-          .cut-guide-box {
-            position: relative;
-            padding: 4px;
-            border: 1.2px dashed #94a3b8;
-            border-radius: 10px;
-            background: #f8fafc;
-          }
-
           /* ID Card Base */
           .id-card {
             background: #ffffff;
@@ -1197,6 +1271,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
             box-sizing: border-box;
+            flex-shrink: 0;
           }
 
           .id-card-horizontal {
@@ -1312,7 +1387,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             align-items: flex-start;
             justify-content: space-between;
             gap: 8px;
-            padding: 2px 0;
+            padding: 1.5px 0;
             border-bottom: 0.8px dashed #cbd5e1;
           }
           .info-dashed-row:last-child {
@@ -1325,7 +1400,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             letter-spacing: 0.8px;
             text-transform: uppercase;
             flex-shrink: 0;
-            line-height: 1.25;
+            line-height: 1.2;
             padding-top: 0.5px;
           }
           .value-text {
@@ -1334,7 +1409,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             color: #000000;
             text-align: right;
             word-break: break-word;
-            line-height: 1.25;
+            line-height: 1.2;
           }
           .value-text.value-name {
             font-weight: 800;
@@ -1348,9 +1423,14 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           }
           .value-text.value-address {
             font-weight: 600;
-            line-height: 1.25;
+            line-height: 1.2;
             color: #111827;
             letter-spacing: 0.1px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
           /* Back Side */
@@ -1400,7 +1480,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           .back-rules-nct {
             background: #f8fafc;
             border-top: 1px dashed #94a3b8;
-            line-height: 1.4;
+            line-height: 1.35;
             color: #334155;
             box-sizing: border-box;
           }
@@ -1449,7 +1529,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                       <span>Lembar A4 #{pageIdx + 1} dari {a4Pages.length}</span>
                     </span>
                     <span className="bg-slate-800 border border-slate-700 px-2.5 py-0.5 rounded-full text-[11px] font-mono text-emerald-300">
-                      {pageStudents.length} Siswa ({currentSize.code} • {a4SideMode === "pairs" ? "Depan-Belakang" : a4SideMode === "front" ? "Depan" : "Belakang"})
+                      {pageStudents.length} Siswa ({currentSize.code} • {a4SideMode === "pairs" ? (pairGapMode === "gap" ? "Pasang (Ada Gap)" : "Pasang (Rapat)") : a4SideMode === "front" ? "Depan" : "Belakang"})
                     </span>
                   </div>
 
@@ -1460,8 +1540,8 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                       display: "grid",
                       gridTemplateColumns: `repeat(${a4LayoutConfig.cols}, 1fr)`,
                       gridTemplateRows: `repeat(${a4LayoutConfig.rows}, 1fr)`,
-                      gap: "18px",
-                      padding: isLandscape ? "24px 36px" : "32px 24px",
+                      gap: "16px",
+                      padding: isLandscape ? "28px 40px" : "36px 30px",
                       justifyItems: "center",
                       alignItems: "center",
                       boxSizing: "border-box",
@@ -1469,13 +1549,14 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                   >
                     {pageStudents.map((person) => {
                       if (a4SideMode === "pairs") {
-                        // Pasang Sisi Depan + Sisi Belakang Berdampingan
+                        // Pasang Sisi Depan + Sisi Belakang
                         return (
                           <div
                             key={person.id}
-                            className={`id-card-wrapper paired-fold ${showCutMarks ? "cut-guide-box" : ""}`}
+                            className={`id-card-pair-wrapper ${pairGapMode === "gap" ? "pair-has-gap" : "pair-no-gap"} ${showCutMarks ? "cut-guide-pair" : ""}`}
                           >
                             {renderFrontCard(person)}
+                            {pairGapMode === "gap" && showCutMarks && <div className="pair-gap-divider"></div>}
                             {renderBackCard(person)}
                           </div>
                         );
@@ -1484,7 +1565,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                         return (
                           <div
                             key={person.id}
-                            className={`id-card-wrapper ${showCutMarks ? "cut-guide-box" : ""}`}
+                            className={`id-card-wrapper ${showCutMarks ? "cut-guide-single" : ""}`}
                           >
                             {renderFrontCard(person)}
                           </div>
@@ -1494,7 +1575,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                         return (
                           <div
                             key={person.id}
-                            className={`id-card-wrapper ${showCutMarks ? "cut-guide-box" : ""}`}
+                            className={`id-card-wrapper ${showCutMarks ? "cut-guide-single" : ""}`}
                           >
                             {renderBackCard(person)}
                           </div>
@@ -1513,7 +1594,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                   key={person.id}
                   data-id={person.id}
                   data-uuid={person.uuid}
-                  className="student-card-print id-card-wrapper"
+                  className="student-card-print id-card-pair-wrapper pair-has-gap"
                 >
                   {renderFrontCard(person)}
                   {renderBackCard(person)}
