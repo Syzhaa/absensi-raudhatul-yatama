@@ -4,6 +4,8 @@ export default function ManualAttendanceForm({
   teachersData,
   manualSubmitMutation,
   handleManualSubmit,
+  isGuru = false,
+  myTeacher = null,
 }) {
   return (
         <div className="w-full max-w-sm bg-white border-3 border-gray-900 rounded-3xl shadow-neo p-6 space-y-4">
@@ -11,33 +13,46 @@ export default function ManualAttendanceForm({
             Input Kehadiran Manual
           </h3>
           <p className="text-xs text-gray-600 text-center mb-4">
-            Untuk guru yang izin, sakit, atau tidak hadir
+            {isGuru ? "Pengajuan izin, sakit, atau alpha mandiri" : "Untuk guru yang izin, sakit, atau tidak hadir"}
           </p>
 
           <form onSubmit={handleManualSubmit} className="space-y-4">
-            {/* Dropdown Pilih Guru */}
+            {/* Dropdown / Badge Pilih Guru */}
             <div className="space-y-2">
               <label className="block text-sm font-bold text-gray-700">
-                Pilih Guru
+                {isGuru ? "Nama Guru (Akun Anda)" : "Pilih Guru"}
               </label>
-              <select
-                value={manualFormData.teacher_id}
-                onChange={(e) =>
-                  setManualFormData({
-                    ...manualFormData,
-                    teacher_id: e.target.value,
-                  })
-                }
-                required
-                className="w-full px-3 py-2.5 bg-white border-2 border-gray-900 rounded-xl font-medium text-sm text-gray-900 focus:outline-none focus:border-primary-green"
-              >
-                <option value="">-- Pilih Guru --</option>
-                {teachersData?.data?.map((teacher) => (
-                  <option key={teacher.id} value={teacher.id}>
-                    {teacher.nama} {teacher.nip ? `(${teacher.nip})` : ""}
-                  </option>
-                ))}
-              </select>
+              {isGuru ? (
+                <div className="p-3 bg-emerald-50 border-2 border-gray-900 rounded-xl">
+                  <span className="text-xs font-black text-emerald-950 block">
+                    {myTeacher?.nama || "Guru Terautentikasi"}
+                  </span>
+                  {myTeacher?.nip && (
+                    <span className="text-[11px] font-mono text-emerald-800">
+                      NIP/NPK: {myTeacher.nip}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <select
+                  value={manualFormData.teacher_id}
+                  onChange={(e) =>
+                    setManualFormData({
+                      ...manualFormData,
+                      teacher_id: e.target.value,
+                    })
+                  }
+                  required
+                  className="w-full px-3 py-2.5 bg-white border-2 border-gray-900 rounded-xl font-medium text-sm text-gray-900 focus:outline-none focus:border-primary-green"
+                >
+                  <option value="">-- Pilih Guru --</option>
+                  {teachersData?.data?.map((teacher) => (
+                    <option key={teacher.id} value={teacher.id}>
+                      {teacher.nama} {teacher.nip ? `(${teacher.nip})` : ""}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Radio Status */}

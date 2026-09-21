@@ -33,6 +33,13 @@ export default function Attendance() {
   const [selectedPerson, setSelectedPerson] = useState(null);
   const userRole = useAppStore((state) => state.userRole);
   const isGuru = userRole === "guru";
+
+  const { data: authData } = useQuery({
+    queryKey: ["me"],
+    queryFn: async () => (await api.get("/auth/me")).data,
+    staleTime: 10 * 60 * 1000,
+  });
+  const myTeacherId = authData?.data?.teacher?.id;
   
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
@@ -776,56 +783,61 @@ export default function Attendance() {
                           </td>
 
                           <td className="py-2.5 px-4 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
-                              {isBelumAbsen && (
-                                isGuru ? (
-                                  <div className="flex items-center justify-center gap-1">
+                            {/* Jika role Guru dan baris ini adalah Guru lain, cegah aksi mutasi status */}
+                            {isGuru && !isStudent && person?.id !== myTeacherId ? (
+                              <span className="text-[11px] text-gray-400 font-bold italic">Khusus Ybs</span>
+                            ) : (
+                              <div className="flex items-center justify-center gap-1.5">
+                                {isBelumAbsen && (
+                                  isGuru ? (
+                                    <div className="flex items-center justify-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleEditAttendance({ ...item, initialStatus: "izin" })}
+                                        className="px-1.5 py-0.5 bg-purple-100 hover:bg-purple-200 text-purple-950 text-[10px] font-black rounded border border-gray-900 shadow-xs cursor-pointer"
+                                        title="Pintasan Izin"
+                                      >
+                                        Izin
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleEditAttendance({ ...item, initialStatus: "sakit" })}
+                                        className="px-1.5 py-0.5 bg-blue-100 hover:bg-blue-200 text-blue-950 text-[10px] font-black rounded border border-gray-900 shadow-xs cursor-pointer"
+                                        title="Pintasan Sakit"
+                                      >
+                                        Sakit
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleEditAttendance({ ...item, initialStatus: "alpha" })}
+                                        className="px-1.5 py-0.5 bg-red-100 hover:bg-red-200 text-red-950 text-[10px] font-black rounded border border-gray-900 shadow-xs cursor-pointer"
+                                        title="Pintasan Alpha"
+                                      >
+                                        Alpha
+                                      </button>
+                                    </div>
+                                  ) : (
                                     <button
                                       type="button"
-                                      onClick={() => handleEditAttendance({ ...item, initialStatus: "izin" })}
-                                      className="px-1.5 py-0.5 bg-purple-100 hover:bg-purple-200 text-purple-950 text-[10px] font-black rounded border border-gray-900 shadow-xs cursor-pointer"
-                                      title="Pintasan Izin"
+                                      onClick={() => handleEditAttendance(item)}
+                                      className="px-2 py-1 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs font-black rounded border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer"
+                                      title="Tandai Hadir"
                                     >
-                                      Izin
+                                      <span className="material-symbols-outlined text-xs">check</span>
+                                      <span>Hadir</span>
                                     </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleEditAttendance({ ...item, initialStatus: "sakit" })}
-                                      className="px-1.5 py-0.5 bg-blue-100 hover:bg-blue-200 text-blue-950 text-[10px] font-black rounded border border-gray-900 shadow-xs cursor-pointer"
-                                      title="Pintasan Sakit"
-                                    >
-                                      Sakit
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleEditAttendance({ ...item, initialStatus: "alpha" })}
-                                      className="px-1.5 py-0.5 bg-red-100 hover:bg-red-200 text-red-950 text-[10px] font-black rounded border border-gray-900 shadow-xs cursor-pointer"
-                                      title="Pintasan Alpha"
-                                    >
-                                      Alpha
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleEditAttendance(item)}
-                                    className="px-2 py-1 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs font-black rounded border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer"
-                                    title="Tandai Hadir"
-                                  >
-                                    <span className="material-symbols-outlined text-xs">check</span>
-                                    <span>Hadir</span>
-                                  </button>
-                                )
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => handleEditAttendance(item)}
-                                className="p-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded border border-gray-900 transition-colors cursor-pointer"
-                                title="Edit Presensi"
-                              >
-                                <span className="material-symbols-outlined text-sm">edit_note</span>
-                              </button>
-                            </div>
+                                  )
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditAttendance(item)}
+                                  className="p-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded border border-gray-900 transition-colors cursor-pointer"
+                                  title="Edit Presensi"
+                                >
+                                  <span className="material-symbols-outlined text-sm">edit_note</span>
+                                </button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       );

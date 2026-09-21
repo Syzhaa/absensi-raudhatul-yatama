@@ -105,6 +105,14 @@ export default function ScanQR() {
   const coordsRef = useRef(getCachedLocationSession(effectiveLembaga));
 
   const userRole = useAppStore((state) => state.userRole);
+  const isGuru = userRole === "guru";
+
+  const { data: authData } = useQuery({
+    queryKey: ["me"],
+    queryFn: async () => (await api.get("/auth/me")).data,
+    staleTime: 10 * 60 * 1000,
+  });
+  const myTeacher = authData?.data?.teacher;
   const isAdminRole = [
     "super_admin",
     "admin_yayasan",
@@ -455,6 +463,9 @@ export default function ScanQR() {
       setScanType("check_in"); // Reset scan type
       scanTypeRef.current = "check_in";
       lastScannedRef.current = null;
+      if (isGuru && myTeacher?.id) {
+        setManualFormData((prev) => ({ ...prev, teacher_id: String(myTeacher.id) }));
+      }
     } else {
       // Switch to scan mode (check_in or check_out)
       setShowManualForm(false);
@@ -749,6 +760,8 @@ export default function ScanQR() {
               teachersData={teachersData}
               manualSubmitMutation={manualSubmitMutation}
               handleManualSubmit={handleManualSubmit}
+              isGuru={isGuru}
+              myTeacher={myTeacher}
             />
           )}
 
