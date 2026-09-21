@@ -122,11 +122,13 @@ export default function ScanQR() {
       longitude: schoolLon,
       accuracy: 5,
       isPcVerified: true,
+      isFallbackVerified: true,
       lembaga: activeLembagaNorm,
       expiresAt: Date.now() + 3 * 3600 * 1000,
     };
     try {
       localStorage.setItem(getLocationSessionKey(effectiveLembaga), JSON.stringify(c));
+      localStorage.setItem("yatama_location_sync_session", JSON.stringify(c));
     } catch {}
     setCoords(c);
     coordsRef.current = c;
@@ -135,17 +137,19 @@ export default function ScanQR() {
     setIsDesktopBlocked(false);
   };
 
+  const setSchoolLocationFallback = setPcSchoolLocation;
+
   const detectLocation = () => {
     const cachedForLembaga = getCachedLocationSession(effectiveLembaga);
-    // Jika PC sudah terverifikasi untuk lembaga aktif ini, jangan memindai GPS lagi, langsung aktif!
-    if (coords?.isPcVerified || cachedForLembaga?.isPcVerified) {
+    // Jika PC / alternatif lokasi sudah aktif, langsung aktif!
+    if (coords?.isPcVerified || coords?.isFallbackVerified || cachedForLembaga?.isPcVerified || cachedForLembaga?.isFallbackVerified) {
       setIsLocating(false);
       setLocationError(null);
       setIsDesktopBlocked(false);
       return;
     }
 
-    if (isDesktop && !coords?.isPcVerified) {
+    if (isDesktop && !coords?.isPcVerified && !coords?.isFallbackVerified) {
       setIsDesktopBlocked(true);
       setIsLocating(false);
       return;
@@ -160,32 +164,41 @@ export default function ScanQR() {
     setLocationError(null);
 
     const onPosSuccess = (pos) => {
-      setCoords({
+      const c = {
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
         accuracy: pos.coords.accuracy,
-      });
-      coordsRef.current = { latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy };
+      };
+      setCoords(c);
+      coordsRef.current = c;
       setIsLocating(false);
+      setLocationError(null);
     };
 
+    // 1. Coba Satelit Berakurasi Tinggi (GPS Satelit HP) - timeout 10 detik
     navigator.geolocation.getCurrentPosition(
       onPosSuccess,
-      () => {
+      (err1) => {
+        // 2. Jika sinyal satelit lemah/timeout di dalam kelas, coba Jaringan/Cellular/Wi-Fi - timeout 12 detik
         navigator.geolocation.getCurrentPosition(
           onPosSuccess,
-          (err) => {
+          (err2) => {
             setIsLocating(false);
+            const err = err2 || err1;
             if (err.code === 1) {
-              setLocationError("Izin lokasi ditolak. Silakan izinkan akses lokasi (GPS) di browser Anda.");
+              setLocationError("Izin lokasi ditolak. Silakan izinkan akses lokasi di browser/HP Anda.");
+            } else if (err.code === 3) {
+              setLocationError("Sinyal satelit GPS lambat terkunci (terhalang ruangan). Coba lagi atau gunakan alternatif lokasi sekolah.");
+            } else if (err.code === 2) {
+              setLocationError("Sinyal satelit GPS tidak terdeteksi di dalam ruangan. Silakan gunakan alternatif lokasi sekolah.");
             } else {
-              setLocationError("Perangkat tidak memiliki sensor GPS satelit.");
+              setLocationError("Sinyal GPS belum terkunci. Coba lagi atau gunakan alternatif lokasi sekolah.");
             }
           },
-          { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+          { enableHighAccuracy: false, timeout: 12000, maximumAge: 180000 }
         );
       },
-      { enableHighAccuracy: false, timeout: 4000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   };
 
@@ -207,6 +220,31 @@ export default function ScanQR() {
     }
   }, [effectiveLembaga, isLocationRequired, isDesktop]);
 
+  // Live GPS tracking: otomatis perbarui koordinat satelit saat perangkat terkunci
+  useEffect(() => {
+    if (!navigator.geolocation || isDesktop) return;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        if (!coordsRef.current?.isPcVerified && !coordsRef.current?.isFallbackVerified) {
+          const c = {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          };
+          setCoords(c);
+          coordsRef.current = c;
+          setLocationError(null);
+          setIsLocating(false);
+        }
+      },
+      () => {},
+      { enableHighAccuracy: false, maximumAge: 60000 }
+    );
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [isDesktop]);
+
   const currentDistance =
     coords && schoolLat && schoolLon
       ? getDistance(coords.latitude, coords.longitude, schoolLat, schoolLon)
@@ -220,6 +258,7 @@ export default function ScanQR() {
   const isWithinRadius =
     !isLocationRequired ||
     coords?.isPcVerified ||
+    coords?.isFallbackVerified ||
     (effectiveDistance !== null && effectiveDistance <= radiusMax);
 
   // Fetch recent logs
@@ -335,7 +374,7 @@ export default function ScanQR() {
           message: "Lokasi GPS belum terdeteksi. Silakan klik tombol 'Refresh GPS' di atas kamera.",
         };
       }
-      if (!coords?.isPcVerified && effectiveDistance !== null && effectiveDistance > radiusMax) {
+      if (!coords?.isPcVerified && !coords?.isFallbackVerified && effectiveDistance !== null && effectiveDistance > radiusMax) {
         return {
           valid: false,
           message: `Di luar jangkauan sekolah (${Math.round(currentDistance)}m). Presensi hanya sah di lingkungan sekolah (maks ${radiusMax}m).`,
@@ -490,103 +529,149 @@ export default function ScanQR() {
                 </div>
               </div>
             ) : isLocationRequired ? (
-              <div
-                className={`p-3 rounded-2xl border-2 border-gray-900 flex items-center justify-between shadow-sm transition-all ${
-                  coords?.isPcVerified
-                    ? "bg-emerald-50"
-                    : isLocating
-                    ? "bg-amber-50"
-                    : locationError
-                    ? "bg-red-50"
-                    : isWithinRadius
-                    ? "bg-emerald-50"
-                    : "bg-red-50"
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                  <div
-                    className={`w-9 h-9 rounded-xl border-2 border-gray-900 flex items-center justify-center flex-shrink-0 shadow-sm ${
-                      coords?.isPcVerified
-                        ? "bg-primary-green text-gray-900"
-                        : isLocating
-                        ? "bg-amber-200 text-amber-900"
-                        : locationError
-                        ? "bg-red-200 text-red-900"
-                        : isWithinRadius
-                        ? "bg-primary-green text-gray-900"
-                        : "bg-red-200 text-red-900"
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-xl">
-                      {coords?.isPcVerified ? "verified_user" : isLocating ? "radar" : isWithinRadius ? "pin_drop" : "location_off"}
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-black text-xs sm:text-sm text-gray-900">
-                        {coords?.isPcVerified
-                          ? "Lokasi Sah: PC Terverifikasi"
+              <>
+                <div
+                  className={`p-3 rounded-2xl border-2 border-gray-900 flex items-center justify-between shadow-sm transition-all ${
+                    coords?.isPcVerified || coords?.isFallbackVerified
+                      ? "bg-emerald-50"
+                      : isLocating
+                      ? "bg-amber-50"
+                      : locationError
+                      ? "bg-red-50"
+                      : isWithinRadius
+                      ? "bg-emerald-50"
+                      : "bg-red-50"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                    <div
+                      className={`w-9 h-9 rounded-xl border-2 border-gray-900 flex items-center justify-center flex-shrink-0 shadow-sm ${
+                        coords?.isPcVerified || coords?.isFallbackVerified
+                          ? "bg-primary-green text-gray-900"
                           : isLocating
-                          ? "Mendeteksi Lokasi GPS..."
+                          ? "bg-amber-200 text-amber-900"
                           : locationError
-                          ? "Izin Lokasi GPS Diperlukan"
+                          ? "bg-red-200 text-red-900"
                           : isWithinRadius
-                          ? "Lokasi Sah: Di Lingkungan Sekolah"
-                          : "Di Luar Jangkauan Sekolah"}
+                          ? "bg-primary-green text-gray-900"
+                          : "bg-red-200 text-red-900"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-xl">
+                        {coords?.isPcVerified || coords?.isFallbackVerified
+                          ? "verified_user"
+                          : isLocating
+                          ? "radar"
+                          : isWithinRadius
+                          ? "pin_drop"
+                          : "location_off"}
                       </span>
-                      {coords && (
-                        <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded border ${
-                          isWithinRadius ? "bg-emerald-100 border-emerald-400 text-emerald-900" : "bg-red-100 border-red-400 text-red-900"
-                        }`}>
-                          {coords.isPcVerified ? `PC Terverifikasi (s.d. ${format(new Date(coords.expiresAt || Date.now() + 3 * 3600 * 1000), "HH:mm")})` : `${currentDistance !== null ? `${Math.round(currentDistance)}m` : ""} / Maks ${radiusMax}m`}
-                        </span>
-                      )}
                     </div>
-                    <p className="text-[11px] text-gray-600 font-medium truncate mt-0.5">
-                      {coords?.isPcVerified
-                        ? `Akses pemindaian presensi disetujui dari stasiun PC madrasah (${effectiveLembaga?.toUpperCase() || "MA"})`
-                        : isLocating
-                        ? "Menghubungkan sensor koordinat perangkat..."
-                        : locationError || (isWithinRadius
-                            ? `Jarak ${currentDistance !== null ? Math.round(currentDistance) : 0}m dari titik pusat (${effectiveLembaga?.toUpperCase() || "MA"})`
-                            : `Jarak ${Math.round(currentDistance || 0)}m melebihi batas toleransi radius ${radiusMax}m.`)}
-                    </p>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-black text-xs sm:text-sm text-gray-900">
+                          {coords?.isPcVerified
+                            ? "Lokasi Sah: PC Terverifikasi"
+                            : coords?.isFallbackVerified
+                            ? "Lokasi Sah: Alternatif Sekolah"
+                            : isLocating
+                            ? "Mendeteksi Lokasi Satelit GPS..."
+                            : locationError
+                            ? "Sinyal GPS Diperlukan"
+                            : isWithinRadius
+                            ? "Lokasi Sah: Di Lingkungan Sekolah"
+                            : "Di Luar Jangkauan Sekolah"}
+                        </span>
+                        {coords && (
+                          <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded border ${
+                            isWithinRadius ? "bg-emerald-100 border-emerald-400 text-emerald-900" : "bg-red-100 border-red-400 text-red-900"
+                          }`}>
+                            {coords.isFallbackVerified
+                              ? "Alternatif Sekolah (Sah)"
+                              : coords.isPcVerified
+                              ? `PC Terverifikasi (s.d. ${format(new Date(coords.expiresAt || Date.now() + 3 * 3600 * 1000), "HH:mm")})`
+                              : `${currentDistance !== null ? `${Math.round(currentDistance)}m` : ""} / Maks ${radiusMax}m`}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-600 font-medium truncate mt-0.5">
+                        {coords?.isFallbackVerified
+                          ? `Mode alternatif lokasi sekolah aktif (${effectiveLembaga?.toUpperCase() || "MA"})`
+                          : coords?.isPcVerified
+                          ? `Akses pemindaian presensi disetujui dari stasiun PC madrasah (${effectiveLembaga?.toUpperCase() || "MA"})`
+                          : isLocating
+                          ? "Menghubungkan sensor satelit GPS / jaringan..."
+                          : locationError || (isWithinRadius
+                              ? `Jarak ${currentDistance !== null ? Math.round(currentDistance) : 0}m dari titik pusat (${effectiveLembaga?.toUpperCase() || "MA"})`
+                              : `Jarak ${Math.round(currentDistance || 0)}m melebihi batas toleransi radius ${radiusMax}m.`)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {coords?.isPcVerified || coords?.isFallbackVerified ? (
+                      <div className="px-2.5 py-1.5 bg-emerald-100 border-2 border-emerald-600 text-emerald-950 font-black text-xs rounded-xl flex items-center gap-1 shadow-xs">
+                        <span className="material-symbols-outlined text-base text-emerald-700">verified</span>
+                        <span>Siap Scan</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={detectLocation}
+                        disabled={isLocating}
+                        className="p-1.5 sm:px-2.5 sm:py-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-xs flex items-center gap-1 shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
+                        title="Perbarui koordinat GPS sekarang"
+                      >
+                        <span className={`material-symbols-outlined text-base ${isLocating ? "animate-spin" : ""}`}>
+                          refresh
+                        </span>
+                        <span className="hidden sm:inline">{isLocating ? "Mencari..." : "Cek GPS"}</span>
+                      </button>
+                    )}
+                    {coords && (
+                      <a
+                        href={`https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-xs flex items-center shadow-sm transition-colors text-blue-700"
+                        title="Buka titik koordinat saya di Google Maps"
+                      >
+                        <span className="material-symbols-outlined text-base">map</span>
+                      </a>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {coords?.isPcVerified ? (
-                    <div className="px-2.5 py-1.5 bg-emerald-100 border-2 border-emerald-600 text-emerald-950 font-black text-xs rounded-xl flex items-center gap-1 shadow-xs">
-                      <span className="material-symbols-outlined text-base text-emerald-700">verified</span>
-                      <span>Siap Scan</span>
+                {/* Alternatif Box saat GPS Lemah / Error di dalam ruangan */}
+                {locationError && (
+                  <div className="mt-2.5 p-3 bg-amber-50 border-2 border-gray-900 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-sm text-xs">
+                    <div className="flex items-start gap-2 text-amber-950 font-bold min-w-0">
+                      <span className="material-symbols-outlined text-amber-600 text-lg flex-shrink-0 mt-0.5">cell_tower</span>
+                      <span className="leading-snug">{locationError}</span>
                     </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={detectLocation}
-                      disabled={isLocating}
-                      className="p-1.5 sm:px-2.5 sm:py-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-xs flex items-center gap-1 shadow-sm cursor-pointer disabled:opacity-50 transition-colors"
-                      title="Perbarui koordinat GPS sekarang"
-                    >
-                      <span className={`material-symbols-outlined text-base ${isLocating ? "animate-spin" : ""}`}>
-                        refresh
-                      </span>
-                      <span className="hidden sm:inline">{isLocating ? "Mencari..." : "Cek GPS"}</span>
-                    </button>
-                  )}
-                  {coords && (
-                    <a
-                      href={`https://www.google.com/maps?q=${coords.latitude},${coords.longitude}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="p-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-bold text-xs flex items-center shadow-sm transition-colors text-blue-700"
-                      title="Buka titik koordinat saya di Google Maps"
-                    >
-                      <span className="material-symbols-outlined text-base">map</span>
-                    </a>
-                  )}
-                </div>
-              </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={detectLocation}
+                        disabled={isLocating}
+                        className="flex-1 sm:flex-none px-3 py-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-gray-900 shadow-xs cursor-pointer disabled:opacity-50 transition-colors flex items-center justify-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-base">refresh</span>
+                        <span>Coba Lagi Satelit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={setSchoolLocationFallback}
+                        className="flex-1 sm:flex-none px-3 py-1.5 bg-primary-green hover:bg-emerald-400 border-2 border-gray-900 rounded-xl font-black text-gray-900 shadow-xs cursor-pointer transition-colors flex items-center justify-center gap-1"
+                        title="Aktifkan koordinat madrasah jika berada di dalam ruangan"
+                      >
+                        <span className="material-symbols-outlined text-base">domain</span>
+                        <span>Alternatif Sekolah</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="p-2.5 bg-gray-50 border-2 border-gray-300 rounded-2xl flex items-center justify-between text-xs text-gray-600">
                 <div className="flex items-center gap-2">
