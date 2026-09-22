@@ -6,7 +6,7 @@ import { useAppStore } from "../store/useAppStore";
 import AttendanceModal from "../components/AttendanceModal";
 import TeacherSelfCard from "../components/TeacherSelfCard";
 import { getAutoHoliday } from "../utils/holidays";
-import { format } from "date-fns";
+import { format, subDays, addDays } from "date-fns";
 import { useAttendanceSSE } from "../hooks/useAttendanceSSE";
 
 import { AttendanceItem } from "../components/AttendanceItems";
@@ -14,12 +14,33 @@ import { CardSkeleton } from "../components/Skeleton";
 
 export default function GuruAttendance() {
   const today = format(new Date(), "yyyy-MM-dd");
+  const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
   const [date, setDate] = useState(today);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const selectedKelas = useAppStore((state) => state.selectedKelas);
   const { effectiveLembaga, isLoading: isLembagaLoading } = useEffectiveLembaga();
   const queryClient = useQueryClient();
+
+  const handlePrevDay = () => {
+    try {
+      const [y, m, d] = (date || today).split("-").map(Number);
+      const curr = new Date(y, m - 1, d);
+      setDate(format(subDays(curr, 1), "yyyy-MM-dd"));
+    } catch {
+      setDate(today);
+    }
+  };
+
+  const handleNextDay = () => {
+    try {
+      const [y, m, d] = (date || today).split("-").map(Number);
+      const curr = new Date(y, m - 1, d);
+      setDate(format(addDays(curr, 1), "yyyy-MM-dd"));
+    } catch {
+      setDate(today);
+    }
+  };
 
   // Aktifkan SSE untuk realtime update roster
   useAttendanceSSE(date, queryClient);
@@ -71,7 +92,49 @@ export default function GuruAttendance() {
           <h1 className="text-lg md:text-xl font-black">Daftar Hadir Siswa</h1>
           <p className="text-[10px] md:text-xs text-gray-500 uppercase font-bold">{effectiveLembaga} • {selectedKelas ? `Kelas ${selectedKelas}` : "Semua Kelas"}</p>
         </div>
-        <input aria-label="Pilih tanggal absensi" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="px-3 py-1.5 md:py-2 border-2 border-gray-900 rounded-xl font-bold text-sm" />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 bg-gray-100 p-1 border-2 border-gray-900 rounded-xl">
+            <button
+              type="button"
+              onClick={handlePrevDay}
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-white border border-gray-300 hover:bg-gray-200 text-gray-800 transition-all cursor-pointer shadow-2xs"
+              title="Hari Sebelumnya"
+            >
+              <span className="material-symbols-outlined text-base">chevron_left</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDate(today)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                date === today
+                  ? "bg-primary-green text-gray-900 border border-gray-900 shadow-2xs"
+                  : "text-gray-700 hover:bg-white"
+              }`}
+            >
+              Hari Ini
+            </button>
+            <button
+              type="button"
+              onClick={() => setDate(yesterday)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                date === yesterday
+                  ? "bg-primary-green text-gray-900 border border-gray-900 shadow-2xs"
+                  : "text-gray-700 hover:bg-white"
+              }`}
+            >
+              Kemarin
+            </button>
+            <button
+              type="button"
+              onClick={handleNextDay}
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-white border border-gray-300 hover:bg-gray-200 text-gray-800 transition-all cursor-pointer shadow-2xs"
+              title="Hari Berikutnya"
+            >
+              <span className="material-symbols-outlined text-base">chevron_right</span>
+            </button>
+          </div>
+          <input aria-label="Pilih tanggal absensi" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="px-3 py-1.5 md:py-2 border-2 border-gray-900 rounded-xl font-bold text-sm bg-gray-50 focus:bg-white cursor-pointer" />
+        </div>
       </div>
       
       {activeHoliday && (

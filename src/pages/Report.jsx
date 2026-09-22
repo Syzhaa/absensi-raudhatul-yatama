@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format, startOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import api from "../services/api";
 import { useAppStore } from "../store/useAppStore";
 import { useEffectiveLembaga } from "../hooks/useEffectiveLembaga";
@@ -155,12 +155,24 @@ export default function Report() {
 
   const today = format(new Date(), "yyyy-MM-dd");
   const firstDayThisMonth = format(startOfMonth(new Date()), "yyyy-MM-dd");
+  const lastDayThisMonth = format(endOfMonth(new Date()), "yyyy-MM-dd");
+
+  const lastMonthDate = subMonths(new Date(), 1);
+  const firstDayLastMonth = format(startOfMonth(lastMonthDate), "yyyy-MM-dd");
+  const lastDayLastMonth = format(endOfMonth(lastMonthDate), "yyyy-MM-dd");
+
+  const MONTH_NAMES = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+  const currentMonthName = MONTH_NAMES[new Date().getMonth()];
+  const lastMonthName = MONTH_NAMES[lastMonthDate.getMonth()];
 
   // Category: "siswa" | "guru"
   const [category, setCategory] = useState("siswa");
 
   const [dateFrom, setDateFrom] = useState("2026-08-01");
-  const [dateTo, setDateTo] = useState("2026-09-17");
+  const [dateTo, setDateTo] = useState(lastDayThisMonth);
   const [statusFilter, setStatusFilter] = useState("");
   const [lembagaFilter, setLembagaFilter] = useState("");
   const [kelasFilterLocal, setKelasFilterLocal] = useState("");
@@ -208,19 +220,19 @@ export default function Report() {
 
   const handlePresetThisMonth = () => {
     setDateFrom(firstDayThisMonth);
-    setDateTo(today);
+    setDateTo(lastDayThisMonth);
     setPage(1);
   };
 
   const handlePresetLastMonth = () => {
-    setDateFrom("2026-08-01");
-    setDateTo("2026-08-31");
+    setDateFrom(firstDayLastMonth);
+    setDateTo(lastDayLastMonth);
     setPage(1);
   };
 
-  const handlePresetAllDummy = () => {
+  const handlePresetAll = () => {
     setDateFrom("2026-08-01");
-    setDateTo("2026-09-17");
+    setDateTo(lastDayThisMonth);
     setPage(1);
   };
 
@@ -964,37 +976,37 @@ export default function Report() {
               type="button"
               onClick={handlePresetThisMonth}
               className={`px-2.5 py-1 rounded-xl text-xs font-bold border cursor-pointer transition-all ${
-                dateFrom === firstDayThisMonth && dateTo === today ? "bg-primary-green border-gray-900 text-gray-900 font-black shadow-xs" : "bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700"
+                dateFrom === firstDayThisMonth && dateTo === lastDayThisMonth ? "bg-primary-green border-gray-900 text-gray-900 font-black shadow-xs" : "bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700"
               }`}
             >
-              Bulan Ini (September)
+              Bulan Ini ({currentMonthName})
             </button>
             <button
               type="button"
               onClick={handlePresetLastMonth}
               className={`px-2.5 py-1 rounded-xl text-xs font-bold border cursor-pointer transition-all ${
-                dateFrom === "2026-08-01" && dateTo === "2026-08-31" ? "bg-primary-green border-gray-900 text-gray-900 font-black shadow-xs" : "bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700"
+                dateFrom === firstDayLastMonth && dateTo === lastDayLastMonth ? "bg-primary-green border-gray-900 text-gray-900 font-black shadow-xs" : "bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700"
               }`}
             >
-              Bulan Lalu (Agustus)
+              Bulan Lalu ({lastMonthName})
             </button>
             <button
               type="button"
-              onClick={handlePresetAllDummy}
+              onClick={handlePresetAll}
               className={`px-2.5 py-1 rounded-xl text-xs font-bold border cursor-pointer transition-all ${
-                dateFrom === "2026-08-01" && dateTo === "2026-09-17" ? "bg-primary-green border-gray-900 text-gray-900 font-black shadow-xs" : "bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700"
+                dateFrom === "2026-08-01" && dateTo === lastDayThisMonth ? "bg-primary-green border-gray-900 text-gray-900 font-black shadow-xs" : "bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-700"
               }`}
             >
-              Semua Periode (Agu - Sep)
+              Semua Periode (Agu - {currentMonthName.slice(0, 3)})
             </button>
           </div>
 
-          {(dateFrom !== "2026-08-01" || dateTo !== "2026-09-17" || statusFilter || lembagaFilter || kelasFilterLocal || search) && (
+          {(dateFrom !== "2026-08-01" || dateTo !== lastDayThisMonth || statusFilter || lembagaFilter || kelasFilterLocal || search) && (
             <button
               type="button"
               onClick={() => {
                 setDateFrom("2026-08-01");
-                setDateTo("2026-09-17");
+                setDateTo(lastDayThisMonth);
                 setStatusFilter("");
                 setLembagaFilter("");
                 setKelasFilterLocal("");

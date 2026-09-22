@@ -133,6 +133,40 @@ export default function Layout({ children }) {
     .filter((item) => !["/settings", "/profile"].includes(item.path))
     .filter((item) => enableTeacherAttendance || item.path !== "/teachers");
 
+  const mobileNavItems = useMemo(() => {
+    if (menuItems.length <= 5) {
+      return menuItems.map((item) => ({
+        ...item,
+        isAction: false,
+        isActive: location.pathname === item.path,
+      }));
+    }
+
+    const corePaths = ["/", "/scan", "/attendance", "/report"];
+    const coreItems = corePaths
+      .map((p) => menuItems.find((m) => m.path === p))
+      .filter(Boolean)
+      .map((item) => ({
+        ...item,
+        isAction: false,
+        isActive: location.pathname === item.path,
+      }));
+
+    const isOtherActive =
+      !corePaths.includes(location.pathname) && location.pathname !== "/profile";
+
+    return [
+      ...coreItems,
+      {
+        label: "Menu",
+        icon: "apps",
+        isAction: true,
+        onClick: () => setIsSidebarOpen(true),
+        isActive: isOtherActive,
+      },
+    ];
+  }, [menuItems, location.pathname]);
+
   const handleLogout = async () => {
     try {
       await authService.logout();
@@ -225,12 +259,12 @@ export default function Layout({ children }) {
           </nav>
         </aside>
 
-        <main className="flex-1 p-3 sm:p-4 md:p-6 portrait:pb-28 landscape:pb-6 md:pb-6 min-w-0 bg-[#fdfaf5]">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 pb-28 md:pb-6 min-w-0 bg-[#fdfaf5]">
           <header className="flex bg-white border-2 border-gray-900 px-3 py-2 sm:px-4 sm:py-3 items-center justify-between mb-3 md:mb-6 shadow-xs sm:shadow-sm rounded-2xl gap-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <button 
                 onClick={() => setIsSidebarOpen(true)}
-                className="flex portrait:!hidden md:!hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center flex-shrink-0 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
+                className="flex md:!hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl border-2 border-gray-900 bg-white hover:bg-gray-100 items-center justify-center flex-shrink-0 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
                 title="Buka Menu"
               >
                 <span className="material-symbols-outlined text-lg">menu</span>
@@ -269,26 +303,42 @@ export default function Layout({ children }) {
         </main>
       </div>
 
-      {/* Mobile Bottom Nav */}
-      <nav className="hidden md:!hidden fixed bottom-4 left-0 w-full z-40 portrait:flex landscape:hidden justify-center px-4 pointer-events-none">
-        <div className="bg-white border-2 border-gray-900 rounded-2xl shadow-sm overflow-hidden pointer-events-auto max-w-full">
-          <div className="flex overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {menuItems.map((item) => {
-              const isActive = location.pathname === item.path;
+      {/* Mobile Bottom Navigation Bar - Docked & Clean Neo-Brutalist */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t-2 border-gray-900 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-1.5 px-3">
+        <div className="flex items-center justify-around max-w-md mx-auto gap-1">
+          {mobileNavItems.map((item, idx) => {
+            if (item.isAction) {
               return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex-none min-w-[64px] flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all ${
-                    isActive ? 'bg-primary-green text-gray-900 font-bold' : 'bg-white text-gray-800 hover:bg-gray-50'
+                <button
+                  key={`mobile-action-${idx}`}
+                  type="button"
+                  onClick={item.onClick}
+                  className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all cursor-pointer ${
+                    item.isActive
+                      ? "bg-primary-green text-gray-900 font-black border-2 border-gray-900 shadow-xs"
+                      : "text-gray-600 hover:text-gray-900 font-bold"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-xl">{item.icon}</span>
-                  <span className="text-[10px] font-bold text-center leading-tight whitespace-nowrap">{item.label}</span>
-                </Link>
+                  <span className="material-symbols-outlined text-xl leading-none mb-0.5">{item.icon}</span>
+                  <span className="text-[10px] font-bold leading-tight text-center truncate w-full">{item.label}</span>
+                </button>
               );
-            })}
-          </div>
+            }
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+                  item.isActive
+                    ? "bg-primary-green text-gray-900 font-black border-2 border-gray-900 shadow-xs"
+                    : "text-gray-600 hover:text-gray-900 font-bold"
+                }`}
+              >
+                <span className="material-symbols-outlined text-xl leading-none mb-0.5">{item.icon}</span>
+                <span className="text-[10px] font-bold leading-tight text-center truncate w-full">{item.label}</span>
+              </Link>
+            );
+          })}
         </div>
       </nav>
 

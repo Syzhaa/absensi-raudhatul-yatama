@@ -13,16 +13,17 @@ import { getAutoHoliday } from "../utils/holidays";
 import { getKelasNumericVal, sortKelasList } from "../utils/kelasHelper";
 import { useKelasFormat } from "../hooks/useKelasFormat";
 import { useAttendanceSettings } from "../hooks/useAttendanceSettings";
-import { format } from "date-fns";
+import { format, subDays, addDays } from "date-fns";
 import {
   isTeacherScheduledOnDate,
   getTeacherScheduleSummary,
 } from "../utils/scheduleHelper";
 
 export default function Attendance() {
-  const [selectedDate, setSelectedDate] = useState(
-    format(new Date(), "yyyy-MM-dd")
-  );
+  const today = format(new Date(), "yyyy-MM-dd");
+  const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
+
+  const [selectedDate, setSelectedDate] = useState(today);
   const [roleFilter, setRoleFilter] = useState("all");
   const [kelasFilter, setKelasFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -33,6 +34,26 @@ export default function Attendance() {
   const [selectedPerson, setSelectedPerson] = useState(null);
   const userRole = useAppStore((state) => state.userRole);
   const isGuru = userRole === "guru";
+
+  const handlePrevDay = () => {
+    try {
+      const [y, m, d] = (selectedDate || today).split("-").map(Number);
+      const curr = new Date(y, m - 1, d);
+      setSelectedDate(format(subDays(curr, 1), "yyyy-MM-dd"));
+    } catch {
+      setSelectedDate(today);
+    }
+  };
+
+  const handleNextDay = () => {
+    try {
+      const [y, m, d] = (selectedDate || today).split("-").map(Number);
+      const curr = new Date(y, m - 1, d);
+      setSelectedDate(format(addDays(curr, 1), "yyyy-MM-dd"));
+    } catch {
+      setSelectedDate(today);
+    }
+  };
 
   const { data: authData } = useQuery({
     queryKey: ["me"],
@@ -501,8 +522,49 @@ export default function Attendance() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 sm:w-44">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 bg-gray-100 p-1 border-2 border-gray-900 rounded-xl">
+              <button
+                type="button"
+                onClick={handlePrevDay}
+                className="w-7 h-7 flex items-center justify-center rounded-lg bg-white border border-gray-300 hover:bg-gray-200 text-gray-800 transition-all cursor-pointer shadow-2xs"
+                title="Hari Sebelumnya"
+              >
+                <span className="material-symbols-outlined text-base">chevron_left</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedDate(today)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                  selectedDate === today
+                    ? "bg-primary-green text-gray-900 border border-gray-900 shadow-2xs"
+                    : "text-gray-700 hover:bg-white"
+                }`}
+              >
+                Hari Ini
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedDate(yesterday)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                  selectedDate === yesterday
+                    ? "bg-primary-green text-gray-900 border border-gray-900 shadow-2xs"
+                    : "text-gray-700 hover:bg-white"
+                }`}
+              >
+                Kemarin
+              </button>
+              <button
+                type="button"
+                onClick={handleNextDay}
+                className="w-7 h-7 flex items-center justify-center rounded-lg bg-white border border-gray-300 hover:bg-gray-200 text-gray-800 transition-all cursor-pointer shadow-2xs"
+                title="Hari Berikutnya"
+              >
+                <span className="material-symbols-outlined text-base">chevron_right</span>
+              </button>
+            </div>
+
+            <div className="relative flex-1 sm:w-40 min-w-[130px]">
               <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none text-base">
                 calendar_today
               </span>
