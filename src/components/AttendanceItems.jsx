@@ -9,9 +9,10 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
   const isGuru = userRole === "guru";
   const person = isStudent ? item.student || item : item.teacher || item;
   const isBelumAbsen = !item.status || item.status === "belum_absen";
+  const studentNisn = person?.nisn || person?.nis || item.nisn || item.nis;
 
   const subtitle = isStudent
-    ? `Kelas ${formatKelas(person?.kelas) || "-"} • NISN: ${person?.nisn || "-"}`
+    ? `Kelas ${formatKelas(person?.kelas || item.kelas) || "-"} • NISN: ${studentNisn || "-"}`
     : `${person?.nip ? "NIP/NUPTK/NPK: " + person.nip : "Dewan Guru"}${
         item.scheduleSummary ? ` • Jadwal: ${item.scheduleSummary}` : ""
       }`;
@@ -40,6 +41,16 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
             <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-gray-100 text-gray-700 border border-gray-300">
               {lembagaName}
             </span>
+            {isStudent && (person?.kelas || item.kelas) && (
+              <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-100 text-amber-900 border border-amber-300">
+                Kelas {formatKelas(person?.kelas || item.kelas)}
+              </span>
+            )}
+            {isStudent && studentNisn && studentNisn !== "-" && (
+              <span className="px-2 py-0.5 text-[11px] font-mono font-bold rounded-md bg-emerald-50 text-emerald-900 border border-emerald-300">
+                NISN: {studentNisn}
+              </span>
+            )}
             {item.role === "teacher" && item.isScheduledToday && (
               <span className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300">
                 Jadwal Hari Ini

@@ -110,6 +110,9 @@ export default function GuruAttendance() {
               check_in: student.check_in,
               check_out: student.check_out,
               notes: student.notes || (isLibur ? `Libur: ${activeHoliday.name}` : null),
+              nisn: student.nisn || student.nis,
+              kelas: student.kelas,
+              nama: student.nama,
             };
 
             return (

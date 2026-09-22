@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useNoticeStore } from "../store/useNoticeStore";
 import { format } from "date-fns";
+import { id as localeId } from "date-fns/locale";
 
 export default function TeacherSelfCard() {
   const queryClient = useQueryClient();
@@ -54,14 +55,24 @@ export default function TeacherSelfCard() {
   const status = todayAttendance?.status;
   const checkIn = todayAttendance?.check_in;
   const checkOut = todayAttendance?.check_out;
-  const note = todayAttendance?.note;
+  const note = todayAttendance?.notes || todayAttendance?.note;
+
+  // Logika status presensi
+  const hasCheckIn = !!checkIn;
+  const hasCheckOut = !!checkOut;
+  const hasScanned = hasCheckIn || status === "hadir" || status === "terlambat";
+  const hasLeave = status === "izin" || status === "sakit";
+  const isCompleted = hasCheckIn && hasCheckOut;
+
+  // Tombol izin/sakit HANYA tampil jika guru belum scan masuk dan belum izin/sakit
+  const canRequestLeave = !hasScanned && !hasLeave;
 
   return (
-    <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl shadow-neo p-4 sm:p-5 mb-4 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Profil & Status Guru */}
-        <div className="flex items-start sm:items-center gap-3.5 min-w-0">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-primary-green/20 border-2 border-gray-900 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">
+    <div className="bg-white border-2 sm:border-3 border-gray-900 rounded-2xl shadow-neo p-3.5 sm:p-4 mb-3 space-y-3 animate-fade-in">
+      {/* Header Guru: Avatar + Identitas Ringkas */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-xl bg-emerald-100 border-2 border-gray-900 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-sm">
             {teacher.foto ? (
               <img
                 src={teacher.foto.startsWith("http") ? teacher.foto : `https://api.raudhatulyatama.sch.id${teacher.foto}`}
@@ -69,100 +80,155 @@ export default function TeacherSelfCard() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="material-symbols-outlined text-2xl sm:text-3xl text-gray-900">
+              <span className="material-symbols-outlined text-2xl text-gray-900">
                 badge
               </span>
             )}
           </div>
 
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-400 rounded-md">
-                Akun Guru Aktif • {teacher.lembaga?.toUpperCase() || "MA"}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-emerald-100 text-emerald-950 border border-emerald-400 rounded-md">
+                GURU • {teacher.lembaga?.toUpperCase() || "MA"}
               </span>
-              <span className="text-xs text-gray-500 font-bold">
-                {format(new Date(), "EEEE, d MMMM yyyy")}
+              <span className="text-[11px] text-gray-500 font-bold">
+                {format(new Date(), "EEEE, d MMMM yyyy", { locale: localeId })}
               </span>
             </div>
 
-            <h2 className="text-base sm:text-lg font-black text-gray-900 truncate mt-0.5">
+            <h2 className="text-base sm:text-lg font-black text-gray-900 truncate leading-snug mt-0.5">
               {teacher.nama}
             </h2>
-            <p className="text-xs text-gray-600 font-mono font-bold">
-              {teacher.nip ? `NIP/NPK: ${teacher.nip}` : "Guru Pengajar"}
-            </p>
 
-            {/* Badge Status Kehadiran Hari Ini */}
-            <div className="mt-2 flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold text-gray-600">Presensi Saya:</span>
-              {status === "hadir" ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-950 border border-emerald-400 rounded-lg text-xs font-black">
-                  <span className="material-symbols-outlined text-sm text-emerald-700">check_circle</span>
-                  Hadir Masuk: {checkIn ? checkIn.slice(0, 5) : "Tepat Waktu"}
-                  {checkOut && ` • Pulang: ${checkOut.slice(0, 5)}`}
-                </span>
-              ) : status === "terlambat" ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-950 border border-amber-400 rounded-lg text-xs font-black">
-                  <span className="material-symbols-outlined text-sm text-amber-700">schedule</span>
-                  Terlambat: {checkIn ? checkIn.slice(0, 5) : "Hadir"}
-                  {checkOut && ` • Pulang: ${checkOut.slice(0, 5)}`}
-                </span>
-              ) : status === "izin" ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-950 border border-purple-400 rounded-lg text-xs font-black">
-                  <span className="material-symbols-outlined text-sm text-purple-700">info</span>
-                  Izin {note ? `(${note})` : ""}
-                </span>
-              ) : status === "sakit" ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-950 border border-blue-400 rounded-lg text-xs font-black">
-                  <span className="material-symbols-outlined text-sm text-blue-700">emergency</span>
-                  Sakit {note ? `(${note})` : ""}
-                </span>
-              ) : status === "alpha" ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-100 text-red-950 border border-red-400 rounded-lg text-xs font-black">
-                  <span className="material-symbols-outlined text-sm text-red-700">cancel</span>
-                  Alpha (Tidak Hadir)
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-xs font-black">
-                  <span className="material-symbols-outlined text-sm text-gray-500">pending</span>
-                  Belum Melakukan Presensi Hari Ini
-                </span>
+            <div className="flex items-center gap-2 text-xs text-gray-600 font-medium truncate">
+              {teacher.nip ? (
+                <span className="font-mono font-bold text-gray-700">NPK: {teacher.nip}</span>
+              ) : null}
+              {teacher.mata_pelajaran && (
+                <span className="text-gray-500 truncate">• {teacher.mata_pelajaran}</span>
               )}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Tombol Aksi Mandiri Guru */}
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
-          {/* Tombol Kamera Scan QR Sekolah */}
-          <Link
-            to="/scan"
-            className="flex-1 sm:flex-initial px-4 py-2.5 bg-primary-green hover:bg-lime-400 text-gray-900 border-2 border-gray-900 rounded-xl shadow-neo text-xs font-black flex items-center justify-center gap-1.5 active:translate-y-0.5 transition-all"
-            title="Buka kamera untuk scan QR Code presensi sekolah"
-          >
-            <span className="material-symbols-outlined text-base">qr_code_scanner</span>
-            <span>Scan QR Sekolah</span>
-          </Link>
-
-          {/* Tombol Ajukan Izin / Sakit Sendiri */}
-          <button
-            type="button"
-            onClick={() => setShowLeaveModal(true)}
-            className="flex-1 sm:flex-initial px-4 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-gray-900 rounded-xl shadow-neo text-xs font-black flex items-center justify-center gap-1.5 active:translate-y-0.5 transition-all cursor-pointer"
-            title="Ajukan izin atau sakit mandiri jika berhalangan hadir"
-          >
-            <span className="material-symbols-outlined text-base">edit_calendar</span>
-            <span>Izin / Sakit Sendiri</span>
-          </button>
+      {/* Baris Status Presensi Hari Ini */}
+      <div className="p-2.5 bg-gray-50 border-2 border-gray-200 rounded-xl flex items-center justify-between flex-wrap gap-2 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-gray-600">Status Presensi:</span>
+          {hasScanned ? (
+            <span
+              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg font-black text-[11px] border ${
+                status === "terlambat"
+                  ? "bg-amber-100 text-amber-950 border-amber-400"
+                  : "bg-emerald-100 text-emerald-950 border-emerald-400"
+              }`}
+            >
+              <span className="material-symbols-outlined text-xs">
+                {status === "terlambat" ? "schedule" : "check_circle"}
+              </span>
+              <span>{status === "terlambat" ? "Terlambat" : "Hadir"}</span>
+            </span>
+          ) : hasLeave ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-purple-100 text-purple-950 border border-purple-400 rounded-lg font-black text-[11px] capitalize">
+              <span className="material-symbols-outlined text-xs">
+                {status === "sakit" ? "emergency" : "info"}
+              </span>
+              <span>{status} {note ? `(${note})` : ""}</span>
+            </span>
+          ) : status === "alpha" ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-100 text-red-950 border border-red-400 rounded-lg font-black text-[11px]">
+              <span className="material-symbols-outlined text-xs">cancel</span>
+              <span>Alpha</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gray-200 text-gray-800 rounded-lg font-black text-[11px]">
+              <span className="material-symbols-outlined text-xs">pending</span>
+              <span>Belum Presensi</span>
+            </span>
+          )}
         </div>
+
+        {/* Info Jam Masuk & Pulang */}
+        {hasScanned && (
+          <div className="flex items-center gap-2 font-mono text-[11px] font-bold">
+            <span className="text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              Masuk: {checkIn ? checkIn.slice(0, 5) : "-"}
+            </span>
+            <span className={`px-2 py-0.5 rounded border ${
+              hasCheckOut 
+                ? "text-purple-800 bg-purple-50 border-purple-200" 
+                : "text-gray-500 bg-gray-100 border-gray-200"
+            }`}>
+              Pulang: {hasCheckOut ? checkOut.slice(0, 5) : "Belum"}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Baris Tombol Aksi Mandiri Guru */}
+      <div className="pt-1">
+        {/* SKENARIO 1: Belum scan sama sekali -> Tampil Scan Masuk & Izin/Sakit */}
+        {canRequestLeave && (
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              to="/scan"
+              className="py-2.5 px-3 bg-primary-green hover:bg-emerald-400 text-gray-900 border-2 border-gray-900 rounded-xl shadow-neo text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 active:translate-y-0.5 transition-all"
+              title="Scan QR presensi masuk sekolah"
+            >
+              <span className="material-symbols-outlined text-base">qr_code_scanner</span>
+              <span>Scan QR Masuk</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setShowLeaveModal(true)}
+              className="py-2.5 px-3 bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-gray-900 rounded-xl shadow-neo text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 active:translate-y-0.5 transition-all cursor-pointer"
+              title="Ajukan izin atau sakit mandiri jika berhalangan hadir"
+            >
+              <span className="material-symbols-outlined text-base">edit_calendar</span>
+              <span>Izin / Sakit Sendiri</span>
+            </button>
+          </div>
+        )}
+
+        {/* SKENARIO 2: Sudah scan masuk tapi belum scan pulang -> Izin/sakit HILANG, tampil tombol Scan Pulang */}
+        {hasScanned && !hasCheckOut && (
+          <div>
+            <Link
+              to="/scan"
+              className="w-full py-2.5 px-4 bg-amber-400 hover:bg-amber-300 text-gray-900 border-2 border-gray-900 rounded-xl shadow-neo text-xs sm:text-sm font-black flex items-center justify-center gap-2 active:translate-y-0.5 transition-all"
+              title="Scan QR Code presensi pulang"
+            >
+              <span className="material-symbols-outlined text-base">logout</span>
+              <span>Scan QR Pulang Sekolah</span>
+            </Link>
+          </div>
+        )}
+
+        {/* SKENARIO 3: Sudah scan masuk DAN sudah scan pulang -> Presensi Lengkap */}
+        {isCompleted && (
+          <div className="w-full py-2 px-3 bg-emerald-50 text-emerald-950 border-2 border-emerald-600 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs">
+            <span className="material-symbols-outlined text-base text-emerald-700">task_alt</span>
+            <span>Presensi Hari Ini Lengkap (Masuk & Pulang Tercatat)</span>
+          </div>
+        )}
+
+        {/* SKENARIO 4: Guru sudah mengajukan izin / sakit mandiri */}
+        {hasLeave && (
+          <div className="w-full py-2 px-3 bg-purple-50 text-purple-950 border-2 border-purple-500 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs">
+            <span className="material-symbols-outlined text-base text-purple-700">info</span>
+            <span>Pengajuan {status.toUpperCase()} Mandiri Telah Dicatat</span>
+          </div>
+        )}
       </div>
 
       {/* Modal Izin / Sakit Mandiri */}
       {showLeaveModal && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="relative bg-white border-3 border-gray-900 rounded-3xl shadow-neo p-6 max-w-sm w-full animate-fade-in space-y-4">
+          <div className="relative bg-white border-3 border-gray-900 rounded-3xl shadow-neo p-5 sm:p-6 max-w-sm w-full animate-fade-in space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-              <h3 className="font-black text-base text-gray-900">
+              <h3 className="font-black text-sm sm:text-base text-gray-900">
                 Pengajuan Izin / Sakit Mandiri
               </h3>
               <button
@@ -182,10 +248,10 @@ export default function TeacherSelfCard() {
                   note: leaveNote,
                 });
               }}
-              className="space-y-4"
+              className="space-y-3.5"
             >
               <div>
-                <label className="block text-xs font-black uppercase text-gray-700 mb-1.5">
+                <label className="block text-[11px] font-black uppercase text-gray-700 mb-1">
                   Nama Guru
                 </label>
                 <input
@@ -197,12 +263,12 @@ export default function TeacherSelfCard() {
               </div>
 
               <div>
-                <label className="block text-xs font-black uppercase text-gray-700 mb-1.5">
+                <label className="block text-[11px] font-black uppercase text-gray-700 mb-1">
                   Pilih Status *
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <label
-                    className={`cursor-pointer border-2 rounded-xl p-3 flex items-center justify-center gap-2 font-black text-xs transition-all ${
+                    className={`cursor-pointer border-2 rounded-xl p-2.5 flex items-center justify-center gap-1.5 font-black text-xs transition-all ${
                       leaveStatus === "izin"
                         ? "bg-purple-100 border-gray-900 text-purple-950 shadow-neo"
                         : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
@@ -221,7 +287,7 @@ export default function TeacherSelfCard() {
                   </label>
 
                   <label
-                    className={`cursor-pointer border-2 rounded-xl p-3 flex items-center justify-center gap-2 font-black text-xs transition-all ${
+                    className={`cursor-pointer border-2 rounded-xl p-2.5 flex items-center justify-center gap-1.5 font-black text-xs transition-all ${
                       leaveStatus === "sakit"
                         ? "bg-blue-100 border-gray-900 text-blue-950 shadow-neo"
                         : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
@@ -242,30 +308,30 @@ export default function TeacherSelfCard() {
               </div>
 
               <div>
-                <label className="block text-xs font-black uppercase text-gray-700 mb-1.5">
+                <label className="block text-[11px] font-black uppercase text-gray-700 mb-1">
                   Keterangan / Alasan (Opsional)
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={leaveNote}
                   onChange={(e) => setLeaveNote(e.target.value)}
-                  placeholder="Misal: Keperluan dinas / keluarga mendesak..."
-                  className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl text-xs font-medium focus:outline-none transition-all"
+                  placeholder="Misal: Keperluan dinas / kesehatan..."
+                  className="w-full px-3 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl text-xs font-medium focus:outline-none transition-all shadow-xs"
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => setShowLeaveModal(false)}
-                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-black text-xs border-2 border-gray-900 rounded-xl shadow-xs transition-all cursor-pointer"
+                  className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-black text-xs border-2 border-gray-900 rounded-xl shadow-xs transition-all cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={submitLeaveMutation.isPending}
-                  className="flex-1 py-2.5 bg-primary-green hover:bg-lime-400 text-gray-900 font-black text-xs border-2 border-gray-900 rounded-xl shadow-neo transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black text-xs border-2 border-gray-900 rounded-xl shadow-neo transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
                 >
                   <span className="material-symbols-outlined text-sm">
                     {submitLeaveMutation.isPending ? "sync" : "send"}
