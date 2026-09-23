@@ -386,85 +386,104 @@ export default function Students() {
   return (
     <div className="w-full md:max-w-none max-w-5xl mx-auto space-y-4 animate-fade-in">
       {/* Action Bar Header */}
-      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-4 shadow-neo flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-4 shadow-neo flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5">
+        {/* Left: Identity & Badge */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-100 border-2 border-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-blue-100 border-2 border-gray-900 rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs">
             <span className="material-symbols-outlined text-2xl text-blue-900 font-bold">school</span>
           </div>
           <div>
-            <h1 className="font-black text-base sm:text-xl text-gray-900 tracking-tight leading-tight">
+            <h1 className="font-black text-base sm:text-lg text-gray-900 tracking-tight leading-tight">
               Data Siswa
             </h1>
-            <p className="text-[11px] sm:text-xs text-gray-500 font-medium">
-              Total {students.length} Siswa terdaftar • {effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA"}
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-blue-100 text-blue-950 border border-blue-300 rounded-md">
+                {effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA"}
+              </span>
+              <span className="text-[11px] sm:text-xs text-gray-500 font-bold">
+                Total {students.length} Siswa terdaftar
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        {/* Right: Search & Actions */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1 lg:flex-initial justify-end">
           {/* Search Bar */}
-          <div className="relative w-full sm:w-60">
+          <div className="relative w-full sm:w-64">
             <input
               type="text"
               placeholder="Cari nama atau NISN..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-gray-50 border-2 border-gray-300 focus:border-gray-900 focus:bg-white rounded-xl text-xs sm:text-sm font-medium focus:outline-none transition-all"
+              className="w-full pl-9 pr-8 py-2 bg-gray-50 border-2 border-gray-900 focus:bg-white rounded-xl text-xs sm:text-sm font-bold text-gray-900 placeholder:text-gray-400 placeholder:font-medium focus:outline-none shadow-xs transition-all"
             />
-            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-lg">
+            <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-lg pointer-events-none">
               search
             </span>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-0.5 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            )}
           </div>
 
-          {selectedStudents.length > 0 && (
-            <>
-              <button
-                onClick={handleBatchPrintQR}
-                className="py-2 px-3.5 bg-white hover:bg-gray-100 text-gray-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer"
-                title="Cetak Kartu Massal"
-              >
-                <span className="material-symbols-outlined text-base">print</span>
-                <span>Cetak Kartu ({selectedStudents.length})</span>
-              </button>
-              <button
-                onClick={handlePromoteClass}
-                className="py-2 px-3.5 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-base">school</span>
-                <span>Naik ({selectedStudents.length})</span>
-              </button>
-              <button
-                onClick={handleBatchDelete}
-                className="py-2 px-3.5 bg-rose-100 hover:bg-rose-200 text-rose-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1.5 text-xs sm:text-sm cursor-pointer"
-                title="Hapus Banyak Siswa"
-              >
-                <span className="material-symbols-outlined text-base text-rose-600">delete</span>
-                <span>Hapus ({selectedStudents.length})</span>
-              </button>
-            </>
-          )}
+          {/* Action Buttons Group */}
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+            {selectedStudents.length > 0 && (
+              <>
+                <button
+                  onClick={handleBatchPrintQR}
+                  className="py-2 px-3 bg-white hover:bg-gray-100 text-gray-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer col-span-1"
+                  title="Cetak Kartu Massal"
+                >
+                  <span className="material-symbols-outlined text-base">print</span>
+                  <span>Cetak ({selectedStudents.length})</span>
+                </button>
+                <button
+                  onClick={handlePromoteClass}
+                  className="py-2 px-3 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer col-span-1"
+                >
+                  <span className="material-symbols-outlined text-base">school</span>
+                  <span>Naik ({selectedStudents.length})</span>
+                </button>
+                <button
+                  onClick={handleBatchDelete}
+                  className="py-2 px-3 bg-rose-100 hover:bg-rose-200 text-rose-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer col-span-2 sm:col-span-1"
+                  title="Hapus Banyak Siswa"
+                >
+                  <span className="material-symbols-outlined text-base text-rose-600">delete</span>
+                  <span>Hapus ({selectedStudents.length})</span>
+                </button>
+              </>
+            )}
 
-          {/* Import Excel Button */}
-          <button
-            onClick={() => setShowImportModal(true)}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm flex-shrink-0 cursor-pointer"
-            title="Import Banyak Siswa dari Excel/CSV"
-          >
-            <span className="material-symbols-outlined text-base text-emerald-700">upload_file</span>
-            <span>Import Excel</span>
-          </button>
+            {/* Import Excel Button */}
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm col-span-2 sm:col-span-1 sm:w-auto cursor-pointer"
+              title="Import Banyak Siswa dari Excel/CSV"
+            >
+              <span className="material-symbols-outlined text-base text-emerald-700">upload_file</span>
+              <span className="truncate">Import Excel</span>
+            </button>
 
-          {/* Desktop Add Button */}
-          <button
-            onClick={() => {
-              resetForm();
-              setShowForm(true);
-            }}
-            className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm flex-shrink-0 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-base font-bold">add</span>
-            <span>Tambah Data</span>
-          </button>
+            {/* Desktop Add Button */}
+            <button
+              onClick={() => {
+                resetForm();
+                setShowForm(true);
+              }}
+              className="hidden lg:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm flex-shrink-0 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base font-bold">add</span>
+              <span>Tambah Data</span>
+            </button>
+          </div>
         </div>
       </div>
 
