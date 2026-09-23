@@ -17,6 +17,11 @@ import {
   playSuccessCheckout,
   playSpecificErrorSound,
 } from "../utils/scanAudio";
+import { analyzeGpsPosition, resetGpsHistory } from "../utils/antiFakeGps";
+
+function isDesktopDevice() {
+  return !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+}
 
 // Formula Haversine: Hitung jarak akurat antar titik koordinat dalam satuan meter
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -96,6 +101,8 @@ export default function ScanQR() {
   // GPS Location states & detection (Isolated Per Lembaga)
   const [coords, setCoords] = useState(() => getCachedLocationSession(effectiveLembaga));
   const [locationError, setLocationError] = useState(null);
+  const [mockStatus, setMockStatus] = useState({ isMock: false, reasons: [], mockScore: 0 });
+  const mockStatusRef = useRef({ isMock: false, reasons: [], mockScore: 0 });
   const isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
   const [isDesktopBlocked, setIsDesktopBlocked] = useState(() => {
     const cached = getCachedLocationSession(effectiveLembaga);
@@ -187,44 +194,77 @@ export default function ScanQR() {
     
     setIsLocating(true);
     setLocationError(null);
+    resetGpsHistory();
 
-    const onPosSuccess = (pos) => {
+    const handlePos = (pos) => {
+      const antiMock = analyzeGpsPosition(pos);
+      setMockStatus(antiMock);
+      mockStatusRef.current = antiMock;
+
       const c = {
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
         accuracy: pos.coords.accuracy,
+        altitude: pos.coords.altitude,
+        altitudeAccuracy: pos.coords.altitudeAccuracy,
+        isMock: antiMock.isMock,
+        mockReasons: antiMock.reasons,
+        mockScore: antiMock.mockScore,
+        sampleCount: antiMock.sampleCount,
       };
       setCoords(c);
       coordsRef.current = c;
       setIsLocating(false);
-      setLocationError(null);
+
+      if (antiMock.isMock) {
+        setLocationError(`Terdeteksi Fake GPS: ${antiMock.reasons[0] || "Aplikasi lokasi palsu aktif."}. Matikan Fake GPS untuk melakukan presensi.`);
+      } else {
+        setLocationError(null);
+      }
     };
 
-    // 1. Coba Satelit Berakurasi Tinggi (GPS Satelit HP) - timeout 12 detik, fresh (tanpa cache lama)
-    navigator.geolocation.getCurrentPosition(
-      onPosSuccess,
-      (err1) => {
-        // 2. Jika sinyal satelit lemah di dalam kelas, coba Jaringan/Cellular/Wi-Fi
-        navigator.geolocation.getCurrentPosition(
-          onPosSuccess,
-          (err2) => {
-            setIsLocating(false);
-            const err = err2 || err1;
-            if (err.code === 1) {
-              setLocationError("Izin lokasi ditolak. Silakan izinkan akses lokasi di browser/HP Anda.");
-            } else if (err.code === 3) {
-              setLocationError("Pencarian satelit GPS timeout (sinyal terhalang ruangan). Silakan klik 'Coba Lagi GPS'.");
-            } else if (err.code === 2) {
-              setLocationError("Sinyal GPS tidak terdeteksi di dalam ruangan. Silakan geser ke dekat jendela/luar.");
-            } else {
-              setLocationError("Sinyal GPS belum terkunci. Silakan klik 'Coba Lagi GPS'.");
-            }
-          },
-          { enableHighAccuracy: false, timeout: 12000, maximumAge: 10000 }
-        );
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
-    );
+    let sampleCount = 0;
+    const requiredSamples = 3;
+
+    const sampleNext = () => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          sampleCount++;
+          handlePos(pos);
+          if (sampleCount < requiredSamples) {
+            setTimeout(sampleNext, 500);
+          }
+        },
+        (err1) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos2) => {
+              sampleCount++;
+              handlePos(pos2);
+              if (sampleCount < requiredSamples) {
+                setTimeout(sampleNext, 500);
+              }
+            },
+            (err2) => {
+              setIsLocating(false);
+              const err = err2 || err1;
+              if (err.code === 1) {
+                setLocationError("Izin lokasi ditolak. Silakan izinkan akses lokasi di browser/HP Anda.");
+              } else if (err.code === 3) {
+                setLocationError("Pencarian satelit GPS timeout. Silakan klik 'Cek GPS'.");
+              } else if (err.code === 2) {
+                setLocationError("Sinyal GPS tidak terdeteksi di dalam ruangan. Silakan geser ke dekat jendela/luar.");
+              } else {
+                setLocationError("Sinyal GPS belum terkunci. Silakan klik 'Cek GPS'.");
+              }
+            },
+            { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
+          );
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    };
+
+    sampleNext();
   };
 
   // Bersihkan cache 3 jam dari tombol bypass sebelumnya di HP/mobile
@@ -263,19 +303,34 @@ export default function ScanQR() {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         if (!coordsRef.current?.isPcVerified) {
+          const antiMock = analyzeGpsPosition(pos);
+          setMockStatus(antiMock);
+          mockStatusRef.current = antiMock;
+
           const c = {
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
             accuracy: pos.coords.accuracy,
+            altitude: pos.coords.altitude,
+            altitudeAccuracy: pos.coords.altitudeAccuracy,
+            isMock: antiMock.isMock,
+            mockReasons: antiMock.reasons,
+            mockScore: antiMock.mockScore,
+            sampleCount: antiMock.sampleCount,
           };
           setCoords(c);
           coordsRef.current = c;
-          setLocationError(null);
           setIsLocating(false);
+
+          if (antiMock.isMock) {
+            setLocationError(`Terdeteksi Fake GPS: ${antiMock.reasons[0] || "Aplikasi lokasi palsu aktif."}. Matikan Fake GPS untuk melakukan presensi.`);
+          } else {
+            setLocationError(null);
+          }
         }
       },
       () => {},
-      { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
     );
     return () => {
       navigator.geolocation.clearWatch(watchId);
@@ -304,10 +359,12 @@ export default function ScanQR() {
       ? Math.max(0, currentDistance - accuracyDeduction)
       : null;
 
+  const isMockActive = Boolean(coords?.isMock || mockStatus.isMock);
+
   const isWithinRadius =
     !isLocationRequired ||
     coords?.isPcVerified ||
-    (effectiveDistance !== null && effectiveDistance <= radiusMax && currentDistance <= 1350);
+    (!isMockActive && effectiveDistance !== null && effectiveDistance <= radiusMax && currentDistance <= 1350);
 
   // Fetch recent logs
   const { data: recentLogs } = useQuery({
@@ -336,7 +393,13 @@ export default function ScanQR() {
   }, [queryClient]);
 
   const scanMutation = useMutation({
-    mutationFn: (uuid) => attendanceService.scan(uuid, scanTypeRef.current, coordsRef.current),
+    mutationFn: (uuid) => attendanceService.scan(uuid, scanTypeRef.current, {
+      ...coordsRef.current,
+      is_mock: Boolean(coordsRef.current?.isMock || mockStatusRef.current?.isMock),
+      mock_reasons: coordsRef.current?.mockReasons || mockStatusRef.current?.reasons || [],
+      altitude: coordsRef.current?.altitude,
+      altitude_accuracy: coordsRef.current?.altitudeAccuracy,
+    }),
     onSuccess: (data) => {
       const activeScanType = scanTypeRef.current;
       const person = data.data?.student || data.data?.teacher;
@@ -419,7 +482,14 @@ export default function ScanQR() {
       if (!coordsRef.current) {
         return {
           valid: false,
-          message: "Lokasi GPS belum terdeteksi. Silakan klik tombol 'Refresh GPS' di atas kamera.",
+          message: "Lokasi GPS belum terdeteksi. Silakan klik tombol 'Cek GPS' di atas kamera.",
+        };
+      }
+      if (coordsRef.current?.isMock || mockStatusRef.current?.isMock) {
+        const reason = mockStatusRef.current?.reasons?.[0] || coordsRef.current?.mockReasons?.[0] || "Aplikasi Fake GPS aktif";
+        return {
+          valid: false,
+          message: `Terdeteksi Fake GPS / Lokasi Palsu (${reason}). Presensi ditolak.`,
         };
       }
       if (!coords?.isPcVerified && (effectiveDistance === null || effectiveDistance > radiusMax || currentDistance > 1350)) {
@@ -604,7 +674,9 @@ export default function ScanQR() {
               <>
                 <div
                   className={`p-3 rounded-2xl border-2 border-gray-900 flex items-center justify-between shadow-sm transition-all ${
-                    coords?.isPcVerified || coords?.isFallbackVerified
+                    isMockActive
+                      ? "bg-rose-50 border-rose-600"
+                      : coords?.isPcVerified || coords?.isFallbackVerified
                       ? "bg-emerald-50"
                       : isLocating
                       ? "bg-amber-50"
@@ -618,7 +690,9 @@ export default function ScanQR() {
                   <div className="flex items-center gap-2.5 min-w-0 pr-2">
                     <div
                       className={`w-9 h-9 rounded-xl border-2 border-gray-900 flex items-center justify-center flex-shrink-0 shadow-sm ${
-                        coords?.isPcVerified
+                        isMockActive
+                          ? "bg-rose-500 text-white"
+                          : coords?.isPcVerified
                           ? "bg-primary-green text-gray-900"
                           : isLocating
                           ? "bg-amber-200 text-amber-900"
@@ -630,7 +704,9 @@ export default function ScanQR() {
                       }`}
                     >
                       <span className="material-symbols-outlined text-xl">
-                        {coords?.isPcVerified
+                        {isMockActive
+                          ? "gpp_bad"
+                          : coords?.isPcVerified
                           ? "verified_user"
                           : isLocating
                           ? "radar"
@@ -642,7 +718,9 @@ export default function ScanQR() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-black text-xs sm:text-sm text-gray-900">
-                          {coords?.isPcVerified
+                          {isMockActive
+                            ? "Terdeteksi Fake GPS / Lokasi Palsu"
+                            : coords?.isPcVerified
                             ? "Lokasi Sah: PC Terverifikasi"
                             : isLocating
                             ? "Mendeteksi Lokasi GPS..."
@@ -652,7 +730,11 @@ export default function ScanQR() {
                             ? (isCellularBtsDrift ? "Lokasi Sah: Toleransi BTS Madrasah" : "Lokasi Sah: Di Lingkungan Sekolah")
                             : "Di Luar Jangkauan Sekolah"}
                         </span>
-                        {coords && (
+                        {isMockActive ? (
+                          <span className="text-[10px] font-mono font-black px-1.5 py-0.5 rounded border bg-rose-100 border-rose-500 text-rose-900">
+                            Fake GPS Ditolak
+                          </span>
+                        ) : coords && (
                           <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded border ${
                             isWithinRadius ? "bg-emerald-100 border-emerald-400 text-emerald-900" : "bg-red-100 border-red-400 text-red-900"
                           }`}>
@@ -665,7 +747,9 @@ export default function ScanQR() {
                         )}
                       </div>
                       <p className="text-[11px] text-gray-600 font-medium truncate mt-0.5">
-                        {coords?.isPcVerified
+                        {isMockActive
+                          ? (mockStatus.reasons[0] || "Aplikasi Fake GPS aktif. Matikan Fake GPS & Opsi Pengembang.")
+                          : coords?.isPcVerified
                           ? `Akses pemindaian presensi disetujui dari stasiun PC madrasah (${effectiveLembaga?.toUpperCase() || "MA"})`
                           : isLocating
                           ? "Menghubungkan sensor satelit GPS / jaringan..."
@@ -681,7 +765,7 @@ export default function ScanQR() {
                   </div>
 
                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {coords?.isPcVerified || isWithinRadius ? (
+                    {(!isMockActive && (coords?.isPcVerified || isWithinRadius)) ? (
                       <div className="px-2.5 py-1.5 bg-emerald-100 border-2 border-emerald-600 text-emerald-950 font-black text-xs rounded-xl flex items-center gap-1 shadow-xs">
                         <span className="material-symbols-outlined text-base text-emerald-700">verified</span>
                         <span>Siap Scan</span>

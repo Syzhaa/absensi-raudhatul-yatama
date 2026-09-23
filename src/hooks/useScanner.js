@@ -147,6 +147,19 @@ export function useScanner({
                   }
                 };
 
+                if (coordsRef?.current?.isMock) {
+                  playErrorSound();
+                  setResult({
+                    success: false,
+                    manual: true,
+                    message: "Akses Ditolak: Terdeteksi Fake GPS / Mock Location pada HP Anda. Matikan aplikasi Fake GPS.",
+                  });
+                  setTimeout(() => {
+                    if (lastScannedRef.current === decodedText) lastScannedRef.current = null;
+                  }, 4000);
+                  return;
+                }
+
                 if (coordsRef?.current?.latitude && coordsRef?.current?.longitude) {
                   await pushLocationToPc(coordsRef.current.latitude, coordsRef.current.longitude, coordsRef.current.accuracy);
                 } else if (navigator.geolocation) {

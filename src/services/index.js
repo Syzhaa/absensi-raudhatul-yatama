@@ -107,8 +107,20 @@ export const attendanceService = {
     if (coords?.latitude && coords?.longitude) {
       payload.latitude = coords.latitude;
       payload.longitude = coords.longitude;
-      if (coords?.accuracy) {
+      if (coords?.accuracy !== undefined) {
         payload.accuracy = coords.accuracy;
+      }
+      if (coords?.altitude !== undefined) {
+        payload.altitude = coords.altitude;
+      }
+      if (coords?.altitudeAccuracy !== undefined) {
+        payload.altitude_accuracy = coords.altitudeAccuracy;
+      }
+      if (coords?.isMock !== undefined) {
+        payload.is_mock = coords.isMock;
+      }
+      if (coords?.mockReasons !== undefined) {
+        payload.mock_reasons = coords.mockReasons;
       }
     }
 
