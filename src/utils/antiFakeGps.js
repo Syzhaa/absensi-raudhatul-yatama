@@ -8,13 +8,12 @@
  * 3. Artificial Accuracy Presets (Akurasi bulat konstan 5m, 10m, 15m khas Fake GPS)
  * 4. Coordinate Truncation (Koordinat manual 6 desimal Google Maps / Fake GPS pin)
  * 5. Teleportation / Hypersonic Jump (Lompatan koordinat drastis akibat konflik mock vs cell tower)
- * 6. Sticky Latch Security (Sekali terdeteksi mock, sesi terkunci permanen - anti split-second scan)
+ * 6. Sticky Latch Security (Sekali terdeteksi mock di dalam area, terkunci aman)
  */
 
 let samples = [];
 const MAX_SAMPLES = 6;
 
-// Sticky Latch: Sekali terdeteksi Fake GPS / Teleportasi, sesi terkunci permanen!
 let isSessionPermanentlyMocked = false;
 let sessionMockReasons = [];
 let sessionMaxDistanceSeen = 0;
@@ -33,14 +32,14 @@ function haversineMeters(lat1, lon1, lat2, lon2) {
 }
 
 /**
- * Reset riwayat sampel GPS (hanya jika halaman di-refresh bersih tanpa mock)
+ * Reset riwayat sampel GPS
  */
 export function resetGpsHistory() {
   samples = [];
 }
 
 /**
- * Reset penuh sesi (hanya dipanggil saat unmount atau refresh manual)
+ * Reset penuh sesi (dipanggil saat klik Cek GPS / Coba Lagi)
  */
 export function resetGpsSession() {
   samples = [];
@@ -67,13 +66,11 @@ export function resetGpsSession() {
  */
 export function analyzeGpsPosition(pos, schoolLat = -3.3747649, schoolLon = 114.646542) {
   if (!pos || !pos.coords) {
-    isSessionPermanentlyMocked = true;
-    sessionMockReasons.push("Data koordinat GPS tidak valid.");
     return {
-      isMock: true,
+      isMock: false,
       isVerified: false,
-      mockScore: 100,
-      reasons: ["Data koordinat GPS tidak valid."],
+      mockScore: 0,
+      reasons: ["Data koordinat GPS tidak terbaca."],
       sampleCount: 0,
       coordVariance: undefined,
       maxDistanceSeen: sessionMaxDistanceSeen,
@@ -102,11 +99,40 @@ export function analyzeGpsPosition(pos, schoolLat = -3.3747649, schoolLon = 114.
     time: Date.now(),
   };
 
-  // Hitung jarak ke madrasah
   const distToSchool = haversineMeters(latitude, longitude, schoolLat, schoolLon);
   if (distToSchool > sessionMaxDistanceSeen) {
     sessionMaxDistanceSeen = distToSchool;
   }
+
+  // ATURAN 1: Jika jarak ke madrasah > 1000m (misal pengguna di rumah, 26km),
+  // ini BUKAN Fake GPS! Pengguna hanya berada di luar jangkauan sekolah.
+  // Jangan tuduh Fake GPS saat orang memang sedang di rumah.
+  if (distToSchool > 1000) {
+    samples = [currentSample];
+    isSessionPermanentlyMocked = false;
+    sessionMockReasons = [];
+
+    return {
+      isMock: false,
+      isVerified: true,
+      mockScore: 0,
+      reasons: [],
+      sampleCount: 1,
+      coordVariance: undefined,
+      maxDistanceSeen: sessionMaxDistanceSeen,
+      telemetry: {
+        latitude,
+        longitude,
+        accuracy,
+        altitude,
+        altitudeAccuracy,
+        distToSchool,
+      },
+    };
+  }
+
+  // ATURAN 2: Jika koordinat berada di dalam / dekat sekolah (<= 1000m),
+  // jalankan pengujian ketat apakah ini sinyal satelit riil atau hasil spoofing Fake GPS!
 
   // Uji Teleportasi / Lonjakan Kecepatan Mustahil antar sampel
   if (samples.length >= 1) {

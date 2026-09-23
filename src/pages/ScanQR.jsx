@@ -515,16 +515,17 @@ export default function ScanQR() {
     coordsRef,
   });
 
-  // Auto-start scanner on mount or when desktop block is resolved
+  // Auto-manage scanner: Kamera HANYA aktif jika lokasi valid di lingkungan sekolah
   useEffect(() => {
-    if (!isDesktopBlocked && !showManualForm) {
-      // Small timeout to guarantee #qr-reader is mounted in DOM
+    if (!canOpenScanner || isDesktopBlocked || showManualForm) {
+      stopScanning();
+    } else if (canOpenScanner && !isDesktopBlocked && !showManualForm && !scanning && !result) {
       const timer = setTimeout(() => {
         startScanning();
-      }, 150);
+      }, 200);
       return () => clearTimeout(timer);
     }
-  }, [isDesktopBlocked, showManualForm]);
+  }, [canOpenScanner, isDesktopBlocked, showManualForm]);
 
   useEffect(() => {
     return () => {
@@ -828,8 +829,8 @@ export default function ScanQR() {
             )}
           </div>
 
-          {/* 2. Area Kamera (Viewfinder) - Hidden when manual form active */}
-          {!showManualForm && (
+          {/* 2. Area Kamera (Viewfinder) - HANYA terbuka jika lokasi sah di lingkungan sekolah */}
+          {!showManualForm && canOpenScanner && (
             <div className="relative w-full aspect-square sm:aspect-[4/3] md:aspect-[4/3] lg:aspect-[16/10] bg-gray-950 rounded-2xl md:rounded-3xl border-2 border-gray-900 overflow-hidden shadow-sm md:shadow-md flex items-center justify-center">
               {/* QR Reader Viewport */}
               <div id="qr-reader" className="w-full h-full relative overflow-hidden" />
@@ -837,7 +838,7 @@ export default function ScanQR() {
               {/* Visual Bracket Scanner Corners (Frame Persegi Pas di Tengah) */}
               <div className="absolute inset-6 sm:inset-10 pointer-events-none z-10 flex flex-col justify-between">
                 <div className="flex justify-between">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-t-4 border-l-4 border-primary-green rounded-tl-xl shadow-sm"></div>
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 border-t-4 border-primary-green rounded-tl-xl shadow-sm"></div>
                   <div className="w-8 h-8 sm:w-10 sm:h-10 border-t-4 border-r-4 border-primary-green rounded-tr-xl shadow-sm"></div>
                 </div>
                 <div className="flex justify-between">
@@ -865,6 +866,36 @@ export default function ScanQR() {
             </div>
           )}
 
+          {/* Area Kamera TERTUTUP (Di Luar Jangkauan Sekolah / Fake GPS) */}
+          {!showManualForm && !canOpenScanner && (
+            <div className="relative w-full aspect-square sm:aspect-[4/3] md:aspect-[4/3] lg:aspect-[16/10] bg-gray-900 rounded-2xl md:rounded-3xl border-3 border-gray-900 p-6 flex flex-col items-center justify-center text-center shadow-neo text-white space-y-3">
+              <div className="w-16 h-16 rounded-2xl bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-red-400 shadow-sm animate-pulse">
+                <span className="material-symbols-outlined text-4xl">
+                  {isMockActive ? "gpp_bad" : "no_photography"}
+                </span>
+              </div>
+              <div>
+                <h3 className="font-black text-sm sm:text-base text-red-400">
+                  {isMockActive ? "Akses Kamera Terkunci: Fake GPS" : "Kamera Tertutup: Di Luar Lokasi"}
+                </h3>
+                <p className="text-xs text-gray-300 font-medium max-w-sm mx-auto mt-1 leading-relaxed">
+                  {isMockActive
+                    ? (mockStatus.reasons[0] || "Terdeteksi Fake GPS. Matikan aplikasi Fake GPS untuk presensi.")
+                    : `Anda berada di luar jangkauan sekolah (${Math.round(currentDistance || 0)}m). Beradalah di lingkungan madrasah untuk membuka kamera.`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={detectLocation}
+                disabled={isLocating}
+                className="mt-1 px-4 py-2 bg-white hover:bg-gray-100 text-gray-900 border-2 border-gray-900 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm active:translate-y-0.5 cursor-pointer disabled:opacity-50"
+              >
+                <span className={`material-symbols-outlined text-base ${isLocating ? "animate-spin" : ""}`}>refresh</span>
+                <span>{isLocating ? "Mencari Lokasi..." : "Cek Ulang Lokasi"}</span>
+              </button>
+            </div>
+          )}
+
           {/* Manual Form - Input Izin/Sakit/Alpha */}
           {showManualForm && (
             <ManualAttendanceForm
@@ -879,7 +910,7 @@ export default function ScanQR() {
           )}
 
           {/* Camera Error Message (Minimalist 1-Line) */}
-          {cameraError && (
+          {cameraError && canOpenScanner && (
             <div className="w-full mt-3 px-3.5 py-2.5 bg-red-100/90 border-2 border-gray-900 rounded-xl md:rounded-2xl shadow-sm flex items-center justify-between text-red-600 text-xs font-bold gap-2">
               <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
                 <span className="material-symbols-outlined text-base flex-shrink-0 text-red-600">
@@ -899,7 +930,12 @@ export default function ScanQR() {
           {/* 3. Tombol 'Mulai / Stop Scan' - Hidden when manual form active */}
           {!showManualForm && (
             <div className="w-full mt-3.5">
-              {scanning ? (
+              {!canOpenScanner ? (
+                <div className="w-full bg-gray-200 border-2 border-gray-400 text-gray-500 font-black py-3 px-6 rounded-xl md:rounded-2xl text-center text-xs sm:text-sm flex items-center justify-center gap-2 select-none shadow-xs">
+                  <span className="material-symbols-outlined text-lg">lock</span>
+                  <span>{isMockActive ? "Kamera Terkunci (Fake GPS Ditolak)" : "Kamera Terkunci (Di Luar Jangkauan Sekolah)"}</span>
+                </div>
+              ) : scanning ? (
                 <button
                   onClick={stopScanning}
                   className="w-full bg-[#e5e7eb] hover:bg-gray-300 text-gray-900 font-black py-3 px-6 border-2 border-gray-900 rounded-xl md:rounded-2xl shadow-neo transition-all flex items-center justify-center gap-2 text-sm sm:text-base active:translate-y-0.5 cursor-pointer"
