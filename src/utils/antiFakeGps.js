@@ -92,7 +92,7 @@ export function analyzeGpsPosition(pos) {
     altitude === null
   ) {
     reasons.push("Akurasi lokasi berupa bilangan bulat konstan (preset Fake GPS) tanpa elevasi satelit.");
-    mockScore += 45;
+    mockScore += 75;
   }
 
   // 3. Elevasi 3D Hilang pada Sinyal Satelit Berakurasi Tinggi (<25m)
@@ -100,7 +100,7 @@ export function analyzeGpsPosition(pos) {
   // Aplikasi Fake GPS di Android hampir selalu mengabaikan altitude (bernilai null).
   if (accuracy > 0 && accuracy < 25 && altitude === null && altitudeAccuracy === null) {
     reasons.push("Sinyal mengaku satelit presisi tinggi (<25m) namun tidak memiliki elevasi 3D (altitude null).");
-    mockScore += 40;
+    mockScore += 50;
   }
 
   // 4. Uji Derau Fluktuasi Satelit Alami (Micro-Drift / Jitter Test)
@@ -110,7 +110,7 @@ export function analyzeGpsPosition(pos) {
   let coordVariance = null;
   if (samples.length >= 3) {
     const timeSpan = samples[samples.length - 1].time - samples[0].time;
-    if (timeSpan >= 800) {
+    if (timeSpan >= 600) {
       const n = samples.length;
       let sumLat = 0,
         sumLon = 0,
@@ -145,7 +145,7 @@ export function analyzeGpsPosition(pos) {
       // Jika dalam 3+ sampel berjarak waktu, koordinat sama persis hingga bit terakhir (variance == 0)
       if (coordVariance === 0 && varAcc === 0) {
         reasons.push("Koordinat dan akurasi GPS beku 100% tanpa fluktuasi satelit alami (Zero Jitter).");
-        mockScore += 75;
+        mockScore += 100;
       }
     }
   }
@@ -172,13 +172,16 @@ export function analyzeGpsPosition(pos) {
     mockScore += 90;
   }
 
+  const isVerified = samples.length >= 3;
   const isMock = mockScore >= 70;
 
   return {
     isMock,
+    isVerified,
     mockScore,
     reasons,
     sampleCount: samples.length,
+    coordVariance,
     telemetry: {
       latitude,
       longitude,

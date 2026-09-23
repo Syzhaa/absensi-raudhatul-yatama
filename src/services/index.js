@@ -122,6 +122,12 @@ export const attendanceService = {
       if (coords?.mockReasons !== undefined) {
         payload.mock_reasons = coords.mockReasons;
       }
+      if (coords?.sample_count !== undefined) {
+        payload.sample_count = coords.sample_count;
+      }
+      if (coords?.coord_variance !== undefined) {
+        payload.coord_variance = coords.coord_variance;
+      }
     }
 
     const response = await api.post("/attendance/scan", payload);
