@@ -5,8 +5,9 @@
  * Menganalisis karakteristik fisik sinyal GNSS satelit:
  * 1. Satellite Jitter / Micro-Drift (Satelit asli selalu memiliki deviasi mikro koordinat)
  * 2. 3D Elevation / Altitude Trilateration (Satelit akurasi tinggi mengunci ketinggian 3D)
- * 3. Artificial Accuracy Presets (Akurasi bulat konstan 0, 1, 5 khas Fake GPS)
- * 4. Browser API Hooking & Emulation (Anti-ekstensi & DevTools spoofer)
+ * 3. Artificial Accuracy Presets (Akurasi bulat konstan 5m, 10m, 15m khas Fake GPS)
+ * 4. Coordinate Truncation (Koordinat manual 6 desimal Google Maps / Fake GPS pin)
+ * 5. Browser API Hooking & Emulation (Anti-ekstensi & DevTools spoofer)
  */
 
 let samples = [];
@@ -24,9 +25,11 @@ export function resetGpsHistory() {
  * @param {GeolocationPosition} pos
  * @returns {{
  *   isMock: boolean,
+ *   isVerified: boolean,
  *   mockScore: number,
  *   reasons: string[],
  *   sampleCount: number,
+ *   coordVariance: number | undefined,
  *   telemetry: object
  * }}
  */
@@ -34,9 +37,11 @@ export function analyzeGpsPosition(pos) {
   if (!pos || !pos.coords) {
     return {
       isMock: true,
+      isVerified: false,
       mockScore: 100,
       reasons: ["Data koordinat GPS tidak valid."],
       sampleCount: 0,
+      coordVariance: undefined,
       telemetry: {},
     };
   }
@@ -50,7 +55,6 @@ export function analyzeGpsPosition(pos) {
     speed,
     heading,
   } = pos.coords;
-  const timestamp = pos.timestamp || Date.now();
 
   const currentSample = {
     lat: latitude,
@@ -60,18 +64,12 @@ export function analyzeGpsPosition(pos) {
     altAcc: altitudeAccuracy,
     speed,
     heading,
-    time: timestamp,
+    time: Date.now(),
   };
 
-  // Tambahkan sampel jika bukan duplikat timestamp yang sama persis
-  const isDuplicate = samples.some(
-    (s) => s.time === timestamp && s.lat === latitude && s.lon === longitude
-  );
-  if (!isDuplicate) {
-    samples.push(currentSample);
-    if (samples.length > MAX_SAMPLES) {
-      samples.shift();
-    }
+  samples.push(currentSample);
+  if (samples.length > MAX_SAMPLES) {
+    samples.shift();
   }
 
   const reasons = [];
@@ -80,77 +78,87 @@ export function analyzeGpsPosition(pos) {
   // 1. Akurasi 0 meter atau negatif (100% Mock / Emulator)
   if (accuracy <= 0 || !Number.isFinite(accuracy)) {
     reasons.push("Akurasi lokasi tidak valid (0 meter). Khas mock location provider.");
-    mockScore += 95;
+    mockScore += 100;
   }
 
-  // 2. Akurasi Bulat Artifisial Khas Preset Fake GPS (1.0m, 5.0m, 10.0m exact integer)
+  // 2. Akurasi Bulat Artifisial Khas Preset Fake GPS (5m, 10m, 15m, 20m exact integer)
   // Satelit GNSS asli menghasilkan angka desimal pecahan berbasis HDOP (misal 14.82m)
   if (
     accuracy > 0 &&
     Number.isInteger(accuracy) &&
-    [1, 5, 10].includes(accuracy) &&
-    altitude === null
+    accuracy <= 50 &&
+    (altitude === null || altitude === 0 || altitudeAccuracy === null)
   ) {
-    reasons.push("Akurasi lokasi berupa bilangan bulat konstan (preset Fake GPS) tanpa elevasi satelit.");
+    reasons.push(`Akurasi lokasi berupa bilangan bulat konstan (${accuracy}m) khas preset Fake GPS.`);
+    mockScore += 80;
+  }
+
+  // 3. Titik Koordinat Manual / 6 Desimal (Khas Pin Google Maps / ByteRev Fake GPS)
+  // Chip GNSS HP menghasilkan 8 - 15 digit desimal floating point
+  const sLat = Math.abs(latitude).toString();
+  const sLon = Math.abs(longitude).toString();
+  const decLat = sLat.includes(".") ? sLat.split(".")[1].length : 0;
+  const decLon = sLon.includes(".") ? sLon.split(".")[1].length : 0;
+  if (decLat <= 6 && decLon <= 6 && (altitude === null || altitude === 0 || altitudeAccuracy === null)) {
+    reasons.push(`Presisi koordinat terbatas (${decLat} desimal) khas titik manual Fake GPS.`);
     mockScore += 75;
   }
 
-  // 3. Elevasi 3D Hilang pada Sinyal Satelit Berakurasi Tinggi (<25m)
-  // Pada GNSS satelit riil, penguncian horizontal < 25m mewajibkan 4+ satelit yang otomatis mengunci altitude.
-  // Aplikasi Fake GPS di Android hampir selalu mengabaikan altitude (bernilai null).
+  // 4. Elevasi 3D Hilang pada Sinyal Satelit Berakurasi Tinggi (<25m)
   if (accuracy > 0 && accuracy < 25 && altitude === null && altitudeAccuracy === null) {
     reasons.push("Sinyal mengaku satelit presisi tinggi (<25m) namun tidak memiliki elevasi 3D (altitude null).");
     mockScore += 50;
   }
 
-  // 4. Uji Derau Fluktuasi Satelit Alami (Micro-Drift / Jitter Test)
-  // Satelit GPS di orbit bergerak dengan kecepatan ~3.9 km/s. Bahkan jika HP ditaruh diam di meja,
-  // ionosfer & derau frekuensi radio selalu menghasilkan variasi mikro pada desimal ke-6 hingga ke-8.
-  // Fake GPS menyuntikkan koordinat yang 100% matematis beku.
-  let coordVariance = null;
-  if (samples.length >= 3) {
-    const timeSpan = samples[samples.length - 1].time - samples[0].time;
-    if (timeSpan >= 600) {
+  // 5. Uji Derau Fluktuasi Satelit Alami (Micro-Drift / Jitter Test)
+  // Satelit GPS di orbit bergerak ~3.9 km/s. Bahkan jika HP ditaruh diam di meja,
+  // derau frekuensi radio selalu menghasilkan variasi mikro pada desimal ke-7 hingga ke-8.
+  let coordVariance = undefined;
+  if (samples.length >= 2) {
+    const first = samples[0];
+    const isIdentical = samples.every(
+      (s) => Math.abs(s.lat - first.lat) < 1e-9 && Math.abs(s.lon - first.lon) < 1e-9
+    );
+
+    if (isIdentical) {
+      reasons.push("Koordinat beku statis tanpa fluktuasi satelit alami (Zero Jitter).");
+      mockScore += 100;
+    }
+
+    if (samples.length >= 3) {
       const n = samples.length;
       let sumLat = 0,
-        sumLon = 0,
-        sumAcc = 0;
+        sumLon = 0;
 
       samples.forEach((s) => {
         sumLat += s.lat;
         sumLon += s.lon;
-        sumAcc += s.acc;
       });
 
       const avgLat = sumLat / n;
       const avgLon = sumLon / n;
-      const avgAcc = sumAcc / n;
 
       let varLat = 0,
-        varLon = 0,
-        varAcc = 0;
+        varLon = 0;
 
       samples.forEach((s) => {
         varLat += Math.pow(s.lat - avgLat, 2);
         varLon += Math.pow(s.lon - avgLon, 2);
-        varAcc += Math.pow(s.acc - avgAcc, 2);
       });
 
       varLat /= n;
       varLon /= n;
-      varAcc /= n;
 
       coordVariance = varLat + varLon;
 
-      // Jika dalam 3+ sampel berjarak waktu, koordinat sama persis hingga bit terakhir (variance == 0)
-      if (coordVariance === 0 && varAcc === 0) {
-        reasons.push("Koordinat dan akurasi GPS beku 100% tanpa fluktuasi satelit alami (Zero Jitter).");
+      if (coordVariance < 1e-18) {
+        reasons.push(`Variansi koordinat terlalu rendah (${coordVariance.toExponential(2)} < 1e-18).`);
         mockScore += 100;
       }
     }
   }
 
-  // 5. Cek Integritas Native API (Anti Ekstensi Browser & DevTools Spoofer)
+  // 6. Cek Integritas Native API (Anti Ekstensi Browser & DevTools Spoofer)
   if (typeof navigator !== "undefined" && navigator.geolocation) {
     try {
       const nativeStr = Function.prototype.toString.call(
@@ -166,8 +174,8 @@ export function analyzeGpsPosition(pos) {
     }
   }
 
-  // 6. Cek Lingkungan Otomasi / WebDriver
-  if (navigator.webdriver) {
+  // 7. Cek Lingkungan Otomasi / WebDriver
+  if (typeof navigator !== "undefined" && navigator.webdriver) {
     reasons.push("Browser berjalan di bawah kontrol otomasi / emulator.");
     mockScore += 90;
   }
@@ -188,7 +196,7 @@ export function analyzeGpsPosition(pos) {
       accuracy,
       altitude,
       altitudeAccuracy,
-      coordVariance: coordVariance !== null ? coordVariance : undefined,
+      coordVariance,
       samplesRecorded: samples.length,
     },
   };

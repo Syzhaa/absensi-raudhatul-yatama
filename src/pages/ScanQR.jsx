@@ -171,6 +171,39 @@ export default function ScanQR() {
     setIsDesktopBlocked(false);
   };
 
+  const handlePos = (pos) => {
+    const antiMock = analyzeGpsPosition(pos);
+    setMockStatus(antiMock);
+    mockStatusRef.current = antiMock;
+
+    const c = {
+      latitude: pos.coords.latitude,
+      longitude: pos.coords.longitude,
+      accuracy: pos.coords.accuracy,
+      altitude: pos.coords.altitude,
+      altitudeAccuracy: pos.coords.altitudeAccuracy,
+      isMock: antiMock.isMock,
+      mockReasons: antiMock.reasons,
+      mockScore: antiMock.mockScore,
+      sampleCount: antiMock.sampleCount,
+      coordVariance: antiMock.coordVariance,
+    };
+
+    if (antiMock.isMock) {
+      setCoords(c);
+      coordsRef.current = c;
+      setIsLocating(false);
+      setLocationError(`Terdeteksi Fake GPS: ${antiMock.reasons[0] || "Aplikasi lokasi palsu aktif."}. Matikan Fake GPS untuk melakukan presensi.`);
+    } else if (antiMock.isVerified) {
+      setCoords(c);
+      coordsRef.current = c;
+      setIsLocating(false);
+      setLocationError(null);
+    } else {
+      coordsRef.current = { ...c, pendingVerification: true };
+    }
+  };
+
   const detectLocation = () => {
     const cachedForLembaga = getCachedLocationSession(effectiveLembaga);
     // Jika PC sudah terverifikasi untuk lembaga aktif ini, langsung aktif!
@@ -195,39 +228,6 @@ export default function ScanQR() {
     setIsLocating(true);
     setLocationError(null);
     resetGpsHistory();
-
-    const handlePos = (pos) => {
-      const antiMock = analyzeGpsPosition(pos);
-      setMockStatus(antiMock);
-      mockStatusRef.current = antiMock;
-
-      const c = {
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        accuracy: pos.coords.accuracy,
-        altitude: pos.coords.altitude,
-        altitudeAccuracy: pos.coords.altitudeAccuracy,
-        isMock: antiMock.isMock,
-        mockReasons: antiMock.reasons,
-        mockScore: antiMock.mockScore,
-        sampleCount: antiMock.sampleCount,
-        coordVariance: antiMock.coordVariance,
-      };
-
-      if (antiMock.isMock) {
-        setCoords(c);
-        coordsRef.current = c;
-        setIsLocating(false);
-        setLocationError(`Terdeteksi Fake GPS: ${antiMock.reasons[0] || "Aplikasi lokasi palsu aktif."}. Matikan Fake GPS untuk melakukan presensi.`);
-      } else if (antiMock.isVerified) {
-        setCoords(c);
-        coordsRef.current = c;
-        setIsLocating(false);
-        setLocationError(null);
-      } else {
-        coordsRef.current = { ...c, pendingVerification: true };
-      }
-    };
 
     let sampleCount = 0;
     const requiredSamples = 3;
@@ -309,30 +309,7 @@ export default function ScanQR() {
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         if (!coordsRef.current?.isPcVerified) {
-          const antiMock = analyzeGpsPosition(pos);
-          setMockStatus(antiMock);
-          mockStatusRef.current = antiMock;
-
-          const c = {
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-            altitude: pos.coords.altitude,
-            altitudeAccuracy: pos.coords.altitudeAccuracy,
-            isMock: antiMock.isMock,
-            mockReasons: antiMock.reasons,
-            mockScore: antiMock.mockScore,
-            sampleCount: antiMock.sampleCount,
-          };
-          setCoords(c);
-          coordsRef.current = c;
-          setIsLocating(false);
-
-          if (antiMock.isMock) {
-            setLocationError(`Terdeteksi Fake GPS: ${antiMock.reasons[0] || "Aplikasi lokasi palsu aktif."}. Matikan Fake GPS untuk melakukan presensi.`);
-          } else {
-            setLocationError(null);
-          }
+          handlePos(pos);
         }
       },
       () => {},
