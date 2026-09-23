@@ -108,16 +108,6 @@ export function analyzeGpsPosition(pos, schoolLat = -3.3747649, schoolLon = 114.
     sessionMaxDistanceSeen = distToSchool;
   }
 
-  // Jika perangkat sempat terlacak > 1350m (misal 26km di rumah),
-  // berarti perangkat secara fisik memang berada jauh di rumah!
-  if (distToSchool > 1350) {
-    isSessionPermanentlyMocked = true;
-    const msg = `Perangkat secara fisik terlacak di luar jangkauan madrasah (${Math.round(distToSchool)} meter). Sinyal Fake GPS berkonflik dengan BTS/jaringan asli.`;
-    if (!sessionMockReasons.includes(msg)) {
-      sessionMockReasons.push(msg);
-    }
-  }
-
   // Uji Teleportasi / Lonjakan Kecepatan Mustahil antar sampel
   if (samples.length >= 1) {
     const prev = samples[samples.length - 1];

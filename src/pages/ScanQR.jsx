@@ -17,7 +17,7 @@ import {
   playSuccessCheckout,
   playSpecificErrorSound,
 } from "../utils/scanAudio";
-import { analyzeGpsPosition, resetGpsHistory } from "../utils/antiFakeGps";
+import { analyzeGpsPosition, resetGpsSession } from "../utils/antiFakeGps";
 
 function isDesktopDevice() {
   return !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
@@ -228,7 +228,7 @@ export default function ScanQR() {
     
     setIsLocating(true);
     setLocationError(null);
-    resetGpsHistory();
+    resetGpsSession();
 
     let sampleCount = 0;
     const requiredSamples = 3;
