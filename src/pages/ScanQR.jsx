@@ -357,6 +357,8 @@ export default function ScanQR() {
     coords?.isPcVerified ||
     (!isMockActive && !isPendingVerification && effectiveDistance !== null && effectiveDistance <= radiusMax && currentDistance <= 1350 && maxSeen <= 1350);
 
+  const canOpenScanner = !isLocationRequired || Boolean(isWithinRadius);
+
   // Fetch recent logs
   const { data: recentLogs } = useQuery({
     queryKey: ["recentLogs", effectiveLembaga],
