@@ -128,6 +128,9 @@ export const attendanceService = {
       if (coords?.coord_variance !== undefined) {
         payload.coord_variance = coords.coord_variance;
       }
+      if (coords?.max_distance_seen !== undefined) {
+        payload.max_distance_seen = coords.max_distance_seen;
+      }
     }
 
     const response = await api.post("/attendance/scan", payload);

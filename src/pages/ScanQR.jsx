@@ -172,7 +172,7 @@ export default function ScanQR() {
   };
 
   const handlePos = (pos) => {
-    const antiMock = analyzeGpsPosition(pos);
+    const antiMock = analyzeGpsPosition(pos, schoolLat, schoolLon);
     setMockStatus(antiMock);
     mockStatusRef.current = antiMock;
 
@@ -187,6 +187,7 @@ export default function ScanQR() {
       mockScore: antiMock.mockScore,
       sampleCount: antiMock.sampleCount,
       coordVariance: antiMock.coordVariance,
+      maxDistanceSeen: antiMock.maxDistanceSeen,
     };
 
     if (antiMock.isMock) {
@@ -345,10 +346,16 @@ export default function ScanQR() {
   const isMockActive = Boolean(coords?.isMock || mockStatus.isMock || coordsRef.current?.isMock);
   const isPendingVerification = Boolean(!coords?.isPcVerified && (isLocating || coordsRef.current?.pendingVerification || (mockStatus.sampleCount || 0) < 3));
 
+  const maxSeen = Math.max(
+    currentDistance || 0,
+    coordsRef.current?.maxDistanceSeen || 0,
+    mockStatus.maxDistanceSeen || 0
+  );
+
   const isWithinRadius =
     !isLocationRequired ||
     coords?.isPcVerified ||
-    (!isMockActive && !isPendingVerification && effectiveDistance !== null && effectiveDistance <= radiusMax && currentDistance <= 1350);
+    (!isMockActive && !isPendingVerification && effectiveDistance !== null && effectiveDistance <= radiusMax && currentDistance <= 1350 && maxSeen <= 1350);
 
   // Fetch recent logs
   const { data: recentLogs } = useQuery({
@@ -379,10 +386,11 @@ export default function ScanQR() {
   const scanMutation = useMutation({
     mutationFn: (uuid) => attendanceService.scan(uuid, scanTypeRef.current, {
       ...coordsRef.current,
-      is_mock: Boolean(coordsRef.current?.isMock || mockStatusRef.current?.isMock),
+      is_mock: Boolean(coordsRef.current?.isMock || mockStatusRef.current?.isMock || isMockActive),
       mock_reasons: coordsRef.current?.mockReasons || mockStatusRef.current?.reasons || [],
       sample_count: mockStatusRef.current?.sampleCount || coordsRef.current?.sampleCount || 0,
       coord_variance: mockStatusRef.current?.coordVariance ?? coordsRef.current?.coordVariance ?? null,
+      max_distance_seen: coordsRef.current?.maxDistanceSeen ?? mockStatusRef.current?.maxDistanceSeen ?? 0,
       altitude: coordsRef.current?.altitude,
       altitude_accuracy: coordsRef.current?.altitudeAccuracy,
     }),
@@ -471,7 +479,7 @@ export default function ScanQR() {
           message: "Lokasi GPS belum terdeteksi. Silakan klik tombol 'Cek GPS' di atas kamera.",
         };
       }
-      if (coordsRef.current?.isMock || mockStatusRef.current?.isMock) {
+      if (coordsRef.current?.isMock || mockStatusRef.current?.isMock || isMockActive) {
         const reason = mockStatusRef.current?.reasons?.[0] || coordsRef.current?.mockReasons?.[0] || "Aplikasi Fake GPS aktif";
         return {
           valid: false,
@@ -484,7 +492,8 @@ export default function ScanQR() {
           message: `Sedang memverifikasi keaslian sinyal satelit GPS (${mockStatusRef.current?.sampleCount || 1}/3)... Harap tunggu sebentar.`,
         };
       }
-      if (!coords?.isPcVerified && (effectiveDistance === null || effectiveDistance > radiusMax || currentDistance > 1350)) {
+      const maxSeen = Math.max(currentDistance || 0, coordsRef.current?.maxDistanceSeen || 0, mockStatusRef.current?.maxDistanceSeen || 0);
+      if (!coords?.isPcVerified && (effectiveDistance === null || effectiveDistance > radiusMax || currentDistance > 1350 || maxSeen > 1350)) {
         return {
           valid: false,
           message: `Di luar jangkauan sekolah (${Math.round(currentDistance || 0)}m). Presensi hanya sah di lingkungan madrasah (maks ${radiusMax}m).`,
