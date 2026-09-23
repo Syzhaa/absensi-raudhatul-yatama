@@ -846,11 +846,11 @@ export default function Report() {
       {/* 1. TOP HEADER & EXPORT ACTION BAR */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-3xl p-3 sm:p-4 shadow-neo flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Category Switcher Pill (Siswa vs Guru) */}
-        <div className="flex bg-gray-100 p-1 rounded-2xl border-2 border-gray-900 gap-1 flex-shrink-0">
+        <div className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex bg-gray-100 p-1 rounded-2xl border-2 border-gray-900 gap-1 flex-shrink-0">
           <button
             type="button"
             onClick={() => { setCategory("siswa"); setPage(1); }}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all cursor-pointer select-none ${
+            className={`flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all cursor-pointer select-none text-center ${
               category === "siswa"
                 ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-sm"
                 : "text-gray-600 hover:text-gray-900 hover:bg-white"
@@ -864,7 +864,7 @@ export default function Report() {
             <button
               type="button"
               onClick={() => { setCategory("guru"); setPage(1); }}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all cursor-pointer select-none ${
+              className={`flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl font-black text-xs md:text-sm transition-all cursor-pointer select-none text-center ${
                 category === "guru"
                   ? "bg-primary-green text-gray-900 border-2 border-gray-900 shadow-sm"
                   : "text-gray-600 hover:text-gray-900 hover:bg-white"
@@ -877,12 +877,12 @@ export default function Report() {
         </div>
 
         {/* Action Buttons: Export Excel & PDF */}
-        <div className="flex items-center gap-2 justify-end flex-wrap flex-shrink-0">
+        <div className={`grid ${isSingleDay ? "grid-cols-2" : "grid-cols-3"} sm:flex sm:items-center gap-2 w-full sm:w-auto justify-end flex-shrink-0`}>
           {/* Tombol Excel (Full Sheet Ringkasan + Sheet per Tanggal) */}
           <button
             onClick={exportExcel}
             disabled={isExporting}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50 text-center"
             title="Download Excel: Sheet Depan Ringkasan + Sheet Lain per Tanggal"
           >
             {isExporting ? (
@@ -890,14 +890,14 @@ export default function Report() {
             ) : (
               <span className="material-symbols-outlined text-base">table_view</span>
             )}
-            <span>Excel {isSingleDay ? "" : "(Multi-Sheet)"}</span>
+            <span>Excel <span className="hidden sm:inline">{isSingleDay ? "" : "(Multi-Sheet)"}</span></span>
           </button>
 
           {/* Tombol PDF Rekap */}
           <button
             onClick={() => exportPdf("ringkasan")}
             disabled={isExporting}
-            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-2 bg-rose-500 hover:bg-rose-600 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50 text-center"
             title={isSingleDay ? "Download PDF Laporan Harian" : "Download PDF Ringkasan Angka Rekapitulasi"}
           >
             <span className="material-symbols-outlined text-base">picture_as_pdf</span>
@@ -909,11 +909,11 @@ export default function Report() {
             <button
               onClick={() => exportPdf("gabungan")}
               disabled={isExporting}
-              className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50"
+              className="flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs md:text-sm border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all cursor-pointer disabled:opacity-50 text-center"
               title="Download 1 File PDF Gabungan (Ringkasan + Semua Halaman Tanggal)"
             >
               <span className="material-symbols-outlined text-base">layers</span>
-              <span>PDF Gabungan</span>
+              <span><span className="inline sm:hidden">Gabungan</span><span className="hidden sm:inline">PDF Gabungan</span></span>
             </button>
           )}
         </div>
