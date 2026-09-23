@@ -24,57 +24,197 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
+const CustomMonthHeader = ({ label, date }) => {
+  const isSunday = date.getDay() === 0;
+  const isFriday = date.getDay() === 5;
+  return (
+    <div
+      className={`py-1.5 text-center font-black text-xs sm:text-sm tracking-wider select-none ${
+        isSunday
+          ? "text-rose-600 bg-rose-50/70"
+          : isFriday
+          ? "text-emerald-700 bg-emerald-50/40"
+          : "text-gray-900"
+      }`}
+    >
+      {label}
+    </div>
+  );
+};
+
+const CustomDateHeader = ({ date, isOffRange }) => {
+  const isSunday = date.getDay() === 0;
+  const dayNumber = date.getDate();
+  const isToday = format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+
+  return (
+    <div className="flex items-center justify-between p-1">
+      <span
+        className={`inline-flex items-center justify-center font-black text-xs sm:text-sm select-none transition-all ${
+          isToday
+            ? "w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gray-900 text-white shadow-xs"
+            : isSunday
+            ? "text-rose-600"
+            : isOffRange
+            ? "text-gray-400 opacity-40 font-medium"
+            : "text-gray-900"
+        }`}
+      >
+        {dayNumber}
+      </span>
+      {isToday && (
+        <span className="hidden sm:inline-block text-[9px] font-black uppercase px-1 py-0.2 bg-emerald-100 text-emerald-950 border border-emerald-400 rounded">
+          Hari Ini
+        </span>
+      )}
+    </div>
+  );
+};
+
+const CustomEvent = ({ event }) => {
+  const isSunday = event.type === "sunday";
+  const isNational = event.type === "national";
+
+  if (isSunday) {
+    return (
+      <div
+        className="flex items-center gap-1 w-full px-1 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[9px] font-bold truncate select-none shadow-2xs"
+        title="Libur Hari Minggu"
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+        <span className="hidden sm:inline truncate">Minggu</span>
+        <span className="sm:hidden truncate">Mgg</span>
+      </div>
+    );
+  }
+
+  if (isNational) {
+    return (
+      <div
+        className="flex items-center gap-1 w-full px-1 sm:px-1.5 py-0.5 rounded bg-amber-100 text-amber-950 border border-amber-400 font-black text-[9px] sm:text-[11px] shadow-2xs truncate select-none"
+        title={event.title}
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-600 shrink-0" />
+        <span className="truncate">{event.title}</span>
+      </div>
+    );
+  }
+
+  // Custom Madrasah Holiday
+  const isAll = event.resource?.applies_to === "all";
+  return (
+    <div
+      className={`flex items-center gap-1 w-full px-1 sm:px-1.5 py-0.5 rounded font-black text-[9px] sm:text-[11px] shadow-2xs truncate select-none cursor-pointer ${
+        isAll
+          ? "bg-primary-green text-gray-900 border border-emerald-600"
+          : "bg-purple-100 text-purple-950 border border-purple-400"
+      }`}
+      title={`${event.title} (Klik untuk edit)`}
+    >
+      <span className="w-1.5 h-1.5 rounded-full bg-gray-900 shrink-0" />
+      <span className="truncate">{event.title}</span>
+    </div>
+  );
+};
+
 const CustomToolbar = (toolbar) => {
   const goToBack = () => toolbar.onNavigate("PREV");
   const goToNext = () => toolbar.onNavigate("NEXT");
   const goToCurrent = () => toolbar.onNavigate("TODAY");
 
+  const formattedLabel = toolbar.label.charAt(0).toUpperCase() + toolbar.label.slice(1);
+
   return (
-    <div className="flex flex-wrap items-center justify-between mb-4 pb-3 border-b-2 border-gray-100 gap-y-3 gap-x-2">
-      <div className="flex items-center gap-1.5 order-1">
-        <button
-          onClick={goToCurrent}
-          className="px-3 py-1.5 bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-xs md:text-sm shadow-sm hover:bg-gray-200 active:translate-y-0.5 transition-all"
-        >
-          Hari Ini
-        </button>
-        <div className="flex items-center gap-1">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3.5 pb-3 border-b-2 border-gray-900">
+      {/* Month & Year Title + Mobile Navigation */}
+      <div className="flex items-center justify-between sm:justify-start gap-2.5">
+        <h2 className="text-base sm:text-xl font-black text-gray-900 tracking-tight capitalize flex items-center gap-2">
+          <span>{formattedLabel}</span>
+        </h2>
+
+        {/* Mobile Mini Quick Nav (<, Hari Ini, >) */}
+        <div className="flex items-center gap-1 sm:hidden">
           <button
             onClick={goToBack}
-            className="p-1.5 bg-white border-2 border-gray-900 rounded-xl font-bold shadow-sm hover:bg-gray-100 active:translate-y-0.5 transition-all flex items-center justify-center"
+            className="w-7 h-7 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-lg font-bold shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center cursor-pointer"
+            title="Bulan Lalu"
+          >
+            <span className="material-symbols-outlined text-sm">chevron_left</span>
+          </button>
+          <button
+            onClick={goToCurrent}
+            className="px-2 h-7 bg-primary-green hover:bg-emerald-400 border-2 border-gray-900 rounded-lg font-black text-[11px] text-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center cursor-pointer"
+          >
+            Hari Ini
+          </button>
+          <button
+            onClick={goToNext}
+            className="w-7 h-7 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-lg font-bold shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center cursor-pointer"
+            title="Bulan Depan"
+          >
+            <span className="material-symbols-outlined text-sm">chevron_right</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Right Controls: Desktop Nav + View Switcher */}
+      <div className="flex items-center gap-2 justify-between sm:justify-end">
+        {/* Desktop Nav (<, Hari Ini, >) */}
+        <div className="hidden sm:flex items-center gap-1.5">
+          <button
+            onClick={goToBack}
+            className="p-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-bold shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center cursor-pointer"
+            title="Bulan Sebelumnya"
           >
             <span className="material-symbols-outlined text-base">chevron_left</span>
           </button>
           <button
+            onClick={goToCurrent}
+            className="px-3 py-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-black text-xs sm:text-sm text-gray-900 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
+          >
+            Hari Ini
+          </button>
+          <button
             onClick={goToNext}
-            className="p-1.5 bg-white border-2 border-gray-900 rounded-xl font-bold shadow-sm hover:bg-gray-100 active:translate-y-0.5 transition-all flex items-center justify-center"
+            className="p-1.5 bg-white hover:bg-gray-100 border-2 border-gray-900 rounded-xl font-bold shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center cursor-pointer"
+            title="Bulan Berikutnya"
           >
             <span className="material-symbols-outlined text-base">chevron_right</span>
           </button>
         </div>
-      </div>
-      
-      <div className="flex items-center order-2 md:order-3">
-        <select
-          value={toolbar.view}
-          onChange={(e) => toolbar.onView(e.target.value)}
-          className="px-3 py-1.5 bg-gray-50 border-2 border-gray-900 rounded-xl font-bold text-xs md:text-sm shadow-sm focus:outline-none cursor-pointer"
-        >
-          <option value="month">Bulan</option>
-          <option value="week">Minggu</option>
-          <option value="day">Hari</option>
-          <option value="agenda">Agenda</option>
-        </select>
-      </div>
 
-      <h2 className="text-base md:text-lg font-black text-gray-900 capitalize w-full text-center order-3 md:order-2 md:w-auto md:text-left">
-        {toolbar.label}
-      </h2>
+        {/* View Switcher Toggle (Bulan / Agenda) */}
+        <div className="flex items-center bg-gray-100 p-0.5 border-2 border-gray-900 rounded-xl shadow-xs">
+          <button
+            type="button"
+            onClick={() => toolbar.onView("month")}
+            className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+              toolbar.view === "month"
+                ? "bg-white text-gray-900 border border-gray-900 shadow-xs"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Bulan
+          </button>
+          <button
+            type="button"
+            onClick={() => toolbar.onView("agenda")}
+            className={`px-3 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
+              toolbar.view === "agenda"
+                ? "bg-white text-gray-900 border border-gray-900 shadow-xs"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Agenda
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default function Holidays() {
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingHoliday, setEditingHoliday] = useState(null);
   const [duration, setDuration] = useState("single");
@@ -290,6 +430,22 @@ export default function Holidays() {
     return allEvents;
   }, [holidays]);
 
+  const monthSpecialHolidays = useMemo(() => {
+    const m = currentDate.getMonth();
+    const y = currentDate.getFullYear();
+    return events
+      .filter((e) => {
+        if (e.type === "sunday") return false;
+        const s = new Date(e.start);
+        const end = new Date(e.end);
+        return (
+          (s.getFullYear() === y && s.getMonth() === m) ||
+          (end.getFullYear() === y && end.getMonth() === m)
+        );
+      })
+      .sort((a, b) => new Date(a.start) - new Date(b.start));
+  }, [events, currentDate]);
+
   const existingHolidaysOnSelectedDate = useMemo(() => {
     if (!formData.start_date || editingHoliday) return [];
     
@@ -318,11 +474,11 @@ export default function Holidays() {
   };
 
   return (
-    <div className="w-full md:max-w-none max-w-6xl mx-auto space-y-4 animate-fade-in">
+    <div className="w-full md:max-w-none max-w-6xl mx-auto space-y-4 animate-fade-in pb-12">
       {/* Header Compact */}
       <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-4 shadow-neo flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-teal-100 border-2 border-gray-900 rounded-xl flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-teal-100 border-2 border-gray-900 rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs">
             <span className="material-symbols-outlined text-2xl text-teal-900 font-bold">calendar_month</span>
           </div>
           <div>
@@ -330,24 +486,24 @@ export default function Holidays() {
               Kalender Libur Sekolah
             </h1>
             <p className="text-[11px] sm:text-xs text-gray-500 font-medium">
-              Jadwal hari libur nasional, akhir pekan & libur khusus lembaga • {effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA"}
+              Jadwal hari libur nasional, akhir pekan & libur khusus • {effectiveLembaga ? effectiveLembaga.toUpperCase() : "MA"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 justify-end">
+        <div className="flex items-center gap-2 justify-end w-full sm:w-auto">
           <button
             onClick={() => openModal()}
-            className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0"
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm flex-shrink-0 cursor-pointer w-full sm:w-auto"
           >
-            <span className="material-symbols-outlined text-base">add</span>
+            <span className="material-symbols-outlined text-base font-bold">add</span>
             <span>Tambah Libur</span>
           </button>
         </div>
       </div>
 
       {/* Calendar Area */}
-      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3.5 sm:p-5 shadow-neo flex flex-col h-[75vh] min-h-[600px]">
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-3 sm:p-5 shadow-neo flex flex-col min-h-[480px] sm:min-h-[580px]">
         {isLoading ? (
           <div className="w-full h-full p-4 space-y-4">
             <div className="flex justify-between items-center">
@@ -364,14 +520,21 @@ export default function Holidays() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 w-full h-full min-h-[500px]">
+          <div className="flex-1 w-full h-full min-h-[460px]">
             <Calendar
               localizer={localizer}
               events={events}
+              date={currentDate}
+              onNavigate={(newDate) => setCurrentDate(newDate)}
               components={{
-                toolbar: CustomToolbar
+                toolbar: CustomToolbar,
+                event: CustomEvent,
+                month: {
+                  header: CustomMonthHeader,
+                  dateHeader: CustomDateHeader,
+                },
               }}
-              style={{ height: "100%", minHeight: "500px" }}
+              style={{ height: "100%", minHeight: "460px" }}
               startAccessor="start"
               endAccessor="end"
               culture="id"
@@ -388,38 +551,103 @@ export default function Holidays() {
                 agenda: "Agenda",
                 noEventsInRange: "Tidak ada libur di rentang waktu ini.",
               }}
-              eventPropGetter={(event) => {
-                let bg = "bg-red-600";
-                let text = "text-white";
-                let border = "border-red-800";
-                
-                if (event.resource.applies_to === "students") {
-                  bg = "bg-rose-500";
-                } else if (event.resource.applies_to === "teachers") {
-                  bg = "bg-red-500";
-                }
-
-                return {
-                  className: `${bg} ${text} border-2 ${border} font-bold rounded-lg px-1 md:px-2 py-0.5 shadow-sm text-[9px] md:text-xs leading-tight truncate`,
-                  style: {
-                    borderRadius: "6px",
-                    color: "#ffffff",
-                    border: "2px solid #991b1b"
-                  }
-                };
-              }}
             />
           </div>
         )}
       </div>
 
-      {/* Mobile FAB */}
-      <button
-        onClick={() => openModal()}
-        className="md:hidden fixed bottom-24 right-4 w-14 h-14 bg-primary-green text-gray-900 rounded-full border-3 border-gray-900 shadow-neo flex items-center justify-center z-40 active:translate-y-1 transition-transform"
-      >
-        <span className="material-symbols-outlined text-3xl font-black">add</span>
-      </button>
+      {/* Daftar Hari Libur Bulan Ini */}
+      <div className="bg-white border-2 md:border-3 border-gray-900 rounded-2xl p-4 sm:p-5 shadow-neo space-y-3">
+        <div className="flex items-center justify-between gap-2 border-b-2 border-gray-100 pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-xl text-teal-700 font-bold">event_upcoming</span>
+            <h3 className="font-black text-sm sm:text-base text-gray-900">
+              Daftar Hari Libur • {format(currentDate, "MMMM yyyy", { locale: idLocale })}
+            </h3>
+          </div>
+          <span className="text-[11px] sm:text-xs font-bold px-2 py-0.5 bg-gray-100 text-gray-700 rounded-lg border border-gray-300">
+            {monthSpecialHolidays.length} Libur Terjadwal
+          </span>
+        </div>
+
+        {monthSpecialHolidays.length === 0 ? (
+          <div className="text-center py-6 text-gray-500 text-xs sm:text-sm font-medium">
+            <span className="material-symbols-outlined text-3xl text-gray-300 block mb-1">celebration</span>
+            Tidak ada hari libur nasional atau khusus di bulan ini.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {monthSpecialHolidays.map((ev) => {
+              const isNat = ev.type === "national";
+              const isCust = ev.type === "custom";
+              const startDateStr = format(ev.start, "d MMMM yyyy", { locale: idLocale });
+              const isSingleDay = format(ev.start, "yyyy-MM-dd") === format(ev.end, "yyyy-MM-dd");
+              const dateDisplay = isSingleDay
+                ? startDateStr
+                : `${format(ev.start, "d MMM", { locale: idLocale })} - ${format(ev.end, "d MMM yyyy", { locale: idLocale })}`;
+
+              return (
+                <div
+                  key={ev.id}
+                  className={`p-3 rounded-xl border-2 border-gray-900 shadow-xs flex items-start justify-between gap-2.5 transition-all ${
+                    isNat ? "bg-amber-50/70" : "bg-emerald-50/70"
+                  }`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                      <span
+                        className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded border ${
+                          isNat
+                            ? "bg-amber-100 border-amber-400 text-amber-900"
+                            : "bg-emerald-100 border-emerald-400 text-emerald-950"
+                        }`}
+                      >
+                        {isNat ? "Libur Nasional" : "Libur Madrasah"}
+                      </span>
+                      {ev.resource?.applies_to && ev.resource.applies_to !== "all" && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded border border-gray-300 capitalize">
+                          {ev.resource.applies_to}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-black text-xs sm:text-sm text-gray-900 truncate" title={ev.title}>
+                      {ev.title}
+                    </h4>
+                    <p className="text-[11px] text-gray-600 font-semibold mt-0.5 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[13px] text-gray-500">calendar_today</span>
+                      <span>{dateDisplay}</span>
+                    </p>
+                    {ev.resource?.description && (
+                      <p className="text-[10px] text-gray-500 font-medium italic mt-1 line-clamp-2">
+                        {ev.resource.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {isCust && (
+                    <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                      <button
+                        onClick={() => openModal(ev.resource)}
+                        className="w-7 h-7 bg-white hover:bg-amber-50 text-amber-800 border-2 border-gray-900 rounded-lg shadow-xs flex items-center justify-center cursor-pointer active:translate-y-0.5 transition-all"
+                        title="Edit Libur"
+                      >
+                        <span className="material-symbols-outlined text-sm font-bold">edit</span>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(ev.id)}
+                        className="w-7 h-7 bg-white hover:bg-rose-50 text-rose-700 border-2 border-gray-900 rounded-lg shadow-xs flex items-center justify-center cursor-pointer active:translate-y-0.5 transition-all"
+                        title="Hapus Libur"
+                      >
+                        <span className="material-symbols-outlined text-sm font-bold">delete</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Modal Tambah/Edit */}
       <Modal

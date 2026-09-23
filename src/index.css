@@ -193,42 +193,71 @@
 }
 
 
-/* React Big Calendar Overrides */
+/* React Big Calendar Overrides - Modern Neo-Brutalist Calendar */
 .rbc-calendar {
   font-family: inherit;
 }
 .rbc-month-view, .rbc-time-view, .rbc-agenda-view {
-  border: 2px solid #111827;
-  border-radius: 12px;
-  overflow: hidden;
-  background: white;
+  border: 2px solid #111827 !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background: white !important;
 }
 .rbc-header {
   border-bottom: 2px solid #111827 !important;
-  border-left: 2px solid #111827;
-  padding: 8px 0;
-  font-weight: 900;
-  color: #111827;
-  text-transform: uppercase;
+  border-left: 1px solid #e5e7eb !important;
+  padding: 8px 0 !important;
+  font-weight: 900 !important;
+  color: #111827 !important;
+  text-transform: uppercase !important;
+  background: #f8fafc !important;
 }
 .rbc-header:first-child {
-  border-left: none;
+  border-left: none !important;
 }
 .rbc-month-row, .rbc-day-bg {
-  border-top: 2px solid #111827;
+  border-top: 1px solid #e5e7eb !important;
 }
 .rbc-day-bg + .rbc-day-bg {
-  border-left: 2px solid #111827;
+  border-left: 1px solid #e5e7eb !important;
 }
 .rbc-off-range-bg {
-  background: #f3f4f6;
+  background: #f9fafb !important;
+  opacity: 0.6 !important;
 }
 .rbc-today {
-  background: #fef3c7 !important;
+  background: #f0fdf4 !important;
 }
 .rbc-event {
-  border-radius: 6px !important;
-  padding: 2px 6px !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 1px 2px !important;
+  box-shadow: none !important;
+}
+.rbc-event-content {
+  overflow: hidden !important;
+}
+.rbc-row-content {
+  z-index: 2 !important;
+}
+.rbc-date-cell {
+  padding-right: 4px !important;
+  padding-top: 2px !important;
+}
+.rbc-agenda-view table.rbc-agenda-table {
+  border: 2px solid #111827 !important;
+  border-radius: 12px !important;
+}
+.rbc-agenda-view table.rbc-agenda-table thead > tr > th {
+  border-bottom: 2px solid #111827 !important;
+  background: #f8fafc !important;
+  font-weight: 900 !important;
+  padding: 8px !important;
+}
+.rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+  border-bottom: 1px solid #e5e7eb !important;
+  padding: 8px !important;
+  font-weight: 600 !important;
 }
 .rbc-toolbar button {
   border: 2px solid #111827 !important;
