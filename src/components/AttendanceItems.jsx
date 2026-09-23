@@ -118,6 +118,15 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
               {item.notes || "Hari Libur Terjadwal"}
             </span>
           </div>
+        ) : isPjj ? (
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5 px-3 py-1 bg-cyan-50 text-cyan-950 border border-cyan-300 rounded-lg text-xs font-bold">
+              <span className="material-symbols-outlined text-sm text-cyan-700">
+                laptop_chromebook
+              </span>
+              Pelajaran Jarak Jauh (Tanpa Jam Masuk & Pulang)
+            </span>
+          </div>
         ) : (
           <div className="flex items-center gap-2 flex-wrap">
             {item.check_in ? (

@@ -117,6 +117,7 @@ export default function AttendanceModal({
           status: submitStatus,
           notes: submitNotes,
           role: isTeacher ? "teacher" : "student",
+          ...(isPjj ? { check_in: null, check_out: null } : {}),
         });
       } else {
         // Create new manual attendance
@@ -124,6 +125,7 @@ export default function AttendanceModal({
           status: submitStatus,
           notes: submitNotes,
           date,
+          ...(isPjj ? { check_in: null, check_out: null } : {}),
         };
         if (isTeacher) {
           payload.teacher_id = student.teacher_id || student.id;
