@@ -11,6 +11,11 @@ const STATUS_OPTIONS = [
     color: "bg-emerald-100 text-emerald-900 border-emerald-400",
   },
   {
+    value: "pjj",
+    label: "PJJ (Jarak Jauh)",
+    color: "bg-cyan-100 text-cyan-950 border-cyan-400",
+  },
+  {
     value: "terlambat",
     label: "Terlambat",
     color: "bg-amber-100 text-amber-900 border-amber-400",
@@ -60,15 +65,25 @@ export default function AttendanceModal({
 
   useEffect(() => {
     if (isOpen) {
-      let currentStatus = student?.initialStatus
-        || (student?.status && student.status !== "belum_absen"
-          ? student.status
-          : (isGuru ? "izin" : "hadir"));
-      if (isGuru && ["hadir", "terlambat"].includes(currentStatus)) {
+      const existingNote = student?.notes || student?.initialNotes || "";
+      const isExistingPjj =
+        student?.initialStatus === "pjj" ||
+        existingNote.toLowerCase().includes("jarak jauh") ||
+        existingNote.toLowerCase().includes("pjj");
+
+      let currentStatus = student?.initialStatus ||
+        (isExistingPjj
+          ? "pjj"
+          : (student?.status && student.status !== "belum_absen"
+            ? student.status
+            : (isGuru ? "izin" : "hadir")));
+
+      if (isGuru && ["hadir", "terlambat"].includes(currentStatus) && !isExistingPjj) {
         currentStatus = student?.initialStatus || "izin";
       }
+
       setStatus(currentStatus);
-      setNotes(student?.notes || "");
+      setNotes(existingNote || (currentStatus === "pjj" ? "Pelajaran Jarak Jauh (PJJ)" : ""));
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -76,7 +91,7 @@ export default function AttendanceModal({
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isOpen, student?.status, student?.notes, isGuru]);
+  }, [isOpen, student?.status, student?.notes, student?.initialStatus, student?.initialNotes, isGuru]);
 
   if (!isOpen) return null;
 
@@ -85,25 +100,29 @@ export default function AttendanceModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (isGuru && ["hadir", "terlambat"].includes(status)) {
-      alert("Role Guru hanya dapat menginput status selain Hadir (Izin, Sakit, Alpha). Status Hadir wajib melalui scan QR.");
+    if (isGuru && ["hadir", "terlambat"].includes(status) && status !== "pjj") {
+      alert("Role Guru hanya dapat menginput status selain Hadir fisik (Izin, Sakit, Alpha, atau PJJ). Status Hadir fisik wajib melalui scan QR.");
       return;
     }
 
     setIsSubmitting(true);
 
+    const isPjj = status === "pjj";
+    const submitStatus = isPjj ? "hadir" : status;
+    const submitNotes = isPjj ? (notes.trim() || "Pelajaran Jarak Jauh (PJJ)") : notes;
+
     try {
       if (student?.attendance_id) {
         await logsService.updateStatus(student.attendance_id, {
-          status,
-          notes,
+          status: submitStatus,
+          notes: submitNotes,
           role: isTeacher ? "teacher" : "student",
         });
       } else {
         // Create new manual attendance
         const payload = {
-          status,
-          notes,
+          status: submitStatus,
+          notes: submitNotes,
           date,
         };
         if (isTeacher) {
@@ -202,7 +221,7 @@ export default function AttendanceModal({
               <div className="p-2 bg-amber-50 border border-amber-300 rounded-xl flex items-start gap-1.5">
                 <span className="material-symbols-outlined text-amber-700 text-sm shrink-0 mt-0.5">info</span>
                 <p className="text-[10px] text-amber-950 font-bold leading-tight">
-                  Status Hadir wajib scan QR fisik. Guru hanya mencatat izin, sakit, atau alpha.
+                  Status Hadir fisik wajib scan QR. Guru dapat mencatat PJJ (Jarak Jauh), Izin, Sakit, atau Alpha.
                 </p>
               </div>
             )}
@@ -222,7 +241,13 @@ export default function AttendanceModal({
                     name="status"
                     value={opt.value}
                     checked={status === opt.value}
-                    onChange={(e) => setStatus(e.target.value)}
+                    onChange={(e) => {
+                      const newStatus = e.target.value;
+                      setStatus(newStatus);
+                      if (newStatus === "pjj" && (!notes || !notes.trim())) {
+                        setNotes("Pelajaran Jarak Jauh (PJJ)");
+                      }
+                    }}
                     className="hidden"
                   />
                   <span className="text-[11px] font-black">
@@ -238,18 +263,63 @@ export default function AttendanceModal({
             </div>
           </div>
 
-          {/* Notes Field - for izin/sakit/alpha */}
-          {["izin", "sakit", "alpha"].includes(status) && (
+          {/* Quick Preset Buttons for Notes */}
+          <div className="flex flex-wrap items-center gap-1 pt-1">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider mr-0.5">Preset:</span>
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("pjj");
+                setNotes("Pelajaran Jarak Jauh (PJJ)");
+              }}
+              className="px-2 py-0.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-950 font-black text-[10px] rounded-lg border border-cyan-400 cursor-pointer transition-all shadow-2xs"
+            >
+              💻 PJJ (Jarak Jauh)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("sakit");
+                setNotes("Sakit demam / istirahat di rumah");
+              }}
+              className="px-2 py-0.5 bg-blue-100 hover:bg-blue-200 text-blue-950 font-bold text-[10px] rounded-lg border border-blue-300 cursor-pointer transition-all shadow-2xs"
+            >
+              🏥 Sakit
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("izin");
+                setNotes("Izin keperluan keluarga");
+              }}
+              className="px-2 py-0.5 bg-purple-100 hover:bg-purple-200 text-purple-950 font-bold text-[10px] rounded-lg border border-purple-300 cursor-pointer transition-all shadow-2xs"
+            >
+              📝 Keperluan Keluarga
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("izin");
+                setNotes("Tugas dinas madrasah / dispensasi");
+              }}
+              className="px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-[10px] rounded-lg border border-amber-300 cursor-pointer transition-all shadow-2xs"
+            >
+              🎖️ Tugas / Dispensasi
+            </button>
+          </div>
+
+          {/* Notes Field */}
+          {(["izin", "sakit", "alpha", "pjj"].includes(status) || notes.length > 0) && (
             <div className="space-y-1">
               <label className="block text-[11px] font-black uppercase text-gray-800 tracking-wider">
-                Keterangan {status === "izin" ? "(Opsional)" : ""}
+                Keterangan / Alasan {status === "izin" || status === "pjj" ? "(Opsional)" : ""}
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 maxLength={250}
                 rows={2}
-                placeholder={`Masukkan keterangan ${status}...`}
+                placeholder={status === "pjj" ? "Pelajaran Jarak Jauh (PJJ)..." : `Masukkan keterangan ${status}...`}
                 className="w-full px-2.5 py-1.5 bg-gray-50 border-2 border-gray-300 rounded-xl text-xs text-gray-900 placeholder-gray-400 hover:border-gray-900 focus:border-emerald-600 focus:bg-white focus:outline-none transition-all resize-none"
               />
               <p className="text-[10px] text-gray-500 text-right">

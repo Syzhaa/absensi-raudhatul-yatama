@@ -62,19 +62,27 @@ export default function ManualAttendanceForm({
               </label>
               <div className="space-y-2">
                 {[
-                  { value: "izin", label: "Izin", color: "blue" },
-                  { value: "sakit", label: "Sakit", color: "yellow" },
+                  {
+                    value: "hadir",
+                    label: "Pelajaran Jarak Jauh (PJJ)",
+                    color: "cyan",
+                    icon: "laptop_chromebook",
+                    defaultNote: "Pelajaran Jarak Jauh (PJJ)",
+                  },
+                  { value: "izin", label: "Izin", color: "blue", icon: "info" },
+                  { value: "sakit", label: "Sakit", color: "yellow", icon: "emergency" },
                   {
                     value: "alpha",
                     label: "Alpha (Tidak Hadir)",
                     color: "red",
+                    icon: "cancel",
                   },
                 ].map((status) => (
                   <label
                     key={status.value}
                     className={`flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all ${
                       manualFormData.status === status.value
-                        ? `border-gray-900 bg-${status.color}-50`
+                        ? `border-gray-900 bg-${status.color}-50 shadow-xs font-black`
                         : "border-gray-300 bg-white hover:bg-gray-50"
                     }`}
                   >
@@ -83,14 +91,22 @@ export default function ManualAttendanceForm({
                       name="status"
                       value={status.value}
                       checked={manualFormData.status === status.value}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const newStatus = e.target.value;
+                        const newNote = newStatus === "hadir"
+                          ? (manualFormData.note || "Pelajaran Jarak Jauh (PJJ)")
+                          : manualFormData.note;
                         setManualFormData({
                           ...manualFormData,
-                          status: e.target.value,
-                        })
-                      }
+                          status: newStatus,
+                          note: newNote,
+                        });
+                      }}
                       className="w-4 h-4 text-primary-green focus:ring-0"
                     />
+                    <span className="material-symbols-outlined text-lg text-gray-700">
+                      {status.icon}
+                    </span>
                     <span className="font-bold text-sm text-gray-900">
                       {status.label}
                     </span>
@@ -99,10 +115,54 @@ export default function ManualAttendanceForm({
               </div>
             </div>
 
+            {/* Quick Note Presets */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Preset:</span>
+              <button
+                type="button"
+                onClick={() =>
+                  setManualFormData({
+                    ...manualFormData,
+                    status: "hadir",
+                    note: "Pelajaran Jarak Jauh (PJJ)",
+                  })
+                }
+                className="px-2 py-0.5 bg-cyan-100 hover:bg-cyan-200 text-cyan-950 font-black text-[10px] rounded-lg border border-cyan-400 cursor-pointer shadow-2xs"
+              >
+                💻 PJJ
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setManualFormData({
+                    ...manualFormData,
+                    status: "sakit",
+                    note: "Sakit demam / istirahat",
+                  })
+                }
+                className="px-2 py-0.5 bg-yellow-100 hover:bg-yellow-200 text-yellow-950 font-bold text-[10px] rounded-lg border border-yellow-300 cursor-pointer shadow-2xs"
+              >
+                🏥 Sakit
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setManualFormData({
+                    ...manualFormData,
+                    status: "izin",
+                    note: "Izin keperluan keluarga",
+                  })
+                }
+                className="px-2 py-0.5 bg-blue-100 hover:bg-blue-200 text-blue-950 font-bold text-[10px] rounded-lg border border-blue-300 cursor-pointer shadow-2xs"
+              >
+                📝 Keperluan Keluarga
+              </button>
+            </div>
+
             {/* Textarea Alasan */}
             <div className="space-y-2">
               <label className="block text-sm font-bold text-gray-700">
-                Keterangan/Alasan (opsional)
+                Keterangan / Alasan {manualFormData.status === "hadir" ? "(PJJ)" : "(opsional)"}
               </label>
               <textarea
                 value={manualFormData.note}
@@ -110,7 +170,7 @@ export default function ManualAttendanceForm({
                   setManualFormData({ ...manualFormData, note: e.target.value })
                 }
                 rows={3}
-                placeholder="Contoh: Sakit demam, ada keperluan keluarga, dll."
+                placeholder={manualFormData.status === "hadir" ? "Pelajaran Jarak Jauh (PJJ)..." : "Contoh: Sakit demam, ada keperluan keluarga, dll."}
                 className="w-full px-3 py-2.5 bg-white border-2 border-gray-900 rounded-xl font-medium text-sm text-gray-900 focus:outline-none focus:border-primary-green resize-none"
               />
             </div>

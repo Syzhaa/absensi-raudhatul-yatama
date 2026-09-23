@@ -11,11 +11,19 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
   const isBelumAbsen = !item.status || item.status === "belum_absen";
   const studentNisn = person?.nisn || person?.nis || item.nisn || item.nis;
 
+  const isPjj =
+    item.status === "pjj" ||
+    Boolean(
+      item.notes &&
+        (item.notes.toLowerCase().includes("jarak jauh") ||
+          item.notes.toLowerCase().includes("pjj"))
+    );
+
   const subtitle = isStudent
-    ? `Kelas ${formatKelas(person?.kelas || item.kelas) || "-"} • NISN: ${studentNisn || "-"}`
-    : `${person?.nip ? "NIP/NUPTK/NPK: " + person.nip : "Dewan Guru"}${
+    ? item.notes ? `Catatan: ${item.notes}` : null
+    : `${person?.nip ? "NIP/NPK: " + person.nip : "Dewan Guru"}${
         item.scheduleSummary ? ` • Jadwal: ${item.scheduleSummary}` : ""
-      }`;
+      }${item.notes ? ` • Ket: ${item.notes}` : ""}`;
 
   const lembagaName = (item.lembaga || person?.lembaga || "MA").toUpperCase();
 
@@ -57,7 +65,7 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
               </span>
             )}
           </div>
-          <p className="text-xs text-gray-500 font-medium">{subtitle}</p>
+          {subtitle && <p className="text-xs text-gray-500 font-medium">{subtitle}</p>}
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -65,6 +73,8 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
             className={`px-2.5 py-1 text-xs font-black rounded-lg border-2 border-gray-900 ${
               isBelumAbsen
                 ? "bg-amber-200 text-amber-950 animate-pulse"
+                : isPjj
+                ? "bg-cyan-200 text-cyan-950"
                 : item.status === "hadir"
                 ? "bg-primary-green text-gray-900"
                 : item.status === "terlambat"
@@ -80,7 +90,7 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
                 : "bg-gray-200 text-gray-900"
             }`}
           >
-            {isBelumAbsen ? "BELUM ABSEN" : item.status?.toUpperCase()}
+            {isBelumAbsen ? "BELUM ABSEN" : isPjj ? "HADIR (PJJ)" : item.status?.toUpperCase()}
           </span>
 
           {/* Quick Manual Attendance Actions */}
@@ -147,6 +157,15 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
         {/* Manual Buttons for Belum Absen */}
         {isBelumAbsen && (
           <div className="flex items-center gap-1.5 ml-auto flex-wrap justify-end">
+            <button
+              type="button"
+              onClick={() => onEdit && onEdit({ ...person, ...item, initialStatus: "pjj", initialNotes: "Pelajaran Jarak Jauh (PJJ)" })}
+              title="Absen Pelajaran Jarak Jauh (PJJ)"
+              className="px-2 py-1 bg-cyan-100 hover:bg-cyan-200 text-cyan-950 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-0.5 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-xs">laptop_chromebook</span>
+              <span>PJJ</span>
+            </button>
             {isGuru ? (
               <div className="flex items-center gap-1">
                 <button

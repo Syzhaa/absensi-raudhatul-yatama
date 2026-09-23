@@ -13,17 +13,16 @@ import { getAutoHoliday } from "../utils/holidays";
 import { getKelasNumericVal, sortKelasList } from "../utils/kelasHelper";
 import { useKelasFormat } from "../hooks/useKelasFormat";
 import { useAttendanceSettings } from "../hooks/useAttendanceSettings";
-import { format, subDays, addDays } from "date-fns";
+import { format } from "date-fns";
 import {
   isTeacherScheduledOnDate,
   getTeacherScheduleSummary,
 } from "../utils/scheduleHelper";
 
 export default function Attendance() {
-  const today = format(new Date(), "yyyy-MM-dd");
-  const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
-
-  const [selectedDate, setSelectedDate] = useState(today);
+  const [selectedDate, setSelectedDate] = useState(
+    format(new Date(), "yyyy-MM-dd")
+  );
   const [roleFilter, setRoleFilter] = useState("all");
   const [kelasFilter, setKelasFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -34,26 +33,6 @@ export default function Attendance() {
   const [selectedPerson, setSelectedPerson] = useState(null);
   const userRole = useAppStore((state) => state.userRole);
   const isGuru = userRole === "guru";
-
-  const handlePrevDay = () => {
-    try {
-      const [y, m, d] = (selectedDate || today).split("-").map(Number);
-      const curr = new Date(y, m - 1, d);
-      setSelectedDate(format(subDays(curr, 1), "yyyy-MM-dd"));
-    } catch {
-      setSelectedDate(today);
-    }
-  };
-
-  const handleNextDay = () => {
-    try {
-      const [y, m, d] = (selectedDate || today).split("-").map(Number);
-      const curr = new Date(y, m - 1, d);
-      setSelectedDate(format(addDays(curr, 1), "yyyy-MM-dd"));
-    } catch {
-      setSelectedDate(today);
-    }
-  };
 
   const { data: authData } = useQuery({
     queryKey: ["me"],
@@ -522,49 +501,8 @@ export default function Attendance() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 bg-gray-100 p-1 border-2 border-gray-900 rounded-xl">
-              <button
-                type="button"
-                onClick={handlePrevDay}
-                className="w-7 h-7 flex items-center justify-center rounded-lg bg-white border border-gray-300 hover:bg-gray-200 text-gray-800 transition-all cursor-pointer shadow-2xs"
-                title="Hari Sebelumnya"
-              >
-                <span className="material-symbols-outlined text-base">chevron_left</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedDate(today)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  selectedDate === today
-                    ? "bg-primary-green text-gray-900 border border-gray-900 shadow-2xs"
-                    : "text-gray-700 hover:bg-white"
-                }`}
-              >
-                Hari Ini
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedDate(yesterday)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  selectedDate === yesterday
-                    ? "bg-primary-green text-gray-900 border border-gray-900 shadow-2xs"
-                    : "text-gray-700 hover:bg-white"
-                }`}
-              >
-                Kemarin
-              </button>
-              <button
-                type="button"
-                onClick={handleNextDay}
-                className="w-7 h-7 flex items-center justify-center rounded-lg bg-white border border-gray-300 hover:bg-gray-200 text-gray-800 transition-all cursor-pointer shadow-2xs"
-                title="Hari Berikutnya"
-              >
-                <span className="material-symbols-outlined text-base">chevron_right</span>
-              </button>
-            </div>
-
-            <div className="relative flex-1 sm:w-40 min-w-[130px]">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:w-44">
               <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none text-base">
                 calendar_today
               </span>
@@ -821,27 +759,34 @@ export default function Attendance() {
                           </td>
 
                           <td className="py-2.5 px-4 text-center">
-                            <span
-                              className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border-2 border-gray-900 ${
-                                isBelumAbsen
-                                  ? "bg-amber-200 text-amber-950 animate-pulse"
-                                  : item.status === "hadir"
-                                  ? "bg-primary-green text-gray-900"
-                                  : item.status === "terlambat"
-                                  ? "bg-amber-300 text-gray-900"
-                                  : item.status === "izin"
-                                  ? "bg-purple-200 text-purple-900"
-                                  : item.status === "sakit"
-                                  ? "bg-blue-200 text-blue-900"
-                                  : item.status === "alpha"
-                                  ? "bg-red-200 text-red-900"
-                                  : item.status === "libur"
-                                  ? "bg-teal-300 text-teal-950"
-                                  : "bg-gray-200 text-gray-900"
-                              }`}
-                            >
-                              {isBelumAbsen ? "Belum" : item.status}
-                            </span>
+                            {(() => {
+                              const isPjj = item.status === "pjj" || (item.notes && (item.notes.toLowerCase().includes("pjj") || item.notes.toLowerCase().includes("jarak jauh")));
+                              return (
+                                <span
+                                  className={`px-2.5 py-1 text-xs font-black rounded-lg border ${
+                                    isBelumAbsen
+                                      ? "bg-amber-100 text-amber-900 border-amber-300"
+                                      : isPjj
+                                      ? "bg-cyan-100 text-cyan-950 border-cyan-400"
+                                      : item.status === "hadir"
+                                      ? "bg-primary-green text-gray-900 border-gray-900"
+                                      : item.status === "terlambat"
+                                      ? "bg-amber-200 text-amber-900 border-amber-400"
+                                      : item.status === "izin"
+                                      ? "bg-purple-200 text-purple-900 border-purple-300"
+                                      : item.status === "sakit"
+                                      ? "bg-blue-200 text-blue-900 border-blue-300"
+                                      : item.status === "alpha"
+                                      ? "bg-red-200 text-red-900 border-red-300"
+                                      : item.status === "libur"
+                                      ? "bg-teal-300 text-teal-950 border-teal-500"
+                                      : "bg-gray-200 text-gray-900 border-gray-300"
+                                  }`}
+                                >
+                                  {isBelumAbsen ? "Belum" : isPjj ? "Hadir (PJJ)" : item.status}
+                                </span>
+                              );
+                            })()}
                           </td>
 
                           <td className="py-2.5 px-4 text-center">
@@ -850,6 +795,17 @@ export default function Attendance() {
                               <span className="text-[11px] text-gray-400 font-bold italic">Khusus Ybs</span>
                             ) : (
                               <div className="flex items-center justify-center gap-1.5">
+                                {isBelumAbsen && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEditAttendance({ ...item, initialStatus: "pjj", initialNotes: "Pelajaran Jarak Jauh (PJJ)" })}
+                                    className="px-2 py-1 bg-cyan-100 hover:bg-cyan-200 text-cyan-950 text-xs font-bold rounded-lg border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all cursor-pointer flex items-center gap-0.5"
+                                    title="Pintasan Pelajaran Jarak Jauh (PJJ)"
+                                  >
+                                    <span className="material-symbols-outlined text-xs">laptop_chromebook</span>
+                                    <span>PJJ</span>
+                                  </button>
+                                )}
                                 {isBelumAbsen && (
                                   isGuru ? (
                                     <div className="flex items-center justify-center gap-1">
