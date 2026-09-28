@@ -186,22 +186,16 @@ export default function ScanQR() {
       mockReasons: antiMock.reasons,
       mockScore: antiMock.mockScore,
       sampleCount: antiMock.sampleCount,
-      coordVariance: antiMock.coordVariance,
-      maxDistanceSeen: antiMock.maxDistanceSeen,
     };
 
+    setCoords(c);
+    coordsRef.current = c;
+    setIsLocating(false);
+
     if (antiMock.isMock) {
-      setCoords(c);
-      coordsRef.current = c;
-      setIsLocating(false);
       setLocationError(`Terdeteksi Fake GPS: ${antiMock.reasons[0] || "Aplikasi lokasi palsu aktif."}. Matikan Fake GPS untuk melakukan presensi.`);
-    } else if (antiMock.isVerified) {
-      setCoords(c);
-      coordsRef.current = c;
-      setIsLocating(false);
-      setLocationError(null);
     } else {
-      coordsRef.current = { ...c, pendingVerification: true };
+      setLocationError(null);
     }
   };
 
@@ -231,7 +225,7 @@ export default function ScanQR() {
     resetGpsSession();
 
     let sampleCount = 0;
-    const requiredSamples = 3;
+    const requiredSamples = 1;
 
     const sampleNext = () => {
       navigator.geolocation.getCurrentPosition(
@@ -343,19 +337,13 @@ export default function ScanQR() {
       ? Math.max(0, currentDistance - accuracyDeduction)
       : null;
 
-  const isMockActive = Boolean(coords?.isMock || mockStatus.isMock || coordsRef.current?.isMock);
-  const isPendingVerification = Boolean(!coords?.isPcVerified && (isLocating || coordsRef.current?.pendingVerification || (mockStatus.sampleCount || 0) < 3));
-
-  const maxSeen = Math.max(
-    currentDistance || 0,
-    coordsRef.current?.maxDistanceSeen || 0,
-    mockStatus.maxDistanceSeen || 0
-  );
+  const isMockActive = Boolean(!coords?.isPcVerified && (coords?.isMock || mockStatus.isMock || coordsRef.current?.isMock));
+  const isPendingVerification = Boolean(!coords?.isPcVerified && isLocating && !coords);
 
   const isWithinRadius =
     !isLocationRequired ||
     coords?.isPcVerified ||
-    (!isMockActive && !isPendingVerification && effectiveDistance !== null && effectiveDistance <= radiusMax && currentDistance <= 1350 && maxSeen <= 1350);
+    (!isMockActive && !isPendingVerification && effectiveDistance !== null && effectiveDistance <= radiusMax && currentDistance <= 1350);
 
   const canOpenScanner = !isLocationRequired || Boolean(isWithinRadius);
 
@@ -488,14 +476,7 @@ export default function ScanQR() {
           message: `Terdeteksi Fake GPS / Lokasi Palsu (${reason}). Presensi ditolak.`,
         };
       }
-      if (!coordsRef.current?.isPcVerified && (coordsRef.current?.pendingVerification || (mockStatusRef.current?.sampleCount || 0) < 3)) {
-        return {
-          valid: false,
-          message: `Sedang memverifikasi keaslian sinyal satelit GPS (${mockStatusRef.current?.sampleCount || 1}/3)... Harap tunggu sebentar.`,
-        };
-      }
-      const maxSeen = Math.max(currentDistance || 0, coordsRef.current?.maxDistanceSeen || 0, mockStatusRef.current?.maxDistanceSeen || 0);
-      if (!coords?.isPcVerified && (effectiveDistance === null || effectiveDistance > radiusMax || currentDistance > 1350 || maxSeen > 1350)) {
+      if (!coords?.isPcVerified && (effectiveDistance === null || effectiveDistance > radiusMax || currentDistance > 1350)) {
         return {
           valid: false,
           message: `Di luar jangkauan sekolah (${Math.round(currentDistance || 0)}m). Presensi hanya sah di lingkungan madrasah (maks ${radiusMax}m).`,
@@ -727,7 +708,7 @@ export default function ScanQR() {
                             : coords?.isPcVerified
                             ? "Lokasi Sah: PC Terverifikasi"
                             : isPendingVerification || isLocating
-                            ? `Memverifikasi Satelit (${mockStatus.sampleCount || 1}/3)...`
+                            ? "Mencari Sinyal GPS Satelit..."
                             : locationError
                             ? "Izin / Sensor Lokasi GPS Diperlukan"
                             : isWithinRadius
@@ -756,7 +737,7 @@ export default function ScanQR() {
                           : coords?.isPcVerified
                           ? `Akses pemindaian presensi disetujui dari stasiun PC madrasah (${effectiveLembaga?.toUpperCase() || "MA"})`
                           : isPendingVerification || isLocating
-                          ? "Menganalisis fluktuasi satelit fisik alami untuk mencegah pemalsuan lokasi..."
+                          ? "Mencari dan mengunci koordinat GPS perangkat Anda..."
                           : locationError || (isWithinRadius
                               ? (isCellularBtsDrift
                                   ? `Terdeteksi di area madrasah via sinyal BTS (Jarak fisik: ${Math.round(currentDistance || 0)}m, Akurasi: ±${Math.round(rawAccuracy)}m)`

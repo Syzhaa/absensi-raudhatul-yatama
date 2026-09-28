@@ -85,16 +85,21 @@ export default function RecentScanLogs({ recentLogs }) {
         ) : (
           <div className="space-y-2.5">
             {paginatedLogs.map((log, index) => {
+              const isPjj = log.status === "pjj" || Boolean(log.notes && (log.notes.toLowerCase().includes("pjj") || log.notes.toLowerCase().includes("jarak jauh")));
               const isCheckIn = !log.check_out;
               const name = log.student?.nama || log.teacher?.nama || "Unknown";
               const time = isCheckIn ? log.check_in : log.check_out;
               const isLate = log.status === "terlambat";
-              const badgeColor = isCheckIn
+              const badgeColor = isPjj
+                ? "bg-cyan-200 text-cyan-950 border-cyan-400"
+                : isCheckIn
                 ? isLate
                   ? "bg-amber-300 text-amber-950"
                   : "bg-[#9bd47a] text-gray-900"
                 : "bg-[#a78bfa] text-gray-900";
-              const badgeText = isCheckIn
+              const badgeText = isPjj
+                ? "Hadir (PJJ)"
+                : isCheckIn
                 ? isLate
                   ? "Masuk (Telat)"
                   : "Masuk"
