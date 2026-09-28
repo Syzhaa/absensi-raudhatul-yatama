@@ -5,10 +5,13 @@ import api from "../services/api";
 import { useNoticeStore } from "../store/useNoticeStore";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+import TeacherScheduleModal from "./TeacherScheduleModal";
+import { getTeacherScheduleSummary, isTeacherScheduledOnDate } from "../utils/scheduleHelper";
 
 export default function TeacherSelfCard() {
   const queryClient = useQueryClient();
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [leaveStatus, setLeaveStatus] = useState("izin");
   const [leaveNote, setLeaveNote] = useState("");
 
@@ -21,6 +24,30 @@ export default function TeacherSelfCard() {
   const user = userData?.data;
   const teacher = user?.teacher;
   const isGuru = user?.role === "guru";
+
+  const { data: scheduleData } = useQuery({
+    queryKey: ["academic_schedule", teacher?.lembaga || "ma"],
+    queryFn: async () => {
+      try {
+        const res = await api.get("/jadwal-pelajaran", {
+          params: { lembaga: teacher?.lembaga || "ma" },
+        });
+        return res.data?.data || null;
+      } catch (err) {
+        return null;
+      }
+    },
+    enabled: Boolean(isGuru && teacher),
+    staleTime: 1000 * 60 * 15,
+  });
+
+  const scheduleSummary = getTeacherScheduleSummary(teacher, scheduleData);
+  const isScheduledToday = isTeacherScheduledOnDate(
+    teacher,
+    new Date(),
+    scheduleData,
+    teacher?.lembaga || "ma"
+  );
 
   const submitLeaveMutation = useMutation({
     mutationFn: async ({ status, note }) => {
@@ -107,6 +134,34 @@ export default function TeacherSelfCard() {
               {teacher.mata_pelajaran && (
                 <span className="text-gray-500 truncate">• {teacher.mata_pelajaran}</span>
               )}
+            </div>
+
+            {/* Status Jadwal Mengajar Guru */}
+            <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+              {scheduleSummary && (
+                <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-50 text-blue-900 border border-blue-200 rounded-md">
+                  Jadwal: {scheduleSummary}
+                </span>
+              )}
+              {isScheduledToday ? (
+                <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-100 text-emerald-950 border border-emerald-400 rounded-md flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                  Jadwal Hari Ini
+                </span>
+              ) : (
+                <span className="text-[10px] font-medium px-2 py-0.5 bg-gray-100 text-gray-600 border border-gray-200 rounded-md">
+                  Bukan Hari Mengajar
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowScheduleModal(true)}
+                className="text-[10px] font-black text-gray-700 hover:text-black underline underline-offset-2 flex items-center gap-0.5 cursor-pointer ml-auto"
+                title="Lihat jadwal guru tiap hari"
+              >
+                <span>Jadwal Guru</span>
+                <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+              </button>
             </div>
           </div>
         </div>
@@ -343,6 +398,13 @@ export default function TeacherSelfCard() {
           </div>
         </div>
       )}
+
+      {/* Modal Jadwal Guru Tiap Hari */}
+      <TeacherScheduleModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        scheduleData={scheduleData}
+      />
     </div>
   );
 }

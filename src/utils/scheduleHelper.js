@@ -45,40 +45,82 @@ export function normalizeTeacherName(name) {
     .trim();
 }
 
+// Jadwal Guru Tiap Hari MA Raudhatul Yatama (Standar Kurikulum 2026/2027)
+export const TEACHER_SCHEDULE_BY_DAY = {
+  SENIN: [
+    "Badt'urrijal, S. Ag",
+    "Haini Zumaida, S. Pd",
+    "Karimah, S. Pd",
+    "Tania, S. Ak",
+  ],
+  SELASA: [
+    "Sugiannor, S. Pd",
+    "Milawati, S. Pd",
+    "Rima Melati, S. Pd",
+  ],
+  RABU: [
+    "Sugiannor, S. Pd",
+    "Milawati, S. Pd",
+    "Nor Aida, S. Pd",
+    "Tania, S. Ak",
+  ],
+  KAMIS: [
+    "Badt'urrijal, S. Ag",
+    "Karimah, S. Pd",
+    "Haini Zumaida, S. Pd",
+  ],
+  JUMAT: [
+    "Sity Kholifah, S. Pd",
+    "Tania, S. Ak",
+    "Karimah, S. Pd",
+  ],
+  SABTU: [
+    "Rahmi Nike R, M. Pd",
+    "Tati Hartati, S. Ag",
+    "Ahmad Mujahid, S. Pd",
+  ],
+};
+
 /**
  * Ekstrak daftar nama guru terjadwal dari struktur data API backend (scheduleData)
  * Menggabungkan guru dari schedule_by_day dan teacher_workloads secara dinamis.
  */
 export function getScheduledTeacherNamesForDay(dayName, scheduleData) {
-  if (!scheduleData || !dayName || dayName === "MINGGU") return [];
+  if (!dayName || dayName === "MINGGU") return [];
 
-  const teachers = new Set();
   const dayUpper = dayName.toUpperCase();
   const dayLower = dayUpper === "JUMAT" ? "jum" : dayUpper.toLowerCase();
 
-  // 1. Ekstrak dari schedule_by_day
-  const daySlots = scheduleData.schedule_by_day?.[dayUpper] || {};
-  Object.values(daySlots).forEach((classes) => {
-    if (typeof classes === "object" && classes !== null) {
-      Object.values(classes).forEach((detail) => {
-        const g = detail?.guru;
-        if (g && g !== "-") {
-          teachers.add(g);
-        }
-      });
-    }
-  });
+  // 1. Ekstrak dari scheduleData dinamis dari backend jika tersedia
+  if (scheduleData) {
+    const teachers = new Set();
+    const daySlots = scheduleData.schedule_by_day?.[dayUpper] || {};
+    Object.values(daySlots).forEach((classes) => {
+      if (typeof classes === "object" && classes !== null) {
+        Object.values(classes).forEach((detail) => {
+          const g = detail?.guru;
+          if (g && g !== "-") {
+            teachers.add(g);
+          }
+        });
+      }
+    });
 
-  // 2. Ekstrak dari teacher_workloads
-  const workloads = scheduleData.teacher_workloads || [];
-  workloads.forEach((tw) => {
-    const h = (tw.hari || "").toLowerCase();
-    if (h.includes(dayLower) && tw.nama) {
-      teachers.add(tw.nama);
-    }
-  });
+    const workloads = scheduleData.teacher_workloads || [];
+    workloads.forEach((tw) => {
+      const h = (tw.hari || "").toLowerCase();
+      if (h.includes(dayLower) && tw.nama) {
+        teachers.add(tw.nama);
+      }
+    });
 
-  return Array.from(teachers);
+    if (teachers.size > 0) {
+      return Array.from(teachers);
+    }
+  }
+
+  // 2. Fallback standar resmi MA Raudhatul Yatama
+  return TEACHER_SCHEDULE_BY_DAY[dayUpper] || [];
 }
 
 /**
@@ -91,11 +133,6 @@ export function isTeacherScheduledOnDate(teacher, dateInput, scheduleData, lemba
   const tLembaga = (teacher.lembaga || lembaga || "").toLowerCase();
   // Khusus MTs: sementara belum ada jadwal spesifik per hari, izinkan semua guru MTs
   if (tLembaga === "mts") {
-    return true;
-  }
-
-  // Jika scheduleData belum selesai dimuat dari BE, jangan blokir guru
-  if (!scheduleData) {
     return true;
   }
 
@@ -119,6 +156,11 @@ export function isTeacherScheduledOnDate(teacher, dateInput, scheduleData, lemba
       normSched.includes(normTarget) ||
       (normTarget.startsWith("rahminike") && normSched.startsWith("rahminike")) ||
       (normTarget.startsWith("badturrijal") && normSched.startsWith("badturrijal")) ||
+      (normTarget.startsWith("badurrijal") && normSched.startsWith("badturrijal")) ||
+      (normTarget.startsWith("badturrijal") && normSched.startsWith("badurrijal")) ||
+      (normTarget.startsWith("tatihartati") && normSched.startsWith("tatihartati")) ||
+      (normTarget.startsWith("tatiharati") && normSched.startsWith("tatihartati")) ||
+      (normTarget.startsWith("tatihartati") && normSched.startsWith("tatiharati")) ||
       (normTarget.startsWith("sitykholifah") && normSched.startsWith("sitykholifah"))
     );
   });
@@ -129,20 +171,54 @@ export function isTeacherScheduledOnDate(teacher, dateInput, scheduleData, lemba
  * Contoh: "Senin & Kamis", "Sabtu", dll.
  */
 export function getTeacherScheduleSummary(teacher, scheduleData) {
-  if (!teacher || !scheduleData?.teacher_workloads) return null;
+  if (!teacher) return null;
   const teacherName = teacher.nama || (typeof teacher === "string" ? teacher : "");
   const normTarget = normalizeTeacherName(teacherName);
 
-  const matched = scheduleData.teacher_workloads.find((tw) => {
-    const normTw = normalizeTeacherName(tw.nama || "");
-    return (
-      normTarget.includes(normTw) ||
-      normTw.includes(normTarget) ||
-      (normTarget.startsWith("rahminike") && normTw.startsWith("rahminike")) ||
-      (normTarget.startsWith("badturrijal") && normTw.startsWith("badturrijal")) ||
-      (normTarget.startsWith("sitykholifah") && normTw.startsWith("sitykholifah"))
-    );
+  // 1. Cek dari teacher_workloads backend jika ada
+  if (scheduleData?.teacher_workloads) {
+    const matched = scheduleData.teacher_workloads.find((tw) => {
+      const normTw = normalizeTeacherName(tw.nama || "");
+      return (
+        normTarget.includes(normTw) ||
+        normTw.includes(normTarget) ||
+        (normTarget.startsWith("rahminike") && normTw.startsWith("rahminike")) ||
+        (normTarget.startsWith("badturrijal") && normTw.startsWith("badturrijal")) ||
+        (normTarget.startsWith("tatihartati") && normTw.startsWith("tatihartati")) ||
+        (normTarget.startsWith("sitykholifah") && normTw.startsWith("sitykholifah"))
+      );
+    });
+
+    if (matched?.hari) return matched.hari;
+  }
+
+  // 2. Fallback dari matriks TEACHER_SCHEDULE_BY_DAY
+  const dayNames = {
+    SENIN: "Senin",
+    SELASA: "Selasa",
+    RABU: "Rabu",
+    KAMIS: "Kamis",
+    JUMAT: "Jum'at",
+    SABTU: "Sabtu",
+  };
+  const activeDays = [];
+  Object.entries(TEACHER_SCHEDULE_BY_DAY).forEach(([dayKey, list]) => {
+    const isPresent = list.some((n) => {
+      const normN = normalizeTeacherName(n);
+      return (
+        normTarget.includes(normN) ||
+        normN.includes(normTarget) ||
+        (normTarget.startsWith("rahminike") && normN.startsWith("rahminike")) ||
+        (normTarget.startsWith("badturrijal") && normN.startsWith("badturrijal")) ||
+        (normTarget.startsWith("tatihartati") && normN.startsWith("tatihartati")) ||
+        (normTarget.startsWith("sitykholifah") && normN.startsWith("sitykholifah"))
+      );
+    });
+    if (isPresent) {
+      activeDays.push(dayNames[dayKey] || dayKey);
+    }
   });
 
-  return matched?.hari || null;
+  if (activeDays.length === 0) return null;
+  return activeDays.length <= 2 ? activeDays.join(" & ") : activeDays.join(", ");
 }

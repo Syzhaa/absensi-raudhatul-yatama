@@ -14,6 +14,7 @@ import { getKelasNumericVal, sortKelasList } from "../utils/kelasHelper";
 import { useKelasFormat } from "../hooks/useKelasFormat";
 import { useAttendanceSettings } from "../hooks/useAttendanceSettings";
 import { format } from "date-fns";
+import TeacherScheduleModal from "../components/TeacherScheduleModal";
 import {
   isTeacherScheduledOnDate,
   getTeacherScheduleSummary,
@@ -30,6 +31,7 @@ export default function Attendance() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
   const [showModal, setShowModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const userRole = useAppStore((state) => state.userRole);
   const isGuru = userRole === "guru";
@@ -523,39 +525,51 @@ export default function Attendance() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2 border-t border-gray-100">
           {/* Role Tabs - Hanya tampil jika absensi guru diaktifkan */}
           {enableTeacherAttendance && (
-            <div className="inline-flex p-1 bg-gray-100 border-2 border-gray-900 rounded-xl gap-1 w-full sm:w-auto">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="inline-flex p-1 bg-gray-100 border-2 border-gray-900 rounded-xl gap-1 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setRoleFilter("all")}
+                  className={`flex-1 sm:flex-initial py-1.5 px-3.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    roleFilter === "all"
+                      ? "bg-primary-green text-gray-900 shadow-xs border-2 border-gray-900"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+                  }`}
+                >
+                  Semua
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRoleFilter("student")}
+                  className={`flex-1 sm:flex-initial py-1.5 px-3.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    roleFilter === "student"
+                      ? "bg-primary-green text-gray-900 shadow-xs border-2 border-gray-900"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+                  }`}
+                >
+                  Siswa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRoleFilter("teacher")}
+                  className={`flex-1 sm:flex-initial py-1.5 px-3.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    roleFilter === "teacher"
+                      ? "bg-primary-green text-gray-900 shadow-xs border-2 border-gray-900"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
+                  }`}
+                >
+                  Guru
+                </button>
+              </div>
+
               <button
                 type="button"
-                onClick={() => setRoleFilter("all")}
-                className={`flex-1 sm:flex-initial py-1.5 px-3.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  roleFilter === "all"
-                    ? "bg-primary-green text-gray-900 shadow-xs border-2 border-gray-900"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                onClick={() => setShowScheduleModal(true)}
+                className="py-1.5 px-3 bg-white hover:bg-yellow-50 border-2 border-gray-900 rounded-xl text-xs font-black text-gray-900 shadow-xs active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                title="Lihat jadwal guru tiap hari"
               >
-                Semua
-              </button>
-              <button
-                type="button"
-                onClick={() => setRoleFilter("student")}
-                className={`flex-1 sm:flex-initial py-1.5 px-3.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  roleFilter === "student"
-                    ? "bg-primary-green text-gray-900 shadow-xs border-2 border-gray-900"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
-                }`}
-              >
-                Siswa
-              </button>
-              <button
-                type="button"
-                onClick={() => setRoleFilter("teacher")}
-                className={`flex-1 sm:flex-initial py-1.5 px-3.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                  roleFilter === "teacher"
-                    ? "bg-primary-green text-gray-900 shadow-xs border-2 border-gray-900"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-white/50"
-                }`}
-              >
-                Guru
+                <span className="material-symbols-outlined text-sm text-amber-600">event_note</span>
+                <span className="hidden sm:inline">Jadwal Guru</span>
               </button>
             </div>
           )}
@@ -935,6 +949,13 @@ export default function Attendance() {
         message={confirmModal.message}
         type={confirmModal.type}
         onConfirm={confirmModal.onConfirm}
+      />
+
+      {/* Modal Jadwal Dewan Guru Tiap Hari */}
+      <TeacherScheduleModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        scheduleData={scheduleData}
       />
     </div>
   );
