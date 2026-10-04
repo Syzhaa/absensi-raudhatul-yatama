@@ -394,32 +394,11 @@ export default function Teachers() {
           </div>
 
           {/* Action Buttons Group */}
-          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-            {selectedTeachers.length > 0 && (
-              <>
-                <button
-                  onClick={handleBatchPrintCard}
-                  className="py-2 px-3 bg-white hover:bg-gray-100 text-gray-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer col-span-1"
-                  title="Cetak Kartu Guru Massal"
-                >
-                  <span className="material-symbols-outlined text-base">print</span>
-                  <span>Cetak ({selectedTeachers.length})</span>
-                </button>
-                <button
-                  onClick={handleBatchDelete}
-                  className="py-2 px-3 bg-rose-100 hover:bg-rose-200 text-rose-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer col-span-1"
-                  title="Hapus Banyak Guru"
-                >
-                  <span className="material-symbols-outlined text-base text-rose-600">delete</span>
-                  <span>Hapus ({selectedTeachers.length})</span>
-                </button>
-              </>
-            )}
-
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto justify-end">
             {/* Cetak Akun Guru (PDF/WA) Button */}
             <button
               onClick={() => setShowBulkCredentialsModal(true)}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm col-span-1 sm:w-auto cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm cursor-pointer"
               title="Cetak PDF Akun Login Pertama Guru & Kirimkan ke WhatsApp"
             >
               <span className="material-symbols-outlined text-base">key</span>
@@ -429,7 +408,7 @@ export default function Teachers() {
             {/* Import Excel Button */}
             <button
               onClick={() => setShowImportModal(true)}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm col-span-1 sm:w-auto cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo transition-all active:translate-y-0.5 text-xs sm:text-sm cursor-pointer"
               title="Import Banyak Guru dari Excel/CSV"
             >
               <span className="material-symbols-outlined text-base text-emerald-700">upload_file</span>
@@ -442,7 +421,7 @@ export default function Teachers() {
                 resetForm();
                 setShowForm(true);
               }}
-              className="hidden lg:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm flex-shrink-0 cursor-pointer"
+              className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm flex-shrink-0 cursor-pointer"
             >
               <span className="material-symbols-outlined text-base font-bold">add</span>
               <span>Tambah Data</span>
@@ -450,6 +429,53 @@ export default function Teachers() {
           </div>
         </div>
       </div>
+
+      {/* Selection Action Bar (Muncul rapi di dalam card container saat guru dipilih) */}
+      {selectedTeachers.length > 0 && (
+        <div className="bg-purple-50 border-2 md:border-3 border-gray-900 rounded-2xl p-3 sm:p-3.5 shadow-neo flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="flex items-center justify-between sm:justify-start gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-purple-600 border border-gray-900 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                ✓
+              </div>
+              <div>
+                <span className="text-xs sm:text-sm font-black text-gray-900 block leading-tight">
+                  {selectedTeachers.length} Guru Terpilih
+                </span>
+                <span className="text-[10px] text-gray-600 font-bold">
+                  {selectedTeachers.length === teachers.length ? "Seluruh guru telah dipilih" : `${selectedTeachers.length} dari ${teachers.length} guru`}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedTeachers([])}
+              className="text-xs font-bold text-gray-500 hover:text-rose-700 underline cursor-pointer active:translate-y-0.5"
+            >
+              Batal Pilih
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleBatchPrintCard}
+              className="flex-1 sm:flex-initial py-2 px-3.5 bg-white hover:bg-gray-100 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer"
+              title="Cetak Kartu Guru Massal"
+            >
+              <span className="material-symbols-outlined text-base">print</span>
+              <span>Cetak Kartu ({selectedTeachers.length})</span>
+            </button>
+            <button
+              onClick={handleBatchDelete}
+              className="flex-1 sm:flex-initial py-2 px-3.5 bg-rose-100 hover:bg-rose-200 text-rose-950 font-black border-2 border-gray-900 rounded-xl shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer"
+              title="Hapus Banyak Guru"
+            >
+              <span className="material-symbols-outlined text-base text-rose-600">delete</span>
+              <span>Hapus ({selectedTeachers.length})</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       <TeacherForm
         isOpen={showForm}

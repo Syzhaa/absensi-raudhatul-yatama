@@ -433,39 +433,11 @@ export default function Students() {
           </div>
 
           {/* Action Buttons Group */}
-          <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-            {selectedStudents.length > 0 && (
-              <>
-                <button
-                  onClick={handleBatchPrintQR}
-                  className="py-2 px-3 bg-white hover:bg-gray-100 text-gray-900 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer col-span-1"
-                  title="Cetak Kartu Massal"
-                >
-                  <span className="material-symbols-outlined text-base">print</span>
-                  <span>Cetak ({selectedStudents.length})</span>
-                </button>
-                <button
-                  onClick={handlePromoteClass}
-                  className="py-2 px-3 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer col-span-1"
-                >
-                  <span className="material-symbols-outlined text-base">school</span>
-                  <span>Naik ({selectedStudents.length})</span>
-                </button>
-                <button
-                  onClick={handleBatchDelete}
-                  className="py-2 px-3 bg-rose-100 hover:bg-rose-200 text-rose-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer col-span-2 sm:col-span-1"
-                  title="Hapus Banyak Siswa"
-                >
-                  <span className="material-symbols-outlined text-base text-rose-600">delete</span>
-                  <span>Hapus ({selectedStudents.length})</span>
-                </button>
-              </>
-            )}
-
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             {/* Import Excel Button */}
             <button
               onClick={() => setShowImportModal(true)}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm col-span-2 sm:col-span-1 sm:w-auto cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm cursor-pointer"
               title="Import Banyak Siswa dari Excel/CSV"
             >
               <span className="material-symbols-outlined text-base text-emerald-700">upload_file</span>
@@ -478,7 +450,7 @@ export default function Students() {
                 resetForm();
                 setShowForm(true);
               }}
-              className="hidden lg:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm flex-shrink-0 cursor-pointer"
+              className="hidden md:flex items-center justify-center gap-1.5 px-4 py-2 bg-primary-green hover:bg-emerald-400 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-neo active:translate-y-0.5 transition-all text-xs sm:text-sm flex-shrink-0 cursor-pointer"
             >
               <span className="material-symbols-outlined text-base font-bold">add</span>
               <span>Tambah Data</span>
@@ -486,6 +458,60 @@ export default function Students() {
           </div>
         </div>
       </div>
+
+      {/* Selection Action Bar (Muncul rapi di dalam card container saat siswa dipilih) */}
+      {selectedStudents.length > 0 && (
+        <div className="bg-emerald-50 border-2 md:border-3 border-gray-900 rounded-2xl p-3 sm:p-3.5 shadow-neo flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="flex items-center justify-between sm:justify-start gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-emerald-600 border border-gray-900 text-white flex items-center justify-center font-black text-xs shadow-xs">
+                ✓
+              </div>
+              <div>
+                <span className="text-xs sm:text-sm font-black text-gray-900 block leading-tight">
+                  {selectedStudents.length} Siswa Terpilih
+                </span>
+                <span className="text-[10px] text-gray-600 font-bold">
+                  {selectedStudents.length === students.length ? "Seluruh siswa telah dipilih" : `${selectedStudents.length} dari ${students.length} siswa`}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedStudents([])}
+              className="text-xs font-bold text-gray-500 hover:text-rose-700 underline cursor-pointer active:translate-y-0.5"
+            >
+              Batal Pilih
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleBatchPrintQR}
+              className="flex-1 sm:flex-initial py-2 px-3.5 bg-white hover:bg-gray-100 text-gray-900 font-black border-2 border-gray-900 rounded-xl shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer"
+              title="Cetak Kartu Massal"
+            >
+              <span className="material-symbols-outlined text-base">print</span>
+              <span>Cetak ({selectedStudents.length})</span>
+            </button>
+            <button
+              onClick={handlePromoteClass}
+              className="flex-1 sm:flex-initial py-2 px-3.5 bg-amber-100 hover:bg-amber-200 text-amber-950 font-black border-2 border-gray-900 rounded-xl shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">school</span>
+              <span>Naik ({selectedStudents.length})</span>
+            </button>
+            <button
+              onClick={handleBatchDelete}
+              className="w-full sm:w-auto py-2 px-3.5 bg-rose-100 hover:bg-rose-200 text-rose-950 font-black border-2 border-gray-900 rounded-xl shadow-xs active:translate-y-0.5 transition-all flex items-center justify-center gap-1.5 text-xs sm:text-sm cursor-pointer"
+              title="Hapus Banyak Siswa"
+            >
+              <span className="material-symbols-outlined text-base text-rose-600">delete</span>
+              <span>Hapus ({selectedStudents.length})</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       <StudentForm
         isOpen={showForm}
