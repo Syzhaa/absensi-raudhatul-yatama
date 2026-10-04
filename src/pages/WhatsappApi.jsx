@@ -779,7 +779,7 @@ export default function WhatsappApi() {
                 <span>Pilih Sasaran Presensi yang Disimulasikan:</span>
               </span>
               <p className="text-[11px] font-medium text-gray-500 mt-0.5">
-                Uji format template pesan dan saluran pengiriman untuk Santri atau Dewan Guru.
+                Uji format template pesan dan saluran pengiriman untuk Siswa atau Dewan Guru.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
@@ -796,7 +796,7 @@ export default function WhatsappApi() {
                 }`}
               >
                 <span className="material-symbols-outlined text-base">school</span>
-                <span>Siswa / Santri</span>
+                <span>Siswa</span>
               </button>
               <button
                 type="button"

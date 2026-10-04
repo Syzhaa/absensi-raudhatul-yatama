@@ -795,7 +795,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               <div className="title-main" style={{ fontSize: "9px" }}>RAUDHATUL YATAMA</div>
             </div>
             <span className="text-[7.5px] font-mono font-black text-emerald-300 uppercase tracking-wider bg-emerald-950/80 px-1 py-0.5 rounded border border-emerald-500/50">
-              {isTeacher ? "GURU" : "SANTRI"}
+              {isTeacher ? "GURU" : "SISWA"}
             </span>
           </div>
 
@@ -975,7 +975,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           }}
         >
           <div className="back-header-nct" style={{ minHeight: "34px", padding: "4px 8px", fontSize: "8px" }}>
-            KARTU PRESENSI DIGITAL • {isTeacher ? "DEWAN GURU" : "SANTRI"}
+            KARTU PRESENSI DIGITAL • {isTeacher ? "DEWAN GURU" : "SISWA"}
           </div>
           <div className="flex items-center gap-2.5 p-2 flex-1 min-h-0 bg-white">
             <div className="flex flex-col items-center shrink-0">
@@ -1032,7 +1032,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%" }}>
             <div>KARTU PRESENSI DIGITAL</div>
             <div style={{ fontSize: `${7.8 * cardScale}px`, fontWeight: 800, letterSpacing: "1.2px", opacity: 0.95, marginTop: "1px" }}>
-              {isTeacher ? "DEWAN GURU" : "SANTRI"}
+              {isTeacher ? "DEWAN GURU" : "SISWA"}
             </div>
           </div>
         </div>

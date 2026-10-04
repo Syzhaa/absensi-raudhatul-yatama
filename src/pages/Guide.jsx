@@ -15,14 +15,14 @@ export default function Guide() {
       badge: "Operasional Harian",
       route: "/scan",
       routeText: "Buka Pemindai Scan QR",
-      description: "Tata cara penggunaan kamera pemindai harian di gerbang sekolah untuk presensi santri dan dewan guru.",
+      description: "Tata cara penggunaan kamera pemindai harian di gerbang sekolah untuk presensi siswa dan dewan guru.",
       sections: [
         {
           title: "1. Pemilihan Sesi: Masuk & Pulang",
           icon: "swap_horiz",
           points: [
-            "Pagi Hari: Pilih tab 'MASUK'. Kamera akan merekam jam kedatangan santri dan memvalidasi apakah berstatus Hadir atau Terlambat berdasarkan jam batas masuk.",
-            "Siang/Sore Hari: Pilih tab 'PULANG' saat jam kepulangan santri atau guru untuk mencatat waktu checkout.",
+            "Pagi Hari: Pilih tab 'MASUK'. Kamera akan merekam jam kedatangan siswa dan memvalidasi apakah berstatus Hadir atau Terlambat berdasarkan jam batas masuk.",
+            "Siang/Sore Hari: Pilih tab 'PULANG' saat jam kepulangan siswa atau guru untuk mencatat waktu checkout.",
             "Sistem otomatis mencegah double-scan dalam interval cepat untuk menghindari data kembar yang tidak disengaja.",
           ],
         },
@@ -32,7 +32,7 @@ export default function Guide() {
           points: [
             "Pilih Kamera: Tersedia saklar pemilih antara Kamera Belakang (disarankan untuk HP/tablet) dan Kamera Depan (laptop).",
             "Saklar Suara (Beep Audio): Aktifkan suara konfirmasi agar berbunyi 'beep' sukses setiap kali kartu barcode berhasil terpindai.",
-            "Pencahayaan: Pastikan QR Code pada kartu santri/guru tidak terhalang bayangan gelap atau pantulan cahaya terang.",
+            "Pencahayaan: Pastikan QR Code pada kartu siswa/guru tidak terhalang bayangan gelap atau pantulan cahaya terang.",
           ],
         },
         {
@@ -73,25 +73,25 @@ export default function Guide() {
       badge: "Pencatatan Khusus",
       route: "/attendance",
       routeText: "Buka Rekap & Input Absen",
-      description: "Langkah penanganan santri atau guru yang tidak membawa kartu, izin resmi, sakit, atau dispensasi tugas madrasah.",
+      description: "Langkah penanganan siswa atau guru yang tidak membawa kartu, izin resmi, sakit, atau dispensasi tugas madrasah.",
       sections: [
         {
-          title: "1. Input Kehadiran Santri Tanpa Kartu",
+          title: "1. Input Kehadiran Siswa Tanpa Kartu",
           icon: "person_search",
           points: [
-            "Jika santri tertinggal kartu ID di rumah, buka menu Rekap Absen (/attendance) atau gunakan tombol 'Input Manual' di bagian bawah halaman Scan.",
-            "Ketik nama santri atau kelas, pilih status 'Hadir' atau 'Terlambat', lalu masukkan jam masuk dan simpan.",
-            "Status kehadiran santri langsung tercatat resmi di database dan sinkron ke rekap harian.",
+            "Jika siswa tertinggal kartu ID di rumah, buka menu Rekap Absen (/attendance) atau gunakan tombol 'Input Manual' di bagian bawah halaman Scan.",
+            "Ketik nama siswa atau kelas, pilih status 'Hadir' atau 'Terlambat', lalu masukkan jam masuk dan simpan.",
+            "Status kehadiran siswa langsung tercatat resmi di database dan sinkron ke rekap harian.",
           ],
         },
         {
-          title: "2. Pencatatan Santri / Guru Izin & Sakit",
+          title: "2. Pencatatan Siswa / Guru Izin & Sakit",
           icon: "medical_services",
           points: [
-            "Buka menu Absen (/attendance), cari nama santri atau dewan guru bersangkutan.",
+            "Buka menu Absen (/attendance), cari nama siswa atau dewan guru bersangkutan.",
             "Klik ikon pensil (Edit Status Kehadiran), ubah status menjadi 'Izin' atau 'Sakit'.",
             "Tuliskan keterangan (misal: 'Demam', 'Ada acara keluarga di luar kota', atau 'Tugas dinas Kemenag').",
-            "Sistem akan otomatis memperbarui statistik di dashboard dan mengecualikan santri tersebut dari vonis Alpha.",
+            "Sistem akan otomatis memperbarui statistik di dashboard dan mengecualikan siswa tersebut dari vonis Alpha.",
           ],
         },
         {
@@ -99,7 +99,7 @@ export default function Guide() {
           icon: "timer",
           points: [
             "Di menu Pengaturan, terdapat konfigurasi 'Jam Auto-Alpha' (standar jam 12:00 siang).",
-            "Sebelum jam 12:00, santri yang belum melakukan scan masuk belum divonis Alpha pada layar dashboard agar rekaman rekap tetap adil.",
+            "Sebelum jam 12:00, siswa yang belum melakukan scan masuk belum divonis Alpha pada layar dashboard agar rekaman rekap tetap adil.",
             "Tepat setelah jam batas terlewati, sistem otomatis menandai siswa yang tidak hadir dan tanpa surat izin sebagai 'Alpha'.",
           ],
         },
@@ -107,7 +107,7 @@ export default function Guide() {
           title: "4. Koreksi & Perbaikan Riwayat Kehadiran",
           icon: "history_toggle_subdrop",
           points: [
-            "Admin atau Petugas Absen yang memiliki hak akses dapat mengubah atau membetulkan jam masuk/pulang santri jika terjadi kekeliruan pencatatan.",
+            "Admin atau Petugas Absen yang memiliki hak akses dapat mengubah atau membetulkan jam masuk/pulang siswa jika terjadi kekeliruan pencatatan.",
             "Setiap perubahan status dan jam tercatat dalam riwayat rekaman presensi sistem.",
           ],
         },
@@ -115,11 +115,11 @@ export default function Guide() {
       faq: [
         {
           q: "Apakah notifikasi WhatsApp tetap terkirim saat input manual?",
-          a: "Ya, jika fitur WhatsApp Notifier aktif di Pengaturan, notifikasi perubahan status (Izin/Sakit/Hadir) tetap dapat diteruskan ke nomor orang tua santri.",
+          a: "Ya, jika fitur WhatsApp Notifier aktif di Pengaturan, notifikasi perubahan status (Izin/Sakit/Hadir) tetap dapat diteruskan ke nomor orang tua siswa.",
         },
         {
-          q: "Bisakah guru mengubah status kehadiran santri?",
-          a: "Bisa, akun guru yang diberikan hak akses halaman Absen dapat memasukkan presensi manual dan mengubah status santri di kelasnya.",
+          q: "Bisakah guru mengubah status kehadiran siswa?",
+          a: "Bisa, akun guru yang diberikan hak akses halaman Absen dapat memasukkan presensi manual dan mengubah status siswa di kelasnya.",
         },
       ],
     },
@@ -132,7 +132,7 @@ export default function Guide() {
       badge: "Manajemen Data & Akun",
       route: "/teachers",
       routeText: "Buka Data Dewan Guru",
-      description: "Pengelolaan biodata santri dan pendidik, pembuatan akun login resmi, integrasi webmail, dan cetak kartu identitas.",
+      description: "Pengelolaan biodata siswa dan pendidik, pembuatan akun login resmi, integrasi webmail, dan cetak kartu identitas.",
       sections: [
         {
           title: "1. Pembuatan Akun & Webmail Guru (nama@raudhatulyatama.sch.id)",
@@ -145,7 +145,7 @@ export default function Guide() {
           ],
         },
         {
-          title: "2. Cetak Kartu Identitas Digital Santri & Guru",
+          title: "2. Cetak Kartu Identitas Digital Siswa & Guru",
           icon: "print",
           points: [
             "Pilih satu atau beberapa data (centang checkbox), lalu tekan tombol 'Cetak Kartu'.",
@@ -168,7 +168,7 @@ export default function Guide() {
           title: "4. Kenaikan Kelas & Pembaruan Jenjang",
           icon: "school",
           points: [
-            "Gunakan fitur 'Naik Kelas' pada daftar santri untuk memindahkan tingkat kelas (misal Kelas X naik ke XI).",
+            "Gunakan fitur 'Naik Kelas' pada daftar siswa untuk memindahkan tingkat kelas (misal Kelas X naik ke XI).",
             "Format penamaan kelas (Romawi X/XI/XII atau Angka 10/11/12) dapat disesuaikan di menu Pengaturan.",
           ],
         },
@@ -193,7 +193,7 @@ export default function Guide() {
       badge: "Gateway Notifikasi",
       route: "/whatsapp-api",
       routeText: "Buka Pengaturan WA Notifier",
-      description: "Menghubungkan gateway pengiriman pesan instan ke nomor wali santri dan saluran grup kelas madrasah.",
+      description: "Menghubungkan gateway pengiriman pesan instan ke nomor wali siswa dan saluran grup kelas madrasah.",
       sections: [
         {
           title: "1. Konfigurasi API Gateway",
@@ -209,8 +209,8 @@ export default function Guide() {
           title: "2. Mode Saluran: Pribadi & Saluran Multi-Grup",
           icon: "groups",
           points: [
-            "Mode Nomor Pribadi: Notifikasi scan kedatangan dan kepulangan langsung dikirimkan ke nomor WhatsApp orang tua santri masing-masing.",
-            "Mode Grup Kelas: Notifikasi presensi dapat diteruskan ke grup WhatsApp kelas santri atau grup resmi dewan guru.",
+            "Mode Nomor Pribadi: Notifikasi scan kedatangan dan kepulangan langsung dikirimkan ke nomor WhatsApp orang tua siswa masing-masing.",
+            "Mode Grup Kelas: Notifikasi presensi dapat diteruskan ke grup WhatsApp kelas siswa atau grup resmi dewan guru.",
             "Sistem mendukung multi-channel API key per-kelas jika madrasah membedakan nomor pengirim per lembaga (MA & MTs).",
           ],
         },
@@ -234,8 +234,8 @@ export default function Guide() {
       ],
       faq: [
         {
-          q: "Apakah pesan WA terkirim jika kuota internet santri habis?",
-          a: "Notifikasi dikirim langsung ke WhatsApp orang tua/wali santri melalui server madrasah, sehingga orang tua tetap menerima pesan tanpa bergantung pada HP siswa.",
+          q: "Apakah pesan WA terkirim jika kuota internet siswa habis?",
+          a: "Notifikasi dikirim langsung ke WhatsApp orang tua/wali siswa melalui server madrasah, sehingga orang tua tetap menerima pesan tanpa bergantung pada HP siswa.",
         },
         {
           q: "Bagaimana jika pengiriman pesan WA gagal?",
@@ -259,7 +259,7 @@ export default function Guide() {
           icon: "shield_person",
           points: [
             "Super Admin: Memiliki kendali penuh ke seluruh modul, lembaga (MA & MTs), dan pengaturan sistem.",
-            "Admin MA / MTs: Mengelola data santri, dewan guru, dan presensi khusus di lembaganya.",
+            "Admin MA / MTs: Mengelola data siswa, dewan guru, dan presensi khusus di lembaganya.",
             "Petugas Absen: Akun staf piket yang bertugas mengoperasikan pemindai scan dan rekap kehadiran harian.",
             "Dewan Guru: Akun personal pendidik untuk presensi mandiri, melihat riwayat kehadiran, dan rekap kelas.",
           ],
@@ -279,7 +279,7 @@ export default function Guide() {
           points: [
             "Jam Buka: Waktu awal kamera pemindai mulai menerima scan (misal 06:00).",
             "Batas Masuk & Terlambat: Siswa yang memindai setelah jam ini otomatis berstatus Terlambat (misal 07:30).",
-            "Jam Pulang: Waktu kepulangan resmi santri (misal 14:00/15:00).",
+            "Jam Pulang: Waktu kepulangan resmi siswa (misal 14:00/15:00).",
             "Koordinat GPS: Masukkan titik lintang & bujur madrasah serta radius meter untuk validasi presensi mandiri guru.",
           ],
         },
@@ -288,7 +288,7 @@ export default function Guide() {
           icon: "event",
           points: [
             "Tandai tanggal merah nasional, libur pondok pesantren, dan cuti bersama di menu Kalender Libur.",
-            "Pada tanggal yang terdaftar sebagai hari libur, sistem otomatis menonaktifkan vonis Auto-Alpha sehingga tidak ada santri/guru yang dicatat Alpha tanpa alasan.",
+            "Pada tanggal yang terdaftar sebagai hari libur, sistem otomatis menonaktifkan vonis Auto-Alpha sehingga tidak ada siswa/guru yang dicatat Alpha tanpa alasan.",
           ],
         },
       ],
@@ -319,8 +319,8 @@ export default function Guide() {
           icon: "analytics",
           points: [
             "Dashboard menampilkan kartu ringkasan kehadiran hari ini: Total Siswa, Hadir, Terlambat, Izin, Sakit, dan Alpha.",
-            "Grafik kehadiran mingguan dan bulanan untuk memantau tren kedisiplinan santri secara visual.",
-            "Feed pemindaian live stream: Menampilkan data santri yang baru saja melakukan scan barcode secara real-time.",
+            "Grafik kehadiran mingguan dan bulanan untuk memantau tren kedisiplinan siswa secara visual.",
+            "Feed pemindaian live stream: Menampilkan data siswa yang baru saja melakukan scan barcode secara real-time.",
           ],
         },
         {
@@ -346,7 +346,7 @@ export default function Guide() {
           icon: "rule",
           points: [
             "Laporan siswa dengan persentase kehadiran rendah dapat langsung diidentifikasi untuk tindak lanjut guru BK atau wali kelas.",
-            "Riwayat notifikasi WhatsApp dapat dicocokkan untuk memastikan orang tua telah menerima informasi ketidakhadiran santri.",
+            "Riwayat notifikasi WhatsApp dapat dicocokkan untuk memastikan orang tua telah menerima informasi ketidakhadiran siswa.",
           ],
         },
       ],

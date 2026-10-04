@@ -373,7 +373,7 @@ export default function Report() {
       const institutionName = currentInstitutionCode;
       const institutionFull = currentInstitutionFull;
       const email = currentLembagaEmail;
-      const targetTitle = category === "siswa" ? "SANTRI / SISWA" : "DEWAN GURU";
+      const targetTitle = category === "siswa" ? "SISWA" : "DEWAN GURU";
 
       const wb = XLSX.utils.book_new();
 
@@ -626,7 +626,7 @@ export default function Report() {
       await fetchDynamicKontak();
       const institutionName = currentInstitutionCode;
       const institutionFull = currentInstitutionFull;
-      const targetTitle = category === "siswa" ? "SANTRI / SISWA" : "DEWAN GURU";
+      const targetTitle = category === "siswa" ? "SISWA" : "DEWAN GURU";
 
       setExportProgress("Memuat logo madrasah...");
       const logoData = await getLogoBase64();

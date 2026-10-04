@@ -41,7 +41,7 @@ function parseScanError(msg = "") {
       icon: "history",
       iconBg: "bg-blue-600",
       reason: "Siswa atau Guru ini sudah tercatat HADIR MASUK untuk hari ini.",
-      solution: "Jika santri/guru hendak pulang, silakan klik tombol 'PULANG' di bagian atas sebelum scan.",
+      solution: "Jika siswa/guru hendak pulang, silakan klik tombol 'PULANG' di bagian atas sebelum scan.",
       canSwitchToCheckout: true,
     };
   }
@@ -59,7 +59,7 @@ function parseScanError(msg = "") {
       badgeColor: "bg-purple-100 text-purple-950 border-purple-400",
       icon: "task_alt",
       iconBg: "bg-purple-600",
-      reason: "Presensi masuk dan pulang santri / dewan guru ini telah lengkap dicatat untuk hari ini.",
+      reason: "Presensi masuk dan pulang siswa / dewan guru ini telah lengkap dicatat untuk hari ini.",
       solution: "Tidak perlu melakukan pemindaian lagi untuk hari ini.",
     };
   }
@@ -99,7 +99,7 @@ function parseScanError(msg = "") {
       badgeColor: "bg-red-100 text-red-950 border-red-400",
       icon: "qr_code_2",
       iconBg: "bg-red-600",
-      reason: "Kode QR yang dipindai tidak terdaftar pada database santri atau dewan guru aktif.",
+      reason: "Kode QR yang dipindai tidak terdaftar pada database siswa atau dewan guru aktif.",
       solution: "Pastikan menggunakan kartu pelajar atau kartu guru resmi madrasah yang dicetak dari sistem.",
     };
   }

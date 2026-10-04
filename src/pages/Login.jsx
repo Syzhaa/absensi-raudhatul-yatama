@@ -86,7 +86,7 @@ export default function Login({ onLogin }) {
       const role = response.data?.user?.role || response.data?.data?.user?.role;
 
       if (role === "siswa") {
-        setError("Akun siswa/santri tidak diizinkan masuk ke Sistem Presensi. Silakan akses Portal Siswa di raudhatulyatama.sch.id.");
+        setError("Akun siswa tidak diizinkan masuk ke Sistem Presensi. Silakan akses Portal Siswa di raudhatulyatama.sch.id.");
         setLoading(false);
         return;
       }
