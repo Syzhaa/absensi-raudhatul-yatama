@@ -129,6 +129,42 @@ export const CARD_SIZES = [
   },
 ];
 
+// Preset Profil Warna CMYK Cetak (Optimasi Foto Agar Wajah Tidak Hitam/Ireng di Kertas)
+export const CMYK_PROFILES = [
+  {
+    id: "cmyk_vivid",
+    name: "🖨️ CMYK: Optimal (Anti-Muka Hitam)",
+    shortName: "CMYK Optimal",
+    badge: "Anti-Muka Gelap",
+    desc: "Menaikkan shadow & exposure wajah (+18% brightness, +8% saturasi) agar saat diprint tinta hitam tidak pekat/ireng",
+    filter: "brightness(1.18) contrast(1.04) saturate(1.08)",
+  },
+  {
+    id: "cmyk_extra",
+    name: "🔆 CMYK: Ekstra Terang (Printer Pekat / HVS)",
+    shortName: "Ekstra Terang",
+    badge: "Maksimal Cerah",
+    desc: "Untuk printer yang tintanya sangat pekat (Epson/Canon) atau kertas HVS polos yang menyerap banyak tinta",
+    filter: "brightness(1.28) contrast(1.02) saturate(1.12)",
+  },
+  {
+    id: "cmyk_soft",
+    name: "🍂 CMYK: Kulit Hangat (Warm Tone)",
+    shortName: "Kulit Hangat",
+    badge: "Warm Tone",
+    desc: "Wajah cerah natural dengan sedikit sentuhan hangat anti-pucat",
+    filter: "brightness(1.14) contrast(1.03) saturate(1.10) sepia(0.04)",
+  },
+  {
+    id: "original",
+    name: "🖥️ RGB: Asli Layar (Tanpa Koreksi)",
+    shortName: "RGB Asli",
+    badge: "Original",
+    desc: "Warna digital murni tanpa penyesuaian cetak",
+    filter: "none",
+  },
+];
+
 export default function StudentCardPrint({ students = [], onClose, type = "student" }) {
   const cardRef = useRef(null);
   const containerRef = useRef(null);
@@ -143,6 +179,11 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
   const [a4SideMode, setA4SideMode] = useState("pairs"); // "pairs" | "front" | "back"
   const [pairGapMode, setPairGapMode] = useState("gap"); // "gap" | "fold"
   const [showCutMarks, setShowCutMarks] = useState(true);
+  const [cmykProfileId, setCmykProfileId] = useState("cmyk_vivid"); // Default CMYK Optimal
+
+  const currentCmykProfile = useMemo(() => {
+    return CMYK_PROFILES.find((p) => p.id === cmykProfileId) || CMYK_PROFILES[0];
+  }, [cmykProfileId]);
 
   // Nilai gabungan untuk dropdown format agar header rapi minimalis
   const combinedLayoutValue = useMemo(() => {
@@ -423,7 +464,11 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     setIsDownloading(true);
     setDownloadProgress("Menyiapkan berkas gambar...");
     try {
-      const wrappers = cardRef.current.querySelectorAll(".id-card-wrapper");
+      const wrappers = cardRef.current.querySelectorAll(
+        viewMode === "single"
+          ? ".student-card-print, .id-card-pair-wrapper"
+          : ".id-card-wrapper, .id-card-pair-wrapper, .student-card-print"
+      );
       if (wrappers.length === 0) return;
 
       const captureWrapper = async (wrapper) => {
@@ -441,7 +486,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         const dataUrl = await captureWrapper(wrappers[0]);
         const link = document.createElement("a");
         const safeName = (students[0]?.nama || "siswa").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-");
-        link.download = `kartu-${currentSize.code.toLowerCase()}-${safeName}.png`;
+        link.download = `kartu-${currentSize.code.toLowerCase()}-${cmykProfileId}-${safeName}.png`;
         link.href = dataUrl;
         link.click();
       } else {
@@ -451,16 +496,16 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
 
         for (let i = 0; i < wrappers.length; i++) {
           const student = students[i];
-          setDownloadProgress(`Merender kartu ${i + 1}/${wrappers.length}: ${student?.nama || "Siswa"}...`);
+          setDownloadProgress(`Merender kartu ${i + 1}/${wrappers.length}: ${student?.nama || "Siswa"} (${currentCmykProfile.shortName})...`);
           const dataUrl = await captureWrapper(wrappers[i]);
           const imgData = dataUrl.split("base64,")[1];
           const safeName = (student?.nama || `siswa-${i + 1}`).replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-");
-          zip.file(`kartu-${currentSize.code.toLowerCase()}-${safeName}-${student?.nisn || student?.id || i}.png`, imgData, { base64: true });
+          zip.file(`kartu-${currentSize.code.toLowerCase()}-${cmykProfileId}-${safeName}-${student?.nisn || student?.id || i}.png`, imgData, { base64: true });
         }
 
         setDownloadProgress(`Mengompresi ${wrappers.length} kartu ke file ZIP...`);
         const content = await zip.generateAsync({ type: "blob" });
-        saveAs(content, `kartu_${type}_${currentSize.code}_${students.length}_data.zip`);
+        saveAs(content, `kartu_${type}_${currentSize.code}_${cmykProfileId}_${students.length}_data.zip`);
       }
     } catch (error) {
       console.error("Gagal mendownload PNG/ZIP:", error);
@@ -471,7 +516,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     }
   };
 
-  // Handler: Unduh PDF (Lembar A4 atau Kartu Satuan)
+  // Handler: Unduh PDF (Lembar A4 atau Kartu Satuan) dengan Optimasi CMYK
   const handleDownloadPDF = async () => {
     setIsDownloading(true);
     try {
@@ -479,7 +524,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
 
       if (viewMode === "a4") {
         const isLandscape = a4LayoutConfig.orientation === "landscape";
-        setDownloadProgress(`Menyiapkan PDF Lembar A4 (${currentSize.name})...`);
+        setDownloadProgress(`Menyiapkan PDF Lembar A4 (${currentSize.name} - ${currentCmykProfile.shortName})...`);
         const pdf = new jsPDF({
           orientation: isLandscape ? "landscape" : "portrait",
           unit: "mm",
@@ -490,10 +535,10 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         if (sheets.length === 0) return;
 
         for (let i = 0; i < sheets.length; i++) {
-          setDownloadProgress(`Memproses Lembar A4 ${i + 1}/${sheets.length}...`);
+          setDownloadProgress(`Memproses Lembar A4 ${i + 1}/${sheets.length} (Render Resolusi Tinggi CMYK)...`);
           await waitForImages(sheets[i]);
           const sheetDataUrl = await toPng(sheets[i], {
-            pixelRatio: 2.0,
+            pixelRatio: 2.5, // 250-300 DPI untuk kualitas cetak tajam & anti-bintik hitam pekat
             backgroundColor: "#ffffff",
             skipFonts: false,
             cacheBust: false,
@@ -508,11 +553,11 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         }
 
         setDownloadProgress("Menyimpan file PDF A4...");
-        const filename = `kartu_${type}_a4_${currentSize.code.toLowerCase()}_${students.length}_data.pdf`;
+        const filename = `kartu_${type}_a4_${currentSize.code.toLowerCase()}_${cmykProfileId}_${students.length}_data.pdf`;
         pdf.save(filename);
       } else {
         // Mode Kartu Satuan
-        setDownloadProgress(`Menyiapkan PDF Satuan (${currentSize.name})...`);
+        setDownloadProgress(`Menyiapkan PDF Satuan (${currentSize.name} - ${currentCmykProfile.shortName})...`);
         const pdf = new jsPDF({
           orientation: currentSize.isLandscape ? "landscape" : "portrait",
           unit: "mm",
@@ -521,7 +566,11 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             : [currentSize.widthMm, currentSize.heightMm],
         });
 
-        const wrappers = cardRef.current.querySelectorAll(".id-card-wrapper");
+        const wrappers = cardRef.current.querySelectorAll(
+          viewMode === "single"
+            ? ".student-card-print, .id-card-pair-wrapper"
+            : ".id-card-wrapper, .id-card-pair-wrapper, .student-card-print"
+        );
         if (wrappers.length === 0) return;
 
         let pageCount = 0;
@@ -534,7 +583,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             // Sisi Depan
             await waitForImages(cards[0]);
             const frontDataUrl = await toPng(cards[0], {
-              pixelRatio: 2.5,
+              pixelRatio: 3.0,
               backgroundColor: "#ffffff",
               skipFonts: false,
               cacheBust: false,
@@ -551,7 +600,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             // Sisi Belakang
             await waitForImages(cards[1]);
             const backDataUrl = await toPng(cards[1], {
-              pixelRatio: 2.5,
+              pixelRatio: 3.0,
               backgroundColor: "#ffffff",
               skipFonts: false,
               cacheBust: false,
@@ -566,7 +615,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
         }
 
         setDownloadProgress("Menyimpan dokumen PDF...");
-        const filename = `kartu_${type}_satuan_${currentSize.code.toLowerCase()}_${students.length}_data.pdf`;
+        const filename = `kartu_${type}_satuan_${currentSize.code.toLowerCase()}_${cmykProfileId}_${students.length}_data.pdf`;
         pdf.save(filename);
       }
     } catch (error) {
@@ -578,7 +627,7 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
     }
   };
 
-  // Handler: Cetak Langsung (Print Dialog)
+  // Handler: Cetak Langsung (Print Dialog) dengan Kalibrasi Warna Cetak
   const handlePrint = () => {
     const printWindow = window.open("", "_blank");
     const cardHTML = cardRef.current.innerHTML;
@@ -590,13 +639,18 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Cetak Kartu - ${students.length} Data (${isA4 ? `Lembar A4 ${currentSize.code}` : `Kartu Satuan ${currentSize.code}`})</title>
+          <title>Cetak Kartu - ${students.length} Data (${isA4 ? `Lembar A4 ${currentSize.code}` : `Kartu Satuan ${currentSize.code}`}) - ${currentCmykProfile.shortName}</title>
           <style>
             ${styles}
             @media print {
               @page {
                 size: ${isA4 ? (isLandscape ? "A4 landscape" : "A4 portrait") : `${currentSize.widthMm}mm ${currentSize.heightMm}mm`};
                 margin: 0;
+              }
+              * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
               }
               body {
                 margin: 0 !important;
@@ -617,6 +671,15 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                 min-width: ${isA4 ? (isLandscape ? "297mm" : "210mm") : `${currentSize.widthMm}mm`} !important;
                 min-height: ${isA4 ? (isLandscape ? "210mm" : "297mm") : `${currentSize.heightMm}mm`} !important;
                 padding: ${isA4 ? "8mm" : "0"} !important;
+              }
+              .photo-box-nct {
+                box-shadow: none !important;
+              }
+              .photo-box-nct img {
+                image-rendering: -webkit-optimize-contrast !important;
+                image-rendering: crisp-edges !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
               }
             }
           </style>
@@ -744,6 +807,10 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                   src={getPhotoUrl(person.foto)}
                   alt={person.nama}
                   crossOrigin="anonymous"
+                  style={{
+                    filter: currentCmykProfile.filter !== "none" ? currentCmykProfile.filter : undefined,
+                    WebkitFilter: currentCmykProfile.filter !== "none" ? currentCmykProfile.filter : undefined,
+                  }}
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.removeAttribute("crossOrigin");
@@ -832,6 +899,10 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                   src={getPhotoUrl(person.foto)}
                   alt={person.nama}
                   crossOrigin="anonymous"
+                  style={{
+                    filter: currentCmykProfile.filter !== "none" ? currentCmykProfile.filter : undefined,
+                    WebkitFilter: currentCmykProfile.filter !== "none" ? currentCmykProfile.filter : undefined,
+                  }}
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.removeAttribute("crossOrigin");
@@ -1030,11 +1101,18 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
               <span className="material-symbols-outlined text-base font-bold">badge</span>
             </div>
             <div className="min-w-0">
-              <h2 className="text-xs sm:text-sm font-black text-gray-900 leading-tight truncate">
-                Cetak Kartu {type === "teacher" ? "Guru" : "Siswa"} ({students.length} Data)
-              </h2>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h2 className="text-xs sm:text-sm font-black text-gray-900 leading-tight truncate">
+                  Cetak Kartu {type === "teacher" ? "Guru" : "Siswa"} ({students.length} Data)
+                </h2>
+                {cmykProfileId !== "original" && (
+                  <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.2 bg-amber-100 border border-amber-300 text-amber-900 rounded font-black text-[9px] uppercase tracking-wider">
+                    ✨ {currentCmykProfile.badge}
+                  </span>
+                )}
+              </div>
               <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium truncate">
-                {viewMode === "a4" ? `Kertas A4 (${a4Pages.length} Hal) • ${currentSize.code}` : `Satuan: ${currentSize.code}`}
+                {viewMode === "a4" ? `Kertas A4 (${a4Pages.length} Hal) • ${currentSize.code}` : `Satuan: ${currentSize.code}`} • {currentCmykProfile.shortName}
               </p>
             </div>
           </div>
@@ -1095,6 +1173,26 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
                 <optgroup label="Cetak Kartu Satuan">
                   <option value="single">Kartu Satuan (Lepas)</option>
                 </optgroup>
+              </select>
+            </div>
+
+            {/* Dropdown 3: Profil CMYK Cetak (Anti-Muka Hitam) */}
+            <div className="relative col-span-2 sm:col-span-1 min-w-0">
+              <select
+                value={cmykProfileId}
+                onChange={(e) => setCmykProfileId(e.target.value)}
+                className={`w-full sm:w-auto px-2 py-1.5 border rounded-lg text-xs font-black focus:outline-none cursor-pointer transition-colors shadow-xs truncate ${
+                  cmykProfileId !== "original"
+                    ? "bg-amber-50 border-amber-400 text-amber-950 hover:bg-amber-100/70"
+                    : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-white"
+                }`}
+                title="Koreksi warna profil CMYK cetak: mencegah wajah hitam/gelap saat diprint di kertas atau kartu PVC"
+              >
+                {CMYK_PROFILES.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -1449,6 +1547,10 @@ export default function StudentCardPrint({ students = [], onClose, type = "stude
             object-fit: cover;
             object-position: center 20%;
             display: block;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
           }
 
           /* Bottom Zone: Data Diri */
