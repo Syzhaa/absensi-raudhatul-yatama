@@ -1,0 +1,9 @@
+# Skip one-off patch/fix scripts (AST noise - not part of the app)
+*.cjs
+
+# Skip build output & vendor artifacts (extra names beyond dist)
+dist
+dist-ssr
+dist-deploy
+dev-dist
+node_modules
