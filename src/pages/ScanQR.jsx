@@ -321,12 +321,12 @@ export default function ScanQR() {
       : null;
 
   // Toleransi BTS/Jaringan Seluler:
-  // Di wilayah madrasah, menara BTS operator seluler berjarak ~1.3km di jalan raya A. Yani.
-  // Jika perangkat berada di madrasah namun membaca tower BTS (jarak <= 1350m dan akurasi >= 100m),
-  // sistem mengompensasi deviasi tersebut sehingga presensi SAH.
-  // Jika jarak > 1350m (misal 2000m di rumah), toleransi BTS DITOLAK TOTAL!
+  // Khusus HP yang tidak mendukung satelit GPS akurat / hanya membaca menara BTS seluler (rawAccuracy >= 80m):
+  // Diberikan toleransi deviasi jarak fisik hingga 700 meter dari titik pusat sekolah.
+  // Jika jarak > 700m untuk BTS, atau jarak > 1350m untuk perangkat apa pun, akses MUTLAK DITOLAK.
+  const BTS_MAX_TOLERANCE = 700;
   const rawAccuracy = coords?.accuracy || 0;
-  const isCellularBtsDrift = currentDistance !== null && currentDistance <= 1350 && rawAccuracy >= 100;
+  const isCellularBtsDrift = currentDistance !== null && currentDistance <= BTS_MAX_TOLERANCE && rawAccuracy >= 80;
 
   const accuracyDeduction = currentDistance !== null && currentDistance <= 1350
     ? (isCellularBtsDrift ? Math.min(rawAccuracy, 1250) : Math.min(rawAccuracy, 50))
@@ -340,10 +340,13 @@ export default function ScanQR() {
   const isMockActive = Boolean(!coords?.isPcVerified && (coords?.isMock || mockStatus.isMock || coordsRef.current?.isMock));
   const isPendingVerification = Boolean(!coords?.isPcVerified && isLocating && !coords);
 
+  const isGpsWithinRadius = effectiveDistance !== null && effectiveDistance <= radiusMax;
+  const isBtsWithinRadius = isCellularBtsDrift; // Jarak <= 700m & akurasi >= 80m
+
   const isWithinRadius =
     !isLocationRequired ||
     coords?.isPcVerified ||
-    (!isMockActive && !isPendingVerification && effectiveDistance !== null && effectiveDistance <= radiusMax && currentDistance <= 1350);
+    (!isMockActive && !isPendingVerification && currentDistance !== null && (isGpsWithinRadius || isBtsWithinRadius) && currentDistance <= 1350);
 
   const canOpenScanner = !isLocationRequired || Boolean(isWithinRadius);
 
@@ -476,10 +479,13 @@ export default function ScanQR() {
           message: `Terdeteksi Fake GPS / Lokasi Palsu (${reason}). Presensi ditolak.`,
         };
       }
-      if (!coords?.isPcVerified && (effectiveDistance === null || effectiveDistance > radiusMax || currentDistance > 1350)) {
+      if (!coords?.isPcVerified && (effectiveDistance === null || ((!isGpsWithinRadius && !isBtsWithinRadius) || currentDistance > 1350))) {
+        const isBtsSignal = rawAccuracy >= 80;
         return {
           valid: false,
-          message: `Di luar jangkauan sekolah (${Math.round(currentDistance || 0)}m). Presensi hanya sah di lingkungan madrasah (maks ${radiusMax}m).`,
+          message: isBtsSignal
+            ? `Di luar toleransi BTS madrasah (${Math.round(currentDistance || 0)}m). Maksimal toleransi BTS adalah ${BTS_MAX_TOLERANCE}m.`
+            : `Di luar jangkauan sekolah (${Math.round(currentDistance || 0)}m). Presensi hanya sah di lingkungan madrasah (maks ${radiusMax}m).`,
         };
       }
     }
@@ -726,7 +732,7 @@ export default function ScanQR() {
                             {coords.isPcVerified
                               ? `PC Terverifikasi (s.d. ${format(new Date(coords.expiresAt || Date.now() + 3 * 3600 * 1000), "HH:mm")})`
                               : isCellularBtsDrift
-                              ? `BTS Terkompensasi (Jarak: ${Math.round(currentDistance || 0)}m, Akurasi: ±${Math.round(rawAccuracy)}m)`
+                              ? `BTS Terkompensasi (${Math.round(currentDistance || 0)}m / Maks ${BTS_MAX_TOLERANCE}m, ±${Math.round(rawAccuracy)}m)`
                               : `${currentDistance !== null ? `${Math.round(currentDistance)}m` : ""} / Maks ${radiusMax}m`}
                           </span>
                         )}
@@ -740,11 +746,13 @@ export default function ScanQR() {
                           ? "Mencari dan mengunci koordinat GPS perangkat Anda..."
                           : locationError || (isWithinRadius
                               ? (isCellularBtsDrift
-                                  ? `Terdeteksi di area madrasah via sinyal BTS (Jarak fisik: ${Math.round(currentDistance || 0)}m, Akurasi: ±${Math.round(rawAccuracy)}m)`
+                                  ? `Terdeteksi di area madrasah via sinyal BTS (${Math.round(currentDistance || 0)}m dari sekolah, toleransi s.d. ${BTS_MAX_TOLERANCE}m)`
                                   : `Jarak ${Math.round(currentDistance || 0)}m dari titik pusat (${effectiveLembaga?.toUpperCase() || "MA"})`)
-                              : (currentDistance !== null && currentDistance > 1350
-                                  ? `Jarak ${Math.round(currentDistance)}m terlalu jauh dari sekolah (Maks 100m). Presensi ditolak.`
-                                  : `Jarak ${Math.round(currentDistance || 0)}m melebihi batas toleransi radius ${radiusMax}m.`))}
+                              : (currentDistance !== null && rawAccuracy >= 80 && currentDistance > BTS_MAX_TOLERANCE
+                                  ? `Jarak ${Math.round(currentDistance)}m melebihi batas toleransi BTS ${BTS_MAX_TOLERANCE}m.`
+                                  : (currentDistance !== null && currentDistance > 1350
+                                      ? `Jarak ${Math.round(currentDistance)}m terlalu jauh dari sekolah (Maks 100m). Presensi ditolak.`
+                                      : `Jarak ${Math.round(currentDistance || 0)}m melebihi batas toleransi radius ${radiusMax}m.`)))}
                       </p>
                     </div>
                   </div>
