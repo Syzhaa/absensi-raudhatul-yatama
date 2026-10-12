@@ -35,6 +35,7 @@ export default function Login({ onLogin }) {
   const [turnstileToken, setTurnstileToken] = useState("");
   const [isTurnstileReady, setIsTurnstileReady] = useState(false);
   const turnstileSlotRef = useRef(null);
+  const autoLoginTried = useRef(false);
 
   const setUserLembaga = useAppStore((state) => state.setUserLembaga);
   const setUserRole = useAppStore((state) => state.setUserRole);
@@ -63,14 +64,67 @@ export default function Login({ onLogin }) {
     return () => { isMounted = false; };
   }, []);
 
-  // Load remembered email on mount
+  // Load remembered credentials & auto-login jika valid (2 bulan = 60 hari)
   useEffect(() => {
-    const rememberedEmail = localStorage.getItem("remembered_email");
-    if (rememberedEmail) {
-      setEmail(rememberedEmail);
-      setRememberMe(true);
+    try {
+      const saved = localStorage.getItem("yatama_remembered_cred");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const now = Date.now();
+        // Cek expiry 60 hari (default 60 * 24 * 3600 * 1000)
+        if (parsed.expiresAt && now < parsed.expiresAt && parsed.email && parsed.p) {
+          const decodedPass = atob(parsed.p);
+          setEmail(parsed.email);
+          setPassword(decodedPass);
+          setRememberMe(true);
+
+          // Coba auto-login background sekali saja jika belum login dan bukan logout manual
+          const isManualLogout = sessionStorage.getItem("yatama_manual_logout") === "true";
+          if (!autoLoginTried.current && !isManualLogout) {
+            autoLoginTried.current = true;
+            setLoading(true);
+            authService.login(parsed.email, decodedPass, getDeviceId(), "bypass")
+              .then((response) => {
+                const token = response.data?.token || response.token || response.data?.data?.token;
+                const lembaga = response.data?.user?.lembaga || response.data?.data?.user?.lembaga;
+                const role = response.data?.user?.role || response.data?.data?.user?.role;
+                if (token && role !== "siswa") {
+                  localStorage.setItem("auth_token", token);
+                  if (lembaga) setUserLembaga(lembaga);
+                  if (role) setUserRole(role);
+                  const userData = response.data?.user || response.data?.data?.user;
+                  if (userData?.id) setUserId(userData.id);
+                  if (userData?.name) setUserName(userData.name);
+                  if (userData?.email) setUserEmail(userData.email);
+                  const permissions = response.data?.user?.permissions || response.data?.data?.user?.permissions;
+                  if (permissions && setUserPermissions) setUserPermissions(permissions);
+                  onLogin();
+                } else {
+                  setLoading(false);
+                }
+              })
+              .catch(() => {
+                // Auto-login gagal (mungkin ganti sandi), biarkan form terisi
+                setLoading(false);
+              });
+          }
+          return;
+        } else {
+          // Expired > 2 bulan, bersihkan
+          localStorage.removeItem("yatama_remembered_cred");
+        }
+      }
+
+      // Fallback legacy remembered_email
+      const rememberedEmail = localStorage.getItem("remembered_email");
+      if (rememberedEmail) {
+        setEmail(rememberedEmail);
+        setRememberMe(true);
+      }
+    } catch {
+      // ignore JSON parse errors
     }
-  }, []);
+  }, [onLogin, setUserId, setUserEmail, setUserLembaga, setUserPermissions, setUserRole, setUserName]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -112,11 +166,20 @@ export default function Login({ onLogin }) {
         throw new Error("Token tidak ditemukan dalam respons login.");
       }
 
-      // Remember me functionality
+      // Remember me: simpan kredensial encoded + expiry 60 hari (2 bulan)
       if (rememberMe) {
         localStorage.setItem("remembered_email", email);
+        localStorage.setItem(
+          "yatama_remembered_cred",
+          JSON.stringify({
+            email,
+            p: btoa(password),
+            expiresAt: Date.now() + 60 * 24 * 3600 * 1000, // 60 hari
+          })
+        );
       } else {
         localStorage.removeItem("remembered_email");
+        localStorage.removeItem("yatama_remembered_cred");
       }
 
       onLogin();

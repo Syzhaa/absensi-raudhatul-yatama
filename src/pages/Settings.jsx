@@ -179,7 +179,9 @@ export default function Settings() {
     } catch {
       // ignore
     } finally {
+      sessionStorage.setItem("yatama_manual_logout", "true");
       localStorage.removeItem("token");
+      localStorage.removeItem("auth_token");
       localStorage.removeItem("user");
       navigate("/login");
     }

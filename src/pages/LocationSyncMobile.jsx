@@ -169,6 +169,7 @@ export default function LocationSyncMobile() {
     try {
       await authService.logout();
     } catch {}
+    sessionStorage.setItem("yatama_manual_logout", "true");
     localStorage.removeItem("auth_token");
     setCurrentUser(null);
     setStatus("idle");

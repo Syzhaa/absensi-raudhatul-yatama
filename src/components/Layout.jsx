@@ -139,6 +139,7 @@ export default function Layout({ children }) {
     } catch (e) {
       console.error(e);
     } finally {
+      sessionStorage.setItem("yatama_manual_logout", "true");
       localStorage.removeItem("auth_token");
       setUserRole(null);
       setUserLembaga(null);
