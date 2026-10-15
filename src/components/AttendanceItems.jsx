@@ -90,7 +90,13 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
                 : "bg-gray-200 text-gray-900"
             }`}
           >
-            {isBelumAbsen ? "BELUM ABSEN" : isPjj ? "HADIR (PJJ)" : item.status?.toUpperCase()}
+            {isBelumAbsen
+              ? "BELUM ABSEN"
+              : isPjj
+              ? "HADIR (PJJ)"
+              : !isStudent && item.status === "alpha"
+              ? "TANPA KABAR"
+              : item.status?.toUpperCase()}
           </span>
 
           {/* Quick Manual Attendance Actions */}
@@ -195,27 +201,47 @@ export const AttendanceItem = memo(function AttendanceItem({ item, onEdit }) {
                   <span className="material-symbols-outlined text-xs">emergency</span>
                   <span>Sakit</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => onEdit && onEdit({ ...person, ...item, initialStatus: "alpha" })}
-                  title="Pintasan Alpha"
-                  className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-950 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-0.5 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-xs">cancel</span>
-                  <span>Alpha</span>
-                </button>
+            <button
+              type="button"
+              onClick={() => onEdit && onEdit({ ...person, ...item, initialStatus: "alpha" })}
+              title="Pintasan Tanpa Kabar (Alpha)"
+              className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-950 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-0.5 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-xs">cancel</span>
+              <span>Tanpa Kabar</span>
+            </button>
               </div>
             ) : (
               onEdit && (
-                <button
-                  type="button"
-                  onClick={() => onEdit(item)}
-                  title="Absen Manual Hadir"
-                  className="px-2.5 py-1 bg-primary-green text-gray-900 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo hover:bg-emerald-400 active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-sm">check_circle</span>
-                  Hadir
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onEdit(item)}
+                    title="Absen Manual Hadir"
+                    className="px-2.5 py-1 bg-primary-green text-gray-900 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo hover:bg-emerald-400 active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                    Hadir
+                  </button>
+                  {!isStudent && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onEdit({
+                          ...person,
+                          ...item,
+                          initialStatus: "alpha",
+                          initialNotes: "Tanpa kabar / tidak ada konfirmasi",
+                        })
+                      }
+                      title="Tandai Tanpa Kabar"
+                      className="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-950 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-0.5 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-xs">cancel</span>
+                      <span>Tanpa Kabar</span>
+                    </button>
+                  )}
+                </div>
               )
             )}
           </div>

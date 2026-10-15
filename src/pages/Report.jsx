@@ -105,6 +105,9 @@ const STATUS_LABELS = {
   libur: "Libur",
 };
 
+const statusLabelFor = (category, key) =>
+  category === "siswa" ? STATUS_LABELS[key] : key === "alpha" ? "Tanpa Kabar" : STATUS_LABELS[key];
+
 const STATUS_COLORS = {
   hadir: "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold",
   terlambat: "bg-amber-100 text-amber-800 border-amber-300 font-bold",
@@ -1235,7 +1238,9 @@ export default function Report() {
                   <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-amber-700">Telat</th>
                   <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-blue-700">Izin</th>
                   <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-purple-700">Sakit</th>
-                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-rose-700">Alpha</th>
+                  <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-rose-700">
+                    {category === "siswa" ? "Alpha" : "Tanpa Kabar"}
+                  </th>
                   <th className="px-3.5 py-3 text-center font-black text-xs uppercase text-slate-700">Libur</th>
                   <th className="px-3.5 py-3 text-center font-black text-xs uppercase bg-emerald-50 text-emerald-950">Total Hadir</th>
                 </tr>

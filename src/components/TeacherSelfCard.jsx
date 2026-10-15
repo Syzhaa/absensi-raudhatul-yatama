@@ -194,7 +194,7 @@ export default function TeacherSelfCard() {
           ) : status === "alpha" ? (
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-red-100 text-red-950 border border-red-400 rounded-lg font-black text-[11px]">
               <span className="material-symbols-outlined text-xs">cancel</span>
-              <span>Alpha</span>
+              <span>Tanpa Kabar</span>
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-gray-200 text-gray-800 rounded-lg font-black text-[11px]">

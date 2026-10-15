@@ -73,9 +73,10 @@ export default function ManualAttendanceForm({
                   { value: "sakit", label: "Sakit", color: "yellow", icon: "emergency" },
                   {
                     value: "alpha",
-                    label: "Alpha (Tidak Hadir)",
+                    label: "Tanpa Kabar",
                     color: "red",
                     icon: "cancel",
+                    defaultNote: "Tanpa Kabar",
                   },
                 ].map((status) => (
                   <label
@@ -156,6 +157,19 @@ export default function ManualAttendanceForm({
                 className="px-2 py-0.5 bg-blue-100 hover:bg-blue-200 text-blue-950 font-bold text-[10px] rounded-lg border border-blue-300 cursor-pointer shadow-2xs"
               >
                 📝 Keperluan Keluarga
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setManualFormData({
+                    ...manualFormData,
+                    status: "alpha",
+                    note: "Tanpa kabar / tidak ada konfirmasi",
+                  })
+                }
+                className="px-2 py-0.5 bg-rose-100 hover:bg-rose-200 text-rose-950 font-black text-[10px] rounded-lg border border-rose-300 cursor-pointer shadow-2xs"
+              >
+                🚨 Tanpa Kabar
               </button>
             </div>
 

@@ -33,6 +33,7 @@ const STATUS_OPTIONS = [
   {
     value: "alpha",
     label: "Alpha",
+    teacherLabel: "Tanpa Kabar",
     color: "bg-red-100 text-red-900 border-red-300",
   },
   {
@@ -48,9 +49,14 @@ export default function AttendanceModal({
   student,
   date,
   lembaga,
+  teachersList = [],
+  studentsList = [],
   onStatusUpdate,
   onSuccessMessage,
 }) {
+  const isManualPicker = Boolean(student?.isManualPicker);
+  const [pickerRole, setPickerRole] = useState("teacher");
+  const [selectedTargetId, setSelectedTargetId] = useState("");
   const [status, setStatus] = useState("hadir");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,31 +65,51 @@ export default function AttendanceModal({
   const userRole = useAppStore((state) => state.userRole);
   const isGuru = userRole === "guru";
 
+  const isTeacher = isManualPicker
+    ? pickerRole === "teacher"
+    : (student?.role === "teacher" || !!student?.teacher_id);
+
   const filteredStatusOptions = isGuru
     ? STATUS_OPTIONS.filter((opt) => !["hadir", "terlambat"].includes(opt.value))
     : STATUS_OPTIONS;
 
   useEffect(() => {
     if (isOpen) {
-      const existingNote = student?.notes || student?.initialNotes || "";
-      const isExistingPjj =
-        student?.initialStatus === "pjj" ||
-        existingNote.toLowerCase().includes("jarak jauh") ||
-        existingNote.toLowerCase().includes("pjj");
+      if (isManualPicker) {
+        const defaultRole = student?.role || "teacher";
+        setPickerRole(defaultRole);
+        setSelectedTargetId("");
+        const defaultStat = defaultRole === "teacher" ? "alpha" : "hadir";
+        setStatus(defaultStat);
+        setNotes(defaultRole === "teacher" ? "Tanpa kabar / tidak ada konfirmasi" : "");
+      } else {
+        const existingNote = student?.notes || student?.initialNotes || "";
+        const isExistingPjj =
+          student?.initialStatus === "pjj" ||
+          existingNote.toLowerCase().includes("jarak jauh") ||
+          existingNote.toLowerCase().includes("pjj");
 
-      let currentStatus = student?.initialStatus ||
-        (isExistingPjj
-          ? "pjj"
-          : (student?.status && student.status !== "belum_absen"
-            ? student.status
-            : (isGuru ? "izin" : "hadir")));
+        let currentStatus = student?.initialStatus ||
+          (isExistingPjj
+            ? "pjj"
+            : (student?.status && student.status !== "belum_absen"
+              ? student.status
+              : (isGuru ? "izin" : "hadir")));
 
-      if (isGuru && ["hadir", "terlambat"].includes(currentStatus) && !isExistingPjj) {
-        currentStatus = student?.initialStatus || "izin";
+        if (isGuru && ["hadir", "terlambat"].includes(currentStatus) && !isExistingPjj) {
+          currentStatus = student?.initialStatus || "izin";
+        }
+
+        setStatus(currentStatus);
+        setNotes(
+          existingNote ||
+            (currentStatus === "pjj"
+              ? "Pelajaran Jarak Jauh (PJJ)"
+              : currentStatus === "alpha" && (student?.role === "teacher" || student?.teacher_id)
+              ? "Tanpa kabar / tidak ada konfirmasi"
+              : "")
+        );
       }
-
-      setStatus(currentStatus);
-      setNotes(existingNote || (currentStatus === "pjj" ? "Pelajaran Jarak Jauh (PJJ)" : ""));
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -91,11 +117,9 @@ export default function AttendanceModal({
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isOpen, student?.status, student?.notes, student?.initialStatus, student?.initialNotes, isGuru]);
+  }, [isOpen, student, isGuru, isManualPicker]);
 
   if (!isOpen) return null;
-
-  const isTeacher = student?.role === "teacher" || !!student?.teacher_id;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -112,7 +136,7 @@ export default function AttendanceModal({
     const submitNotes = isPjj ? (notes.trim() || "Pelajaran Jarak Jauh (PJJ)") : notes;
 
     try {
-      if (student?.attendance_id) {
+      if (!isManualPicker && student?.attendance_id) {
         await logsService.updateStatus(student.attendance_id, {
           status: submitStatus,
           notes: submitNotes,
@@ -120,6 +144,16 @@ export default function AttendanceModal({
           ...(isPjj ? { check_in: null, check_out: null } : {}),
         });
       } else {
+        const targetId = isManualPicker
+          ? selectedTargetId
+          : (isTeacher ? (student.teacher_id || student.id) : (student.student_id || student.id));
+
+        if (!targetId) {
+          alert(`Pilih ${isTeacher ? "guru" : "siswa"} terlebih dahulu.`);
+          setIsSubmitting(false);
+          return;
+        }
+
         // Create new manual attendance
         const payload = {
           status: submitStatus,
@@ -128,9 +162,9 @@ export default function AttendanceModal({
           ...(isPjj ? { check_in: null, check_out: null } : {}),
         };
         if (isTeacher) {
-          payload.teacher_id = student.teacher_id || student.id;
+          payload.teacher_id = targetId;
         } else {
-          payload.student_id = student.student_id || student.id;
+          payload.student_id = targetId;
         }
         await logsService.createManual(payload);
       }
@@ -177,11 +211,14 @@ export default function AttendanceModal({
         <div className="bg-gray-50/50 border-b border-gray-200 px-4 py-2.5 sm:px-5 sm:py-3 flex items-center justify-between">
           <div>
             <h2 className="font-black text-sm sm:text-base text-gray-900">
-              Edit Status Presensi
+              {isManualPicker ? "Input Absen Manual" : "Edit Status Presensi"}
             </h2>
             <p className="text-[11px] sm:text-xs text-gray-500">
-              {student?.nama || student?.student?.nama || "Siswa"} -{" "}
-              {student?.kelas || student?.student?.kelas ? `Kelas ${formatKelas(student.kelas || student.student.kelas)}` : ""}
+              {isManualPicker
+                ? "Pilih target, lalu tentukan status"
+                : `${student?.nama || student?.student?.nama || "Siswa"} - ${
+                    student?.kelas || student?.student?.kelas ? `Kelas ${formatKelas(student.kelas || student.student.kelas)}` : ""
+                  }`}
             </p>
           </div>
           <button
@@ -194,16 +231,75 @@ export default function AttendanceModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-3.5 sm:p-4 space-y-2.5">
-          {/* Student Info Compact */}
-          {student && (
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 flex items-center gap-2">
-              <span className="material-symbols-outlined text-gray-600 text-base">
-                person
-              </span>
-              <p className="font-black text-xs text-gray-900 truncate">
-                {student?.nama || student?.student?.nama || "Nama tidak tersedia"}
-              </p>
+          {/* Target Info or Picker */}
+          {isManualPicker ? (
+            <div className="space-y-2 p-2.5 bg-gray-50 border border-gray-300 rounded-xl">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPickerRole("teacher");
+                    setSelectedTargetId("");
+                    setStatus("alpha");
+                    setNotes("Tanpa kabar / tidak ada konfirmasi");
+                  }}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-black border transition-all cursor-pointer ${
+                    pickerRole === "teacher"
+                      ? "bg-purple-600 text-white border-purple-800 shadow-xs"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                  }`}
+                >
+                  Dewan Guru
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPickerRole("student");
+                    setSelectedTargetId("");
+                    setStatus("hadir");
+                    setNotes("");
+                  }}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-black border transition-all cursor-pointer ${
+                    pickerRole === "student"
+                      ? "bg-primary-green text-gray-900 border-emerald-600 shadow-xs"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                  }`}
+                >
+                  Siswa
+                </button>
+              </div>
+
+              <select
+                value={selectedTargetId}
+                onChange={(e) => setSelectedTargetId(e.target.value)}
+                required
+                className="w-full px-2.5 py-1.5 bg-white border-2 border-gray-900 rounded-xl font-bold text-xs text-gray-900 focus:outline-none focus:border-emerald-600 cursor-pointer"
+              >
+                <option value="">-- Pilih {pickerRole === "teacher" ? "Guru" : "Siswa"} --</option>
+                {pickerRole === "teacher"
+                  ? teachersList.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.nama} {t.nip ? `(${t.nip})` : ""} - {t.lembaga?.toUpperCase()}
+                      </option>
+                    ))
+                  : studentsList.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.nama} ({s.kelas ? `Kelas ${formatKelas(s.kelas)}` : s.lembaga?.toUpperCase()})
+                      </option>
+                    ))}
+              </select>
             </div>
+          ) : (
+            student && (
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 flex items-center gap-2">
+                <span className="material-symbols-outlined text-gray-600 text-base">
+                  {isTeacher ? "school" : "person"}
+                </span>
+                <p className="font-black text-xs text-gray-900 truncate">
+                  {student?.nama || student?.student?.nama || "Nama tidak tersedia"}
+                </p>
+              </div>
+            )
           )}
 
           {/* Status Dropdown */}
@@ -253,7 +349,7 @@ export default function AttendanceModal({
                     className="hidden"
                   />
                   <span className="text-[11px] font-black">
-                    {opt.label}
+                    {isTeacher && opt.teacherLabel ? opt.teacherLabel : opt.label}
                   </span>
                   {status === opt.value && (
                     <span className="material-symbols-outlined text-xs">
@@ -307,6 +403,16 @@ export default function AttendanceModal({
               className="px-2 py-0.5 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-[10px] rounded-lg border border-amber-300 cursor-pointer transition-all shadow-2xs"
             >
               🎖️ Tugas / Dispensasi
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setStatus("alpha");
+                setNotes(isTeacher ? "Tanpa kabar / tidak ada konfirmasi" : "Tidak hadir tanpa keterangan (Alpha)");
+              }}
+              className="px-2 py-0.5 bg-rose-100 hover:bg-rose-200 text-rose-950 font-black text-[10px] rounded-lg border border-rose-300 cursor-pointer transition-all shadow-2xs"
+            >
+              🚨 {isTeacher ? "Tanpa Kabar" : "Alpha"}
             </button>
           </div>
 

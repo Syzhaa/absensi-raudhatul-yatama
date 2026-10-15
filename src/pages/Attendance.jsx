@@ -518,6 +518,23 @@ export default function Attendance() {
             <span className="px-2.5 py-1 text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl whitespace-nowrap">
               Total: {filteredRecords.length}
             </span>
+            {!isGuru && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedPerson({
+                    isManualPicker: true,
+                    role: roleFilter === "student" ? "student" : "teacher",
+                  });
+                  setShowModal(true);
+                }}
+                className="py-1 px-3 bg-primary-green hover:bg-emerald-400 text-gray-900 border-2 border-gray-900 rounded-xl text-xs font-black shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                title="Input Presensi Manual"
+              >
+                <span className="material-symbols-outlined text-sm font-bold">add_circle</span>
+                <span>Absen Manual</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -797,7 +814,13 @@ export default function Attendance() {
                                       : "bg-gray-200 text-gray-900 border-gray-300"
                                   }`}
                                 >
-                                  {isBelumAbsen ? "Belum" : isPjj ? "Hadir (PJJ)" : item.status}
+                                  {isBelumAbsen
+                                    ? "Belum"
+                                    : isPjj
+                                    ? "Hadir (PJJ)"
+                                    : !isStudent && item.status === "alpha"
+                                    ? "Tanpa Kabar"
+                                    : item.status}
                                 </span>
                               );
                             })()}
@@ -841,23 +864,48 @@ export default function Attendance() {
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => handleEditAttendance({ ...item, initialStatus: "alpha" })}
+                                        onClick={() =>
+                                          handleEditAttendance({
+                                            ...item,
+                                            initialStatus: "alpha",
+                                            initialNotes: !isStudent ? "Tanpa kabar / tidak ada konfirmasi" : "",
+                                          })
+                                        }
                                         className="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-950 text-xs font-bold rounded-lg border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
-                                        title="Pintasan Alpha"
+                                        title={!isStudent ? "Pintasan Tanpa Kabar" : "Pintasan Alpha"}
                                       >
-                                        Alpha
+                                        {!isStudent ? "Tanpa Kabar" : "Alpha"}
                                       </button>
                                     </div>
                                   ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleEditAttendance(item)}
-                                      className="px-2.5 py-1 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer"
-                                      title="Tandai Hadir"
-                                    >
-                                      <span className="material-symbols-outlined text-xs">check</span>
-                                      <span>Hadir</span>
-                                    </button>
+                                    <div className="flex items-center justify-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleEditAttendance(item)}
+                                        className="px-2.5 py-1 bg-primary-green hover:bg-emerald-400 text-gray-900 text-xs font-black rounded-lg border-2 border-gray-900 shadow-neo active:translate-y-0.5 transition-all flex items-center gap-1 cursor-pointer"
+                                        title="Tandai Hadir"
+                                      >
+                                        <span className="material-symbols-outlined text-xs">check</span>
+                                        <span>Hadir</span>
+                                      </button>
+                                      {!isStudent && (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleEditAttendance({
+                                              ...item,
+                                              initialStatus: "alpha",
+                                              initialNotes: "Tanpa kabar / tidak ada konfirmasi",
+                                            })
+                                          }
+                                          className="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-950 text-xs font-bold rounded-lg border-2 border-gray-900 shadow-xs active:translate-y-0.5 transition-all cursor-pointer flex items-center gap-0.5"
+                                          title="Tandai Tanpa Kabar"
+                                        >
+                                          <span className="material-symbols-outlined text-xs">cancel</span>
+                                          <span>Tanpa Kabar</span>
+                                        </button>
+                                      )}
+                                    </div>
                                   )
                                 )}
                                 <button
@@ -938,6 +986,8 @@ export default function Attendance() {
         student={selectedPerson}
         date={selectedDate}
         lembaga={effectiveLembaga}
+        teachersList={masterTeachers || []}
+        studentsList={masterStudents || []}
         onStatusUpdate={handleStatusUpdate}
         onSuccessMessage={(msg) => showAlert("Berhasil", msg)}
       />
